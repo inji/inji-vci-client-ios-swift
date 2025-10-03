@@ -77,9 +77,48 @@ let issuerMetadata: [String: Any] = try await vciClient.getIssuerMetadata(creden
 ]
 ```
 
-### 2. Request Credential
+### 2. Obtain Credential Configurations Supported
 
-### 2.1 Request Credential by Credential Offer
+Retrieve credential configurations supported for given issuer from its well-known endpoint.
+
+#### Parameters
+
+| Name             | Type   | Required | Default Value | Description                  |
+|------------------|--------|----------|---------------|------------------------------|
+| credentialIssuer | String | Yes      | N/A           | URI of the Credential Issuer |
+
+#### Returns
+Map of `credential_configurations_supported` objects containing details like `format`, `scope` and other configuration
+information from the well-known endpoint of Credential Issuer, which can be used by the consumer to display supported
+credential types, etc.
+
+> Note: This method does not parse the metadata, it simply returns the raw Network response of well-known endpoint as a `Map<String, Any>`.
+
+#### Example Usage
+
+```swift
+let credentialConfigurationsSupported : [String: Any] = try await vciClient.getCredentialConfigurationsSupported(
+    credentialIssuer: "https://example.com/issuer"
+)
+
+//The response looks similar to this
+[String: Any] = [
+    "credentialConfigId-1": [
+        "format": "ldp_vc",
+        "credential_definition": [
+            "type": ["VerifiableCredential", "ExampleCredential"]
+        ]
+    ],
+    "credentialConfigId-2": [
+        "format": "mso_mdoc",
+        "doctype": "org.iso.18013.5.1.mDL"
+    ]
+]
+```
+
+### 3. Request Credential
+
+### 3.1 Request Credential by Credential Offer
 
 - Method: `requestCredentialByCredentialOffer`
 - This method allows you to request a credential using a credential offer, which can be either an embedded JSON or a URI pointing to the credential offer.
@@ -156,7 +195,7 @@ let credentialIssuer = credentialResponse.credentialIssuer // eg - "https://samp
 
 ```
 
-### 2.2 Request Credential from Trusted Issuer
+### 3.2 Request Credential from Trusted Issuer
 
 - Method: `requestCredentialFromTrustedIssuer`
 - This method allows you to request a credential from a trusted issuer of Wallet.
@@ -223,7 +262,7 @@ let credentialIssuer = credentialResponse.credentialIssuer // eg - "https://samp
 
 ```
 
-### 2.3 Request Credential
+### 3.3 Request Credential
 - Method: `requestCredential`
 - Request for credential from the providers (credential issuer), and receive the credential back.
 
