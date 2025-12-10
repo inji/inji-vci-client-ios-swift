@@ -1,3 +1,5 @@
+import OpenID4VP
+
 public typealias AuthorizeUserCallback = (_ authorizationUrl: String) async throws -> String
 public typealias TokenResponseCallback = (_ tokenRequest: TokenRequest) async throws -> TokenResponse
 public typealias ProofJwtCallback = (
@@ -7,3 +9,6 @@ public typealias ProofJwtCallback = (
 ) async throws -> String
 public typealias CheckIssuerTrustCallback = ((_ credentialIssuer: String, _ issuerDisplay: [[String: Any]]) async throws -> Bool)?
 public typealias TxCodeCallback = ((_ inputMode: String?, _ description: String?, _ length: Int?) async throws -> String)?
+
+public typealias SelectCredentialsForPresentationCallback = (_ ovpRequest: AuthorizationRequest) async throws -> [String: [FormatType: [AnyCodable]]]
+public typealias SignVerifiablePresentationCallback = (_ payload: [FormatType: UnsignedVPToken]) async throws -> [FormatType: VPTokenSigningResult]
