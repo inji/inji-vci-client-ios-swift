@@ -15,13 +15,13 @@ final class TrustedIssuerHandlerTests: XCTestCase {
             credentialIssuer: "mock-issuer",
             credentialConfigurationId: "mock",
             clientMetadata: ClientMetadata(clientId: "", redirectUri: ""),
-            authorizeUser: { _ in "auth-code" },
+            authorizationMethods: [AuthorizationMethod.redirectToWeb(openWebPage: {_ in ["authorization_code": "auth_code"]})],
             getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer", expiresIn: nil) },
             getProofJwt: { _, _, _ in "jwt" }
         )
 
         XCTAssertTrue(mockService.didCallRequestCredentials)
-        let actualData = try result?.toJsonString().data(using: .utf8)
+        let actualData = try result.toJsonString().data(using: .utf8)
         let actualJson = try JSONSerialization.jsonObject(with: actualData!, options: []) as? [String: Any]
 
         let expectedJson: [String: Any] = [
@@ -47,7 +47,7 @@ final class TrustedIssuerHandlerTests: XCTestCase {
                 credentialIssuer: "mock-issuer",
                 credentialConfigurationId: "mock",
                 clientMetadata: ClientMetadata(clientId: "", redirectUri: ""),
-                authorizeUser: { _ in "auth-code" },
+                authorizationMethods: [AuthorizationMethod.redirectToWeb(openWebPage: {_ in ["authorization_code": "auth_code"]})],
                 getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer", expiresIn: nil) },
                 getProofJwt: { _, _, _ in "jwt" }
             )

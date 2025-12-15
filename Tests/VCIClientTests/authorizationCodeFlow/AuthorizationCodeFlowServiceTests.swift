@@ -22,7 +22,6 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         let result = try await service.requestCredentials(
             issuerMetadata: IssuerMetadata.mock(),
             clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
-            authorizeUser: { _ in "auth-code" },
             getTokenResponse: {_ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer")},
             getProofJwt: { _, _, _ in "mock-jwt" },
             credentialConfigurationId: "vc1",
@@ -42,7 +41,6 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
             let result = try await service.requestCredentials(
                 issuerMetadata: IssuerMetadata.mock(),
                 clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
-                authorizeUser: { _ in "auth-code" },
                 getTokenResponse: {_ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer")},
                 getProofJwt: { _, _, _ in "mock-jwt" },
                 credentialConfigurationId: "vc1",
@@ -64,7 +62,6 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
             let result = try await service.requestCredentials(
                 issuerMetadata: IssuerMetadata.mock(),
                 clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
-                authorizeUser: { _ in "auth-code" },
                 getTokenResponse: {_ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer")},
                 getProofJwt: { _, _, _ in "mock-jwt" },
                 credentialConfigurationId: "vc1",
@@ -84,7 +81,6 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
             let result = try await service.requestCredentials(
                 issuerMetadata: IssuerMetadata.mock(),
                 clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
-                authorizeUser: { _ in "auth-code" },
                 getTokenResponse: {_ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer")},
                 getProofJwt: { _, _, _ in "mock-jwt" },
                 credentialConfigurationId: "vc1",

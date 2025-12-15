@@ -12,7 +12,8 @@ final class MockAuthServerResolver: AuthorizationServerResolver {
             issuer: "mock-issuer",
             grantTypesSupported: nil,
             tokenEndpoint: mockTokenEndpoint,
-            authorizationEndpoint: nil
+            authorizationEndpoint: nil,
+            interactiveAuthorizationEndpoint: nil
         )
     }
 
@@ -22,7 +23,8 @@ final class MockAuthServerResolver: AuthorizationServerResolver {
             issuer: "mock-issuer",
             grantTypesSupported: nil,
             tokenEndpoint: mockTokenEndpoint,
-            authorizationEndpoint: mcokAuthorizationEndpoint
+            authorizationEndpoint: mcokAuthorizationEndpoint,
+            interactiveAuthorizationEndpoint: nil
         )
     }
 }
@@ -92,13 +94,9 @@ final class MockCredentialOfferHandler: CredentialOfferFlowHandler {
         credentialOffer: String,
         clientMetadata: ClientMetadata,
         getTxCode: TxCodeCallback,
-        authorizeUser: @escaping (_ authorizationEndpoint: String) async throws -> String,
+        authorizationMethods: [AuthorizationMethod],
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofJwt: @escaping (
-            _ credentialIssuer: String,
-            _ cNonce: String?,
-            _ proofSigningAlgorithmsSupportedSupported: [String]
-        ) async throws -> String,
+        getProofJwt: @escaping ProofJwtCallback,
         onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
         networkSession: NetworkManager = NetworkManager.shared,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
@@ -119,16 +117,12 @@ class MockTrustedIssuerHandler: TrustedIssuerFlowHandler {
         credentialIssuer: String,
         credentialConfigurationId: String,
         clientMetadata: ClientMetadata,
-        authorizeUser: @escaping (_ authorizationEndpoint: String) async throws -> String,
+        authorizationMethods: [AuthorizationMethod]? = nil,
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofJwt: @escaping (
-            _ credentialIssuer: String,
-            _ cNonce: String?,
-            _ proofSigningAlgorithmsSupportedSupported: [String]
-        ) async throws -> String,
+        getProofJwt: @escaping ProofJwtCallback,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
         networkSession: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponse? {
+    ) async throws -> CredentialResponse {
         didCallDownload = true
         if shouldThrow {
             throw DownloadFailedException("Simulated failure")
@@ -154,7 +148,7 @@ final class MockNetworkManager: NetworkManager {
         timeoutMillis: Int64
     ) async throws -> NetworkResponse {
         if simulateDelay > 0 {
-            try await Task.sleep(nanoseconds: UInt64(simulateDelay * 1000000000))
+            try await Task.sleep(nanoseconds: UInt64(simulateDelay * 1_000_000_000))
         }
 
         if shouldThrowNetworkError {
@@ -167,7 +161,7 @@ final class MockNetworkManager: NetworkManager {
 
     override func sendRequest(request: URLRequest) async throws -> NetworkResponse {
         if simulateDelay > 0 {
-            try await Task.sleep(nanoseconds: UInt64(simulateDelay * 1000000000))
+            try await Task.sleep(nanoseconds: UInt64(simulateDelay * 1_000_000_000))
         }
 
         if shouldThrowTimeout {
@@ -289,13 +283,9 @@ final class MockAuthorizationCodeFlowService: AuthorizationCodeFlowService {
     override func requestCredentials(
         issuerMetadata: IssuerMetadata ,
         clientMetadata: ClientMetadata,
-        authorizeUser: @escaping (_ authorizationEndpoint: String) async throws -> String,
+        authorizationMethods: [AuthorizationMethod],
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofJwt: @escaping (
-            _ credentialIssuer: String,
-            _ cNonce: String?,
-            _ proofSigningAlgorithmsSupportedSupported: [String]
-        ) async throws -> String,
+        getProofJwt: @escaping ProofJwtCallback,
         credentialConfigurationId: String,
         proofSigningAlgorithmsSupportedSupported: [String],
         credentialOffer: CredentialOffer? = nil,
@@ -354,11 +344,7 @@ final class MockPreAuthFlowService: PreAuthCodeFlowService {
         issuerMetadata: IssuerMetadata,
         credentialOffer: CredentialOffer,
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofJwt: @escaping (
-            _ credentialIssuer: String,
-            _ cNonce: String?,
-            _ proofSigningAlgorithmsSupportedSupported: [String]
-        ) async throws -> String,
+        getProofJwt: @escaping ProofJwtCallback,
         credentialConfigurationId: String,
         proofSigningAlgorithmsSupportedSupported: [String],
         getTxCode: TxCodeCallback = nil,
@@ -368,3 +354,4 @@ final class MockPreAuthFlowService: PreAuthCodeFlowService {
         return responseToReturn
     }
 }
+
