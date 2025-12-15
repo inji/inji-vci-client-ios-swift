@@ -276,7 +276,7 @@ class InteractiveAuthorizationResponse {
         status: String?,
         type: String?,
         authSession: String?
-    ) {
+    ) throws {
         self.status = status
         self.type = type
         self.authSession = authSession
