@@ -52,7 +52,7 @@ public class VCIClient {
                 credentialOffer: credentialOffer,
                 clientMetadata: clientMetadata,
                 getTxCode: getTxCode,
-                authorizeUser: authorizeUser,
+                authorizationMethods: wrapAuthorizeUser(authorizeUser),
                 getTokenResponse: getTokenResponse,
                 getProofJwt: getProofJwt,
                 onCheckIssuerTrust: onCheckIssuerTrust,
@@ -106,7 +106,7 @@ public class VCIClient {
                 credentialIssuer: credentialIssuer,
                 credentialConfigurationId: credentialConfigurationId,
                 clientMetadata: clientMetadata,
-                authorizeUser: authorizeUser,
+                authorizationMethods: wrapAuthorizeUser(authorizeUser),
                 getTokenResponse: getTokenResponse,
                 getProofJwt: getProofJwt,
                 downloadTimeoutInMillis: downloadTimeoutInMillis,
@@ -126,9 +126,9 @@ public class VCIClient {
         credentialIssuer: String,
         credentialConfigurationId: String,
         clientMetadata: ClientMetadata,
-        getTokenResponse: TokenResponseCallback,
+        getTokenResponse: @escaping TokenResponseCallback,
         authorizations: [AuthorizationMethod],
-        getProofJwt: ProofJwtCallback,
+        getProofJwt: @escaping ProofJwtCallback,
         downloadTimeoutInMillis: Int64 = Constants.DEFAULT_NETWORK_TIMEOUT_IN_MILLIS
     ) async throws -> CredentialResponse {
 
@@ -137,16 +137,16 @@ public class VCIClient {
                 credentialIssuer: credentialIssuer,
                 credentialConfigurationId: credentialConfigurationId,
                 clientMetadata: clientMetadata,
-                getTokenResponse: getTokenResponse,
                 authorizationMethods: authorizations,
+                getTokenResponse: getTokenResponse,
                 getProofJwt: getProofJwt,
                 downloadTimeoutInMillis: downloadTimeoutInMillis
             )
         } catch let error as VCIClientException {
-            logger.error("Downloading credential failed due to \(error.message)")
+            print("Downloading credential failed due to \(error.message)")
             throw error
         } catch {
-            logger.error("Downloading credential failed due to \(error.localizedDescription)")
+            print("Downloading credential failed due to \(error.localizedDescription)")
             throw VCIClientException(
                 code: "VCI-010",
                 message: "Unknown Exception - \(error.localizedDescription)"
@@ -158,11 +158,11 @@ public class VCIClient {
     func fetchCredentialByCredentialOfferV2(
         credentialOffer: String,
         clientMetadata: ClientMetadata,
-        getTxCode: TxCodeCallback?,
+        getTxCode: TxCodeCallback,
         authorizations: [AuthorizationMethod],
-        getTokenResponse: TokenResponseCallback,
-        getProofJwt: ProofJwtCallback,
-        onCheckIssuerTrust: CheckIssuerTrustCallback? = nil,
+        getTokenResponse: @escaping TokenResponseCallback,
+        getProofJwt: @escaping ProofJwtCallback,
+        onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
         downloadTimeoutInMillis: Int64 = Constants.DEFAULT_NETWORK_TIMEOUT_IN_MILLIS
     ) async throws -> CredentialResponse {
 
@@ -171,17 +171,18 @@ public class VCIClient {
                 credentialOffer: credentialOffer,
                 clientMetadata: clientMetadata,
                 getTxCode: getTxCode,
-                interactiveAuthorizationCallbacks: authorizations,
+                authorizationMethods: authorizations,
                 getTokenResponse: getTokenResponse,
                 getProofJwt: getProofJwt,
                 onCheckIssuerTrust: onCheckIssuerTrust,
+                networkSession: networkSession,
                 downloadTimeoutInMillis: downloadTimeoutInMillis
             )
         } catch let error as VCIClientException {
-            logger.error("Downloading credential failed due to \(error.message)")
+            print("Downloading credential failed due to \(error.message)")
             throw error
         } catch {
-            logger.error("Downloading credential failed due to \(error.localizedDescription)")
+            print("Downloading credential failed due to \(error.localizedDescription)")
             throw VCIClientException(
                 code: "VCI-010",
                 message: "Unknown Exception - \(error.localizedDescription)"
@@ -246,5 +247,34 @@ public class VCIClient {
             print("\(logTag) Unexpected error: \(error.localizedDescription)")
             throw DownloadFailedException(error.localizedDescription)
         }
+    }
+    
+    // Wrap AuthorizeUserCallback into AuthorizationMethod.redirectToWeb
+    private func wrapAuthorizeUser(_ authorizeUser: @escaping AuthorizeUserCallback) -> [AuthorizationMethod] {
+        let method = AuthorizationMethod.redirectToWeb { authorizationUrl in
+            // The redirectToWeb callback is synchronous in signature; our AuthorizeUserCallback is async.
+            // We can block here by using Task and awaiting the async callback.
+            // However, AuthorizationMethod.OpenWebPageCallback is defined as (_ url: String) -> [String: Any].
+            // If your AuthorizationCodeFlowService expects to use this differently, adjust accordingly.
+            // For the V2 flow, AuthorizationCodeFlowService.requestCredentials takes [AuthorizationMethod] and internally
+            // will invoke the appropriate callback(s). Here we just encapsulate the provided authorizeUser.
+            // We return a dictionary payload; if not used, return an empty dictionary.
+            // Note: If your implementation needs to return the auth code synchronously, consider refactoring the callback type.
+            // For now, we store the result in a simple dictionary under "code" after executing the async callback synchronously.
+            var result: [String: Any] = [:]
+            let semaphore = DispatchSemaphore(value: 0)
+            Task {
+                do {
+                    let code = try await authorizeUser(authorizationUrl)
+                    result["authorization_code"] = code
+                } catch {
+                    result["error"] = error.localizedDescription
+                }
+                semaphore.signal()
+            }
+            semaphore.wait()
+            return result
+        }
+        return [method]
     }
 }

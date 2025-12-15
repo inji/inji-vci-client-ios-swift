@@ -23,7 +23,6 @@ class AuthorizationCodeFlowService {
     func requestCredentials(
         issuerMetadata: IssuerMetadata,
         clientMetadata: ClientMetadata,
-        authorizeUser: @escaping AuthorizeUserCallback,
         authorizationMethods: [AuthorizationMethod] = [],
         getTokenResponse: @escaping TokenResponseCallback,
         getProofJwt: @escaping ProofJwtCallback,
@@ -52,9 +51,10 @@ class AuthorizationCodeFlowService {
                     authServerMetadata: authServerMetadata,
                     issuerMetadata: issuerMetadata,
                     clientMetadata: clientMetadata,
-                    authorizeUser: authorizeUser,
+                    authorizationMethods: authorizationMethods,
                     pkceSession: pkceSession,
-                    getTokenResponse: getTokenResponse
+                    getTokenResponse: getTokenResponse,
+                    credentialConfigurationId: credentialConfigurationId
                 )
             } catch {
                 throw DownloadFailedException("Failed to obtain access token via authorization code flow: \(error.localizedDescription)")
@@ -94,29 +94,16 @@ class AuthorizationCodeFlowService {
         authServerMetadata: AuthorizationServerMetadata,
         issuerMetadata: IssuerMetadata,
         clientMetadata: ClientMetadata,
-        authorizeUser: @escaping AuthorizeUserCallback,
+        authorizationMethods: [AuthorizationMethod],
         pkceSession: PKCESessionManager.PKCESession,
-        getTokenResponse: @escaping TokenResponseCallback
+        getTokenResponse: @escaping TokenResponseCallback,
+        credentialConfigurationId : String
     ) async throws -> TokenResponse {
         guard let tokenEndpoint = issuerMetadata.tokenEndpoint ?? authServerMetadata.tokenEndpoint else {
             throw DownloadFailedException("Missing token endpoint for issuer \(issuerMetadata.credentialIssuer)")
         }
-        
-        guard let authorizationEndpoint = authServerMetadata.authorizationEndpoint else {
-            throw DownloadFailedException("Missing authorization endpoint")
-        }
-        
-        let authUrl = AuthorizationUrlBuilder.build(
-            baseUrl: authorizationEndpoint,
-            clientId: clientMetadata.clientId,
-            redirectUri: clientMetadata.redirectUri,
-            scope: issuerMetadata.scope!,
-            state: pkceSession.state,
-            codeChallenge: pkceSession.codeChallenge,
-            nonce: pkceSession.nonce
-        )
-        
-        let authCode = try await authorizeUser(authUrl)
+
+        let authCode = try await obtainAuthorizationCode(authorizationServerMetadata: authServerMetadata, issuerMetadata: issuerMetadata, clientMetadata: clientMetadata, pkceSession: pkceSession, credentialConfigurationId: credentialConfigurationId, authorizationMethods: authorizationMethods)
         
         return try await tokenService.getAccessToken(
             getTokenResponse: getTokenResponse,
@@ -183,7 +170,7 @@ class AuthorizationCodeFlowService {
                 endpoint: endpoint,
                 clientMetadata: clientMetadata,
                 credentialConfigurationId: credentialConfigurationId,
-                callback: authorizationMethods,
+                authorizationMethods: authorizationMethods,
                 pkceSession: pkceSession
             )
         } catch {
@@ -241,14 +228,14 @@ class AuthorizationCodeFlowService {
                 authorizeUrl: authorizationEndpoint,
                 clientMetadata: clientMetadata,
                 pkceSession: pkceSession,
-                scope: issuerMetadata.scope
+                scope: issuerMetadata.scope ?? "default"
             )
             
             let response: AuthorizationResponse
             do {
                 response = try await RedirectToWebAuthorizationMethodService(
                     openWebPage: openWebPage
-                ).authorizeUser(requestData)
+                ).authorizeUser(requestData: requestData)
             } catch {
                 throw DownloadFailedException(
                     "Redirect-to-web authorization failed at endpoint \(authorizationEndpoint): \(error.localizedDescription)"
@@ -266,7 +253,7 @@ class AuthorizationCodeFlowService {
         } else {
             
             guard let authorizationCode =
-                    try authorizeUser?(authorizationEndpoint) else {
+                    try await authorizeUser?(authorizationEndpoint) else {
                 throw DownloadFailedException(
                     "No authorization method available to obtain authorization code from \(authorizationEndpoint)"
                 )

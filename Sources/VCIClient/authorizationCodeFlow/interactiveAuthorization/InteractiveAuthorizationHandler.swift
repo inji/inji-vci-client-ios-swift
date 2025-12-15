@@ -113,8 +113,7 @@ final class InteractiveAuthorizationHandler {
         }
         
         guard
-            let presentationMethod = authorizationMethods.first(where: { $0.type == .openId4VpPresentation }),
-            case let .presentationDuringIssuance(selectCredentialsForPresentation, signVerifiablePresentation) = presentationMethod
+            case let .presentationDuringIssuance(selectCredentialsForPresentation, signVerifiablePresentation) = authorizationMethods.first(where: { $0.type == .openId4VpPresentation })
         else {
             throw InteractiveAuthorizationException(message: "Presentation callback missing")
         }
@@ -126,11 +125,11 @@ final class InteractiveAuthorizationHandler {
         )
 
         let handler = PresentationDuringIssuanceHandler(
-            selectCredentialsForPresentation: presentationMethod.selectCredentialsForPresentation,
-            signVerifiablePresentation: presentationMethod.signVerifiablePresentation
+            selectCredentialsForPresentation: selectCredentialsForPresentation,
+            signVerifiablePresentation: signVerifiablePresentation
         )
 
-        return try await handler.authorizeUser(request)
+        return await handler.authorizeUser(requestData: request)
     }
 }
 

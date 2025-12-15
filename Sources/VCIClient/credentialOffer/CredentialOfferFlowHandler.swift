@@ -20,7 +20,7 @@ class CredentialOfferFlowHandler {
         credentialOffer: String,
         clientMetadata: ClientMetadata,
         getTxCode: TxCodeCallback,
-        authorizeUser: @escaping AuthorizeUserCallback,
+        authorizationMethods: [AuthorizationMethod],
         getTokenResponse: @escaping TokenResponseCallback,
         getProofJwt: @escaping ProofJwtCallback,
         onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
@@ -61,7 +61,7 @@ class CredentialOfferFlowHandler {
             return try await authorizationCodeFlowService.requestCredentials(
                 issuerMetadata: issuerMetadataResponse.issuerMetadata,
                 clientMetadata: clientMetadata,
-                authorizeUser: authorizeUser,
+                authorizationMethods: authorizationMethods,
                 getTokenResponse: getTokenResponse,
                 getProofJwt: getProofJwt,
                 credentialConfigurationId: offer.credentialConfigurationIds.first!,

@@ -1,5 +1,6 @@
 import Foundation
 import OpenID4VP
+import OpenID4VPBridge
 
 enum AuthorizationMethod {
     case redirectToWeb(
@@ -7,8 +8,8 @@ enum AuthorizationMethod {
     )
 
     case presentationDuringIssuance(
-        selectCredentialsForPresentation: CredentialSelectionCallback,
-        signVerifiablePresentation: SignPresentationCallback
+        selectCredentialsForPresentation: SelectCredentialsForPresentationCallback,
+        signVerifiablePresentation: SignVerifiablePresentationCallback
     )
 
     var type: InteractionType {
@@ -21,11 +22,4 @@ enum AuthorizationMethod {
     }
 }
 
-
 typealias OpenWebPageCallback = (_ url: String) -> [String: Any]
-
-typealias CredentialSelectionCallback =
-    (_ request: AuthorizationRequest) async throws -> [String: [FormatType: [Any]]]
-
-typealias SignPresentationCallback =
-    (_ payload: [FormatType: UnsignedVPToken]) async throws -> [FormatType: VPTokenSigningResult]
