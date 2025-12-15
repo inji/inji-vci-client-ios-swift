@@ -5,12 +5,14 @@ struct AuthorizationServerMetadata: Codable {
     let grantTypesSupported: [String]?
     let tokenEndpoint: String?
     let authorizationEndpoint: String?
+    let interactiveAuthorizationEndpoint: String?
 
     enum CodingKeys: String, CodingKey {
         case issuer
         case grantTypesSupported = "grant_types_supported"
         case tokenEndpoint = "token_endpoint"
         case authorizationEndpoint = "authorization_endpoint"
+        case interactiveAuthorizationEndpoint = "interactive_authorization_endpoint"
     }
 }
 

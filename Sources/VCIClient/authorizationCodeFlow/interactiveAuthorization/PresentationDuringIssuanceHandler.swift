@@ -1,4 +1,6 @@
 import Foundation
+import OpenID4VPBridge
+import OpenID4VP
 
 class PresentationDuringIssuanceHandler: AuthorizationMethodHandler {
     
@@ -20,26 +22,26 @@ class PresentationDuringIssuanceHandler: AuthorizationMethodHandler {
         self.signVPTokensTimeoutMs = 5 * 1000
     }
     
+    // TODO: extract to constants file fof InteractionType
     func type() -> String {
         return "openid4vp_presentation"
     }
     
     func authorizeUser(requestData: AuthorizationRequestData) async -> AuthorizationResponse {
+        let vpResponse: [String: Any]
+        guard let presentationRequestData = requestData as? PresentationAuthorizationRequestData else {
+            return errorResponse(error: "invalid_request", description: "Expected PresentationAuthorizationRequestData")
+        }
+        //TODO: added authSession check, need to confirm if this is required
+        guard let authSession = presentationRequestData.authSession else {
+            //TODO: if confirmed, change the error message to match authSession requirement
+            //TODO: this needs to be sent to /iar?
+            return errorResponse(error: "invalid_request", description: "authSession is required in PresentationAuthorizationRequestData")
+        }
         do {
-            let vpResponse: [String: Any]
             do {
-                guard let presentationRequestData = requestData as? PresentationAuthorizationRequestData else {
-                    return errorResponse(error: "invalid_request", description: "Expected PresentationAuthorizationRequestData")
-                }
-                //TODO: added authSession check, need to confirm if this is required
-                guard let authSession = presentationRequestData.authSession else {
-                    //TODO: if confirmed, change the error message to match authSession requirement
-                    //TODO: this needs to be sent to /iar?
-                    return errorResponse(error: "invalid_request", description: "authSession is required in PresentationAuthorizationRequestData")
-                }
-                
-                let vpRequest = validatePresentationRequest(request: presentationRequestData.ovpRequest)
-                vpResponse = handlePresentation(vpRequest: vpRequest)
+                let vpRequest = try await validatePresentationRequest(request: presentationRequestData.ovpRequest)
+                vpResponse = try await handlePresentation(vpRequest: vpRequest)
                 //TODO: removed extra wrapping of InteractiveAuthorizationException on sendOVPAuthorizationResponseToIssuer
             } catch {
                 print("Error during presentation handling: \(error.localizedDescription)")
@@ -47,32 +49,32 @@ class PresentationDuringIssuanceHandler: AuthorizationMethodHandler {
             }
             
             return try await sendOVPAuthorizationResponseToIssuer(
-                iar: requestData.iar,
+                iar: presentationRequestData.iar,
                 authSession: authSession,
                 vpResponse: vpResponse
             )
         } catch let ex as InteractiveAuthorizationException {
-            return errorResponse(error: ex.code, description: ex.message ?? "", authSession: presentationRequestData.authSession)
+            return errorResponse(error: ex.code, description: ex.message, authSession: presentationRequestData.authSession)
         } catch {
             return errorResponse(error: "server_error", description: "Unexpected error occurred: \(error.localizedDescription)")
         }
     }
     
     // TODO: changed validateAuthorizationRequest to validatePresentationRequest to avoid confusion
-    private func validatePresentationRequest(request: [String: Any]) throws {
+    private func validatePresentationRequest(request: [String: Any]) async throws -> AuthorizationRequest {
         do {
-            return try openId4vp.authenticateVerifier(authRequest: request, trustedVerifiers: trustedVerifiers, shouldValidateClient: shouldValidateClient)
+            return try await openId4vp.authenticateVerifier(authRequest: request, trustedVerifiers: [], shouldValidateClient: false)
         } catch {
             // TODO: changed validateAuthorizationRequest to validatePresentationRequest to avoid confusion
-            throw InteractiveAuthorizationException(code: (error as OpenID4VPException).errorCode ?? "invalid_request", message: "Malformed authorization request. \(error.localizedDescription)")
+            throw InteractiveAuthorizationException(code: (error as? OpenID4VPException)?.errorCode ?? "invalid_request", message: "Malformed authorization request. \(error.localizedDescription)")
         }
     }
     
-    private func handlePresentation(vpRequest: AuthorizationRequest) throws -> [String: Any] {
-        let selectedCredentials: [String: [FormatType: [Any]]]
+    private func handlePresentation(vpRequest: AuthorizationRequest) async throws -> [String: Any] {
+        let selectedCredentials: [String: [FormatType: [OpenID4VPAnyCodable]]]
         do {
             selectedCredentials = try await withTimeout(milliseconds: handlePresentationTimeoutMs) {
-                try await self.selectCredentialsForPresentation(vpRequest: vpRequest)
+                try await self.selectCredentialsForPresentation(vpRequest)
             }
         } catch {
             //TODO: check the error code needs to be server_error or access_denied
@@ -86,7 +88,7 @@ class PresentationDuringIssuanceHandler: AuthorizationMethodHandler {
         
         let unsignedVpTokens: [FormatType: UnsignedVPToken]
         do {
-            unsignedVpTokens = try openId4vp.constructUnsignedVPToken(
+            unsignedVpTokens = try await openId4vp.constructUnsignedVPToken(
                 verifiableCredentials: selectedCredentials,
                 holderId: holderId,
                 signatureSuite: signatureSuite
@@ -109,8 +111,7 @@ class PresentationDuringIssuanceHandler: AuthorizationMethodHandler {
         let vpResponse: [String: Any]
         do {
             vpResponse = try openId4vp.constructVPResponse(
-                vpTokenSigningResults: signedVpTokens,
-                responseModeAlias: ResponseMode.iarPost
+                vpTokenSigningResults: signedVpTokens
             )
         } catch {
             throw InteractiveAuthorizationException(code: "server_error", message: "Failed to construct VP response. \(error.localizedDescription)")
@@ -161,8 +162,8 @@ class PresentationDuringIssuanceHandler: AuthorizationMethodHandler {
         authSession: String? = nil
     ) -> AuthorizationResponse {
         return AuthorizationResponse(
-            status: "error",
             authorizationCode: nil,
+            status: "error",
             error: error,
             errorDescription: description,
             authSession: authSession ?? ""

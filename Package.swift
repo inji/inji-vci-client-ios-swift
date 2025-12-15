@@ -6,7 +6,8 @@ import PackageDescription
 let package = Package(
     name: "VCIClient",
     platforms: [
-        .iOS(.v13)
+        .iOS(.v13),
+        .macOS(.v12),
     ],
     products: [
         .library(
@@ -15,14 +16,15 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/valpackett/SwiftCBOR", .upToNextMajor(from: "0.5.0")),
-        .package(url: "https://github.com/tw-mosip/inji-openid4vp-ios-swift", revision: "90fca098987558b79b7e3f5b1efc1047fb3124f2")
+        .package(url: "https://github.com/tw-mosip/inji-openid4vp-ios-swift", branch: "injimob-3619")
     ],
     targets: [
         .target(
             name: "VCIClient",
             dependencies: [
                 "SwiftCBOR",
-                .product(name: "InjiOpenID4VP", package: "inji-openid4vp-ios-swift")
+                .product(name: "OpenID4VP", package: "inji-openid4vp-ios-swift"),
+                "OpenID4VPBridge"
             ]
         ),
         .testTarget(
@@ -30,8 +32,14 @@ let package = Package(
             dependencies: [
                 "VCIClient",
                 "SwiftCBOR",
-                .product(name: "InjiOpenID4VP", package: "inji-openid4vp-ios-swift")
+                .product(name: "OpenID4VP", package: "inji-openid4vp-ios-swift")
             ]
         ),
+        .target(
+                name: "OpenID4VPBridge",
+                dependencies: [
+                    .product(name: "OpenID4VP", package: "inji-openid4vp-ios-swift")
+                ]
+            )
     ]
 )

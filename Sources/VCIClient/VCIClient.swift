@@ -121,6 +121,74 @@ public class VCIClient {
             )
         }
     }
+    
+    func fetchCredentialFromTrustedIssuerV2(
+        credentialIssuer: String,
+        credentialConfigurationId: String,
+        clientMetadata: ClientMetadata,
+        getTokenResponse: TokenResponseCallback,
+        authorizations: [AuthorizationMethod],
+        getProofJwt: ProofJwtCallback,
+        downloadTimeoutInMillis: Int64 = Constants.DEFAULT_NETWORK_TIMEOUT_IN_MILLIS
+    ) async throws -> CredentialResponse {
+
+        do {
+            return try await TrustedIssuerFlowHandler().downloadCredentials(
+                credentialIssuer: credentialIssuer,
+                credentialConfigurationId: credentialConfigurationId,
+                clientMetadata: clientMetadata,
+                getTokenResponse: getTokenResponse,
+                authorizationMethods: authorizations,
+                getProofJwt: getProofJwt,
+                downloadTimeoutInMillis: downloadTimeoutInMillis
+            )
+        } catch let error as VCIClientException {
+            logger.error("Downloading credential failed due to \(error.message)")
+            throw error
+        } catch {
+            logger.error("Downloading credential failed due to \(error.localizedDescription)")
+            throw VCIClientException(
+                code: "VCI-010",
+                message: "Unknown Exception - \(error.localizedDescription)"
+            )
+        }
+    }
+
+    
+    func fetchCredentialByCredentialOfferV2(
+        credentialOffer: String,
+        clientMetadata: ClientMetadata,
+        getTxCode: TxCodeCallback?,
+        authorizations: [AuthorizationMethod],
+        getTokenResponse: TokenResponseCallback,
+        getProofJwt: ProofJwtCallback,
+        onCheckIssuerTrust: CheckIssuerTrustCallback? = nil,
+        downloadTimeoutInMillis: Int64 = Constants.DEFAULT_NETWORK_TIMEOUT_IN_MILLIS
+    ) async throws -> CredentialResponse {
+
+        do {
+            return try await CredentialOfferFlowHandler().downloadCredentials(
+                credentialOffer: credentialOffer,
+                clientMetadata: clientMetadata,
+                getTxCode: getTxCode,
+                interactiveAuthorizationCallbacks: authorizations,
+                getTokenResponse: getTokenResponse,
+                getProofJwt: getProofJwt,
+                onCheckIssuerTrust: onCheckIssuerTrust,
+                downloadTimeoutInMillis: downloadTimeoutInMillis
+            )
+        } catch let error as VCIClientException {
+            logger.error("Downloading credential failed due to \(error.message)")
+            throw error
+        } catch {
+            logger.error("Downloading credential failed due to \(error.localizedDescription)")
+            throw VCIClientException(
+                code: "VCI-010",
+                message: "Unknown Exception - \(error.localizedDescription)"
+            )
+        }
+    }
+
 
     @available(*, deprecated, message: "This method is deprecated as per the new VCI Client library contract.Use requestCredentialByCredentialOffer() or requestCredentialFromTrustedIssuer()")
     public func requestCredential(
