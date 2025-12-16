@@ -2,7 +2,7 @@ import Foundation
 import OpenID4VP
 import OpenID4VPBridge
 
-enum AuthorizationMethod {
+public enum AuthorizationMethod {
     case redirectToWeb(
         openWebPage: OpenWebPageCallback
     )
@@ -22,4 +22,4 @@ enum AuthorizationMethod {
     }
 }
 
-typealias OpenWebPageCallback = (_ url: String) -> [String: Any]
+public typealias OpenWebPageCallback = (_ url: String) -> [String: Any]

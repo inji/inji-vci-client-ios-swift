@@ -16,7 +16,7 @@ class TrustedIssuerFlowHandler {
         getProofJwt: @escaping ProofJwtCallback,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
         networkSession: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponse {
+    ) async throws -> CredentialResponse? {
         let issuerMetadata = try await issuerMetadataService
             .fetchIssuerMetadataResult(
                 credentialIssuer: credentialIssuer,

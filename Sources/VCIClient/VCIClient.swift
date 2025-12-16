@@ -122,7 +122,7 @@ public class VCIClient {
         }
     }
     
-    func fetchCredentialFromTrustedIssuerV2(
+    public func fetchCredentialFromTrustedIssuerV2(
         credentialIssuer: String,
         credentialConfigurationId: String,
         clientMetadata: ClientMetadata,
@@ -130,7 +130,7 @@ public class VCIClient {
         authorizations: [AuthorizationMethod],
         getProofJwt: @escaping ProofJwtCallback,
         downloadTimeoutInMillis: Int64 = Constants.DEFAULT_NETWORK_TIMEOUT_IN_MILLIS
-    ) async throws -> CredentialResponse {
+    ) async throws -> CredentialResponse? {
 
         do {
             return try await TrustedIssuerFlowHandler().downloadCredentials(
@@ -155,7 +155,7 @@ public class VCIClient {
     }
 
     
-    func fetchCredentialByCredentialOfferV2(
+    public func fetchCredentialByCredentialOfferV2(
         credentialOffer: String,
         clientMetadata: ClientMetadata,
         getTxCode: TxCodeCallback,
