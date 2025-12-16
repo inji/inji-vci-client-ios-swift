@@ -164,7 +164,7 @@ public class VCIClient {
         getProofJwt: @escaping ProofJwtCallback,
         onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
         downloadTimeoutInMillis: Int64 = Constants.DEFAULT_NETWORK_TIMEOUT_IN_MILLIS
-    ) async throws -> CredentialResponse {
+    ) async throws -> CredentialResponse? {
 
         do {
             return try await CredentialOfferFlowHandler().downloadCredentials(
