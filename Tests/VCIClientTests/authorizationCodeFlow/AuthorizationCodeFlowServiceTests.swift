@@ -78,7 +78,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         let service = makeService(executor: executor)
 
         do {
-            let result = try await service.requestCredentials(
+            _ = try await service.requestCredentials(
                 issuerMetadata: IssuerMetadata.mock(),
                 clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
                 getTokenResponse: {_ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer")},
