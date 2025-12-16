@@ -1,6 +1,6 @@
 import Foundation
 
-struct StandardAuthorizationRequestData: AuthorizationRequestData {
+struct ImplicitAuthorizationRequestData: AuthorizationRequestData {
     let authorizeUrl: String
     let clientMetadata: ClientMetadata
     let pkceSession: PKCESessionManager.PKCESession

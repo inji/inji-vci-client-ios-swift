@@ -11,5 +11,12 @@ public typealias ProofJwtCallback = (
 public typealias CheckIssuerTrustCallback = ((_ credentialIssuer: String, _ issuerDisplay: [[String: Any]]) async throws -> Bool)?
 public typealias TxCodeCallback = ((_ inputMode: String?, _ description: String?, _ length: Int?) async throws -> String)?
 
+// Presentation During Issuance related Callbacks
+
 public typealias SelectCredentialsForPresentationCallback = (_ ovpRequest: AuthorizationRequest) async throws -> [String : [FormatType : [OpenID4VPAnyCodable]]]
 public typealias SignVerifiablePresentationCallback = (_ payload: [FormatType: UnsignedVPToken]) async throws -> [FormatType: VPTokenSigningResult]
+
+
+// Redirect To Web related Callbacks
+
+public typealias OpenWebPageCallback = (_ url: String) -> [String: Any]

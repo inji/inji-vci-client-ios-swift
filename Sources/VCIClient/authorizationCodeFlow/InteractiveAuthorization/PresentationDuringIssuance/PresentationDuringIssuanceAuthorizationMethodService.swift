@@ -22,9 +22,8 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
         self.signVPTokensTimeoutMs = 5 * 1000
     }
     
-    // TODO: extract to constants file fof InteractionType
     func type() -> String {
-        return "openid4vp_presentation"
+        return InteractionType.openId4VpPresentation.rawValue
     }
     
     func authorizeUser(requestData: AuthorizationRequestData) async -> AuthorizationResponse {

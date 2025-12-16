@@ -224,7 +224,7 @@ class AuthorizationCodeFlowService {
                 "(redirect_to_web) for issuer=\(issuerMetadata.credentialIssuer)"
             )
             
-            let requestData = StandardAuthorizationRequestData(
+            let requestData = ImplicitAuthorizationRequestData(
                 authorizeUrl: authorizationEndpoint,
                 clientMetadata: clientMetadata,
                 pkceSession: pkceSession,

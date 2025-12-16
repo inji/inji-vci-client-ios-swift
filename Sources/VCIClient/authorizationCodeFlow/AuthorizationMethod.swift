@@ -21,5 +21,3 @@ public enum AuthorizationMethod {
         }
     }
 }
-
-public typealias OpenWebPageCallback = (_ url: String) -> [String: Any]

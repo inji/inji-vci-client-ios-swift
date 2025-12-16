@@ -6,7 +6,7 @@ class InteractiveAuthorizationException: VCIClientException {
     override init(code:String = "VCI-011", message: String?) {
         super.init(
             code: code,
-            message: "Failed to download Credential: \(message ?? "")"
+            message: "Failed to authorize via interaction: \(message ?? "")"
         )
     }
 }
