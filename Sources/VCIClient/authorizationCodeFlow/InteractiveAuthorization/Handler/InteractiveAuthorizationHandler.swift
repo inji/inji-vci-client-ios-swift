@@ -118,7 +118,7 @@ final class InteractiveAuthorizationHandler {
             throw InteractiveAuthorizationException(message: "Presentation callback missing")
         }
 
-        let request = PresentationAuthorizationRequestData(
+        let request = PresentationDuringIssuanceRequestData(
             ovpRequest: parsed.openid4vpRequest,
             authSession: parsed.authSession,
             iar: endpoint

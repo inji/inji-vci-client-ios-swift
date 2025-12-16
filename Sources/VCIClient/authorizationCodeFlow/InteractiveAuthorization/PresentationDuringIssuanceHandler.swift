@@ -2,7 +2,7 @@ import Foundation
 import OpenID4VPBridge
 import OpenID4VP
 
-class PresentationDuringIssuanceHandler: AuthorizationMethodHandler {
+class PresentationDuringIssuanceHandler: AuthorizationMethodService {
     
     private let selectCredentialsForPresentation: SelectCredentialsForPresentationCallback
     private let signVerifiablePresentation: SignVerifiablePresentationCallback
@@ -29,14 +29,14 @@ class PresentationDuringIssuanceHandler: AuthorizationMethodHandler {
     
     func authorizeUser(requestData: AuthorizationRequestData) async -> AuthorizationResponse {
         let vpResponse: [String: Any]
-        guard let presentationRequestData = requestData as? PresentationAuthorizationRequestData else {
-            return errorResponse(error: "invalid_request", description: "Expected PresentationAuthorizationRequestData")
+        guard let presentationRequestData = requestData as? PresentationDuringIssuanceRequestData else {
+            return errorResponse(error: "invalid_request", description: "Expected PresentationDuringIssuanceRequestData")
         }
         //TODO: added authSession check, need to confirm if this is required
         guard let authSession = presentationRequestData.authSession else {
             //TODO: if confirmed, change the error message to match authSession requirement
             //TODO: this needs to be sent to /iar?
-            return errorResponse(error: "invalid_request", description: "authSession is required in PresentationAuthorizationRequestData")
+            return errorResponse(error: "invalid_request", description: "authSession is required in PresentationDuringIssuanceRequestData")
         }
         do {
             do {
@@ -84,7 +84,15 @@ class PresentationDuringIssuanceHandler: AuthorizationMethodHandler {
         //TODO: populate holderId and signatureSuite properly
         // take the first ldp_vc from selectedCredentials - extract holderId and signatureSuite from there
         let holderId = "did:example:holder"
-        let signatureSuite = "Ed25519Signature2018"
+        let publicKey : PublicKeyType = try await DidPublicKeyResolver().resolve(uri: holderId)
+        
+        let signatureSuite: String
+        switch publicKey {
+        case .ed25519(let edKey):
+            signatureSuite = "Ed25519Signature2020"
+        default:
+            signatureSuite = "JsonWebSignature2020"
+        }
         
         let unsignedVpTokens: [FormatType: UnsignedVPToken]
         do {

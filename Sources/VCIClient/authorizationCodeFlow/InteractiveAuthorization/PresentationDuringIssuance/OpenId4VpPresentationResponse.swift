@@ -1,13 +1,11 @@
 import Foundation
 
-struct OpenId4VpPresentationResponse: Decodable {
 
-    let status: String
-    let type: String
-    let authSession: String
+// reason: status - require_interaction is mentioned in Interaction Required Response section in spec
+// should we keep OpenId4VpPresentationResponse as is or rename it to PresentationInteractionRequiredResponse implementng InteractionRequiredResponse protocol ?
+class OpenId4VpPresentationResponse: InteractiveAuthorizationResponse, Decodable {
     let openid4vpRequest: [String: Any]
 
-    // CodingKeys to map snake_case keys
     private enum CodingKeys: String, CodingKey {
         case status
         case type
@@ -16,31 +14,20 @@ struct OpenId4VpPresentationResponse: Decodable {
     }
 
     init(json: [String: Any]) throws {
-        guard let status = json["status"] as? String else {
-            throw ValidationError.missing("status")
-        }
-        guard let type = json["type"] as? String else {
-            throw ValidationError.missing("type")
-        }
-        guard let authSession = json["auth_session"] as? String else {
-            throw ValidationError.missing("auth_session")
-        }
+        try super.init(status: json["status"] as? String, type: json["type"] as? String, authSession: json["auth_session"] as? String)
         guard let request = json["openid4vp_request"] as? [String: Any] else {
-            throw ValidationError.missing("openid4vp_request")
+            throw IllegalArgumentException("Missing or invalid 'openid4vp_request'")
         }
-
-        self.status = status
-        self.type = type
-        self.authSession = authSession
         self.openid4vpRequest = request
     }
     
     // Custom Decodable init to keep [String: Any] without changing field type
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.status = try container.decode(String.self, forKey: .status)
-        self.type = try container.decode(String.self, forKey: .type)
-        self.authSession = try container.decode(String.self, forKey: .authSession)
+        let status = try container.decode(String.self, forKey: .status)
+        let type = try container.decode(String.self, forKey: .type)
+        let authSession = try container.decode(String.self, forKey: .authSession)
+        try super.init(status: status, type: type,  authSession: authSession)
 
         // Decode openid4vp_request as raw JSON and convert to [String: Any]
         // 1) Decode it as a generic JSON object using an intermediate Data approach
@@ -107,25 +94,13 @@ struct OpenId4VpPresentationResponse: Decodable {
     }
     
     //TODO : validation of iar request content requried?
-}
-
-extension OpenId4VpPresentationResponse {
-
-    func validate() throws {
-        guard status == "require_interaction" else {
-            throw ValidationError.invalidStatus(status)
-        }
-
-        guard type == "openid4vp_presentation" else {
-            throw ValidationError.invalidType(type)
-        }
-
-        guard !authSession.isEmpty else {
-            throw ValidationError.blankAuthSession
+    override func validate() throws {
+        guard let type = type, type == "openid4vp_presentation" else {
+            throw IllegalArgumentException("Invalid type: expected 'openid4vp_presentation'")
         }
 
         guard !openid4vpRequest.isEmpty else {
-            throw ValidationError.emptyOpenId4VpRequest
+            throw IllegalArgumentException("openid4vpRequest must not be empty")
         }
 
         if openid4vpRequest.keys.contains("request") {
@@ -144,44 +119,27 @@ extension OpenId4VpPresentationResponse {
             throw ValidationError.invalid("response_type")
         }
 
-        guard let responseMode = openid4vpRequest["response_mode"] as? String else {
-            throw ValidationError.missing("response_mode")
-        }
-        guard responseMode == "iar_post" || responseMode == "iar_post.jwt" else {
-            throw ValidationError.invalid("response_mode")
-        }
-
-        guard let nonce = openid4vpRequest["nonce"] as? String else {
-            throw ValidationError.missing("nonce")
-        }
-        guard !nonce.isEmpty else {
-            throw ValidationError.blank("nonce")
-        }
+        try validateResponseMode(openid4vpRequest)
     }
 
     private func validateSignedRequest() throws {
         guard let jwt = openid4vpRequest["request"] as? String else {
-            throw ValidationError.missing("request")
+            throw IllegalArgumentException("Missing or invalid 'request' JWT")
         }
 
-        let claims = try decodeJwtPayload(jwt: jwt)
+        let decodedVPRequest = try decodeJwtPayload(jwt: jwt)
 
-        // TODO: remove this not needed
-        guard let aud = claims["aud"] as? String else {
-            throw ValidationError.missing("aud")
+        try validateResponseMode(decodedVPRequest)
+    }
+    
+    private func validateResponseMode(_ vpRequest: [String: Any]) throws {
+        guard let responseMode = openid4vpRequest["response_mode"] as? String else {
+            throw IllegalArgumentException("Missing or invalid 'response_mode'")
         }
-        guard aud.hasPrefix("iar:") else {
-            throw ValidationError.invalid("aud")
-        }
-
-        guard let expectedOrigins = claims["expected_origins"] as? [String],
-              expectedOrigins.count == 1 else {
-            throw ValidationError.invalid("expected_origins")
+        guard responseMode == "iar_post" || responseMode == "iar_post.jwt" else {
+            throw IllegalArgumentException("response_mode must be 'iar_post' or 'iar_post.jwt'")
         }
     }
-}
-
-extension OpenId4VpPresentationResponse {
 
     func decodeJwtPayload(jwt: String) throws -> [String: Any] {
         let parts = jwt.split(separator: ".")
@@ -206,7 +164,6 @@ extension OpenId4VpPresentationResponse {
         return dict
     }
 }
-
 
 
 

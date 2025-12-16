@@ -1,4 +1,4 @@
-final class RedirectToWebAuthorizationMethodService: AuthorizationMethodHandler {
+final class RedirectToWebAuthorizationMethodService: AuthorizationMethodService {
 
     private let openWebPage: OpenWebPageCallback
 

@@ -1,6 +1,6 @@
 import Foundation
 
-protocol AuthorizationMethodHandler {
+protocol AuthorizationMethodService {
     func type() -> String
     func authorizeUser(requestData: AuthorizationRequestData) async throws -> AuthorizationResponse
 }
