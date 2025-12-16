@@ -2,7 +2,7 @@ import Foundation
 import OpenID4VPBridge
 import OpenID4VP
 
-class PresentationDuringIssuanceHandler: AuthorizationMethodService {
+class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodService {
     
     private let selectCredentialsForPresentation: SelectCredentialsForPresentationCallback
     private let signVerifiablePresentation: SignVerifiablePresentationCallback
@@ -32,12 +32,8 @@ class PresentationDuringIssuanceHandler: AuthorizationMethodService {
         guard let presentationRequestData = requestData as? PresentationDuringIssuanceRequestData else {
             return errorResponse(error: "invalid_request", description: "Expected PresentationDuringIssuanceRequestData")
         }
-        //TODO: added authSession check, need to confirm if this is required
-        guard let authSession = presentationRequestData.authSession else {
-            //TODO: if confirmed, change the error message to match authSession requirement
-            //TODO: this needs to be sent to /iar?
-            return errorResponse(error: "invalid_request", description: "authSession is required in PresentationDuringIssuanceRequestData")
-        }
+        
+        let authSession = presentationRequestData.authSession
         do {
             do {
                 let vpRequest = try await validatePresentationRequest(request: presentationRequestData.ovpRequest)

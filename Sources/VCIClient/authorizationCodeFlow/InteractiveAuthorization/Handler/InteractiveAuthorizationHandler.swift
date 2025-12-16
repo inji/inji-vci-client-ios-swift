@@ -124,7 +124,7 @@ final class InteractiveAuthorizationHandler {
             iar: endpoint
         )
 
-        let handler = PresentationDuringIssuanceHandler(
+        let handler = PresentationDuringIssuanceAuthorizationMethodService(
             selectCredentialsForPresentation: selectCredentialsForPresentation,
             signVerifiablePresentation: signVerifiablePresentation
         )

@@ -6,8 +6,6 @@ final class RedirectToWebAuthorizationMethodService: AuthorizationMethodService 
         self.openWebPage = openWebPage
     }
 
-    // MARK: - AuthorizationMethodService
-
     func type() -> String {
         return InteractionType.redirectToWeb.rawValue
     }
@@ -18,8 +16,7 @@ final class RedirectToWebAuthorizationMethodService: AuthorizationMethodService 
 
         guard let request = requestData as? StandardAuthorizationRequestData else {
             throw IllegalArgumentException(
-                "RedirectToWebAuthorizationHandler expects StandardAuthorizationRequestData " +
-                "but received \(Swift.type(of: requestData))"
+                "RedirectToWebAuthorizationHandler expects StandardAuthorizationRequestData but received \(Swift.type(of: requestData))"
             )
         }
 
@@ -33,7 +30,7 @@ final class RedirectToWebAuthorizationMethodService: AuthorizationMethodService 
             nonce: request.pkceSession.nonce
         )
 
-        let authorizationResponse = try await openWebPage(authUrl)
+        let authorizationResponse = openWebPage(authUrl)
 
         if authorizationResponse["error"] != nil {
             return AuthorizationResponse(
@@ -45,9 +42,9 @@ final class RedirectToWebAuthorizationMethodService: AuthorizationMethodService 
             )
         }
 
-        guard let code = authorizationResponse["authorization_code"] as? String else {
+        guard let code = authorizationResponse["code"] as? String else {
             throw InteractiveAuthorizationException(
-                message: "Missing authorization_code in successful redirect response"
+                message: "Missing code (authorization code) in successful redirect response"
             )
         }
 
