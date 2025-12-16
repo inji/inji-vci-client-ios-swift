@@ -46,7 +46,6 @@ class InteractiveAuthorizationResponse {
         }
     }
 
-    /// Subclasses must implement their own validation logic
     func validate() throws {
         fatalError("Subclasses must override validate()")
     }
