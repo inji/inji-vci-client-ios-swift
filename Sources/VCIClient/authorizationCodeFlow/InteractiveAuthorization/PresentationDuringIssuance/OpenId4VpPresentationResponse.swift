@@ -3,8 +3,8 @@ import Foundation
 
 // reason: status - require_interaction is mentioned in Interaction Required Response section in spec
 // should we keep OpenId4VpPresentationResponse as is or rename it to PresentationInteractionRequiredResponse implementng InteractionRequiredResponse protocol ?
-class OpenId4VpPresentationResponse: InteractiveAuthorizationResponse, Decodable {
-    let openid4vpRequest: [String: Any]
+final class OpenId4VpPresentationResponse: InteractiveAuthorizationResponse, Decodable {
+    var openid4vpRequest: [String: Any]
 
     private enum CodingKeys: String, CodingKey {
         case status
@@ -14,11 +14,12 @@ class OpenId4VpPresentationResponse: InteractiveAuthorizationResponse, Decodable
     }
 
     init(json: [String: Any]) throws {
-        try super.init(status: json["status"] as? String, type: json["type"] as? String, authSession: json["auth_session"] as? String)
         guard let request = json["openid4vp_request"] as? [String: Any] else {
             throw IllegalArgumentException("Missing or invalid 'openid4vp_request'")
         }
         self.openid4vpRequest = request
+        
+        try super.init(status: json["status"] as? String, type: json["type"] as? String, authSession: json["auth_session"] as? String)
     }
     
     // Custom Decodable init to keep [String: Any] without changing field type
@@ -27,7 +28,6 @@ class OpenId4VpPresentationResponse: InteractiveAuthorizationResponse, Decodable
         let status = try container.decode(String.self, forKey: .status)
         let type = try container.decode(String.self, forKey: .type)
         let authSession = try container.decode(String.self, forKey: .authSession)
-        try super.init(status: status, type: type,  authSession: authSession)
 
         // Decode openid4vp_request as raw JSON and convert to [String: Any]
         // 1) Decode it as a generic JSON object using an intermediate Data approach
@@ -50,6 +50,7 @@ class OpenId4VpPresentationResponse: InteractiveAuthorizationResponse, Decodable
             }
             self.openid4vpRequest = dict
         }
+        try super.init(status: status, type: type,  authSession: authSession)
     }
 
     // Helper to decode arbitrary JSON into Foundation types

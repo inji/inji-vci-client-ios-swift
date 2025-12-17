@@ -266,7 +266,7 @@ public class VCIClient {
             Task {
                 do {
                     let code = try await authorizeUser(authorizationUrl)
-                    result["authorization_code"] = code
+                    result["code"] = code
                 } catch {
                     result["error"] = error.localizedDescription
                 }

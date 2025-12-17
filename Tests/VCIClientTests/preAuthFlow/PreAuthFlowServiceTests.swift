@@ -19,8 +19,7 @@ final class PreAuthFlowServiceTests: XCTestCase {
 
         _ = IssuerMetadata.mock()
         let offer = CredentialOffer.mockWithTxCodeRequired()
-        let rawMetadata = ["key": "value"]
-
+        
         let result = try await service.requestCredentials(
             issuerMetadata: IssuerMetadata.mock(),
             credentialOffer: offer,

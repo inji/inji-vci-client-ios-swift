@@ -58,7 +58,7 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
     // TODO: changed validateAuthorizationRequest to validatePresentationRequest to avoid confusion
     private func validatePresentationRequest(request: [String: Any]) async throws -> AuthorizationRequest {
         do {
-            return try await openId4vp.authenticateVerifier(authRequest: request, trustedVerifiers: [], shouldValidateClient: false)
+            return try await openId4vp.authenticateVerifier(authRequest: request, trustedVerifiers: [Verifier](), shouldValidateClient: false)
         } catch {
             // TODO: changed validateAuthorizationRequest to validatePresentationRequest to avoid confusion
             throw InteractiveAuthorizationException(code: (error as? OpenID4VPException)?.errorCode ?? "invalid_request", message: "Malformed authorization request. \(error.localizedDescription)")
@@ -79,11 +79,11 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
         //TODO: populate holderId and signatureSuite properly
         // take the first ldp_vc from selectedCredentials - extract holderId and signatureSuite from there
         let holderId = "did:example:holder"
-        let publicKey : PublicKeyType = try await DidPublicKeyResolver().resolve(uri: holderId)
+        let publicKey : PublicKeyType = try await resolvePublicKey(holderId)
         
         let signatureSuite: String
         switch publicKey {
-        case .ed25519(let edKey):
+        case .ed25519(_):
             signatureSuite = "Ed25519Signature2020"
         default:
             signatureSuite = "JsonWebSignature2020"
@@ -133,7 +133,7 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
             let vpResponseJson = try JSONSerialization.data(withJSONObject: vpResponse)
             let vpResponseString = String(data: vpResponseJson, encoding: .utf8) ?? ""
             
-            response = try await NetworkManager.shared.sendRequest(
+            response = try await networkManager.sendRequest(
                 url: iar,
                 method: .post,
                 bodyParams: [

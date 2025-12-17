@@ -120,7 +120,7 @@ final class InteractiveAuthorizationHandler {
 
         let request = PresentationDuringIssuanceRequestData(
             ovpRequest: parsed.openid4vpRequest,
-            authSession: parsed.authSession,
+            authSession: parsed.authSession ?? "",
             iar: endpoint
         )
 
