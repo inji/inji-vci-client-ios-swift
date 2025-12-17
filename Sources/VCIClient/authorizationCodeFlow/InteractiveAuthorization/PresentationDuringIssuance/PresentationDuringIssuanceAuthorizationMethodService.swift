@@ -6,20 +6,30 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
     
     private let selectCredentialsForPresentation: SelectCredentialsForPresentationCallback
     private let signVerifiablePresentation: SignVerifiablePresentationCallback
-    private let openId4vp: OpenID4VP
+    private let openId4vp: OpenID4VPInteracting
     private let handlePresentationTimeoutMs: Int64
     private let signVPTokensTimeoutMs: Int64
+    private let networkManager: NetworkManager
+    private let resolvePublicKey: (_ uri: String) async throws -> PublicKeyType
     
     init(
         selectCredentialsForPresentation: @escaping SelectCredentialsForPresentationCallback,
         signVerifiablePresentation: @escaping SignVerifiablePresentationCallback,
+        
+        networkManger: NetworkManager = NetworkManager.shared,
+        openId4vp: OpenID4VPInteracting? = nil,
+        resolvePublicKey: ((_ uri: String) async throws -> PublicKeyType)? = nil
     ) {
         self.selectCredentialsForPresentation = selectCredentialsForPresentation
         self.signVerifiablePresentation = signVerifiablePresentation
         //TODO: get traceabilityId from vci client instance
-        self.openId4vp = OpenID4VP(traceabilityId: "", walletMetadata: nil)
+        self.openId4vp = openId4vp ?? OpenID4VPInteraction(traceabilityId: "")
         self.handlePresentationTimeoutMs = 500 * 1000
         self.signVPTokensTimeoutMs = 5 * 1000
+        self.networkManager = networkManger
+        self.resolvePublicKey = resolvePublicKey ?? { uri in
+            try await DidPublicKeyResolver().resolve(uri: uri)
+        }
     }
     
     func type() -> String {
@@ -111,14 +121,7 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
             throw InteractiveAuthorizationException(code: "server_error", message: "Failed to sign VP token. \(error.localizedDescription)")
         }
         
-        let vpResponse: [String: Any]
-        do {
-            vpResponse = try openId4vp.constructVPResponse(
-                vpTokenSigningResults: signedVpTokens
-            )
-        } catch {
-            throw InteractiveAuthorizationException(code: "server_error", message: "Failed to construct VP response. \(error.localizedDescription)")
-        }
+        let vpResponse: [String: Any] = openId4vp.constructVPResponse(vpTokenSigningResults: signedVpTokens)
         
         return vpResponse
     }
@@ -173,7 +176,6 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
         )
     }
     
-    // Helper function for timeout
     private func withTimeout<T>(milliseconds: Int64, operation: @escaping () async throws -> T) async throws -> T {
         try await withThrowingTaskGroup(of: T.self) { group in
             group.addTask {

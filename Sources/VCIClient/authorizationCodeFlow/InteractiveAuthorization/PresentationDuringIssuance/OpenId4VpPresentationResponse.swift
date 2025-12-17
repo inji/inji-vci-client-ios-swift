@@ -1,8 +1,7 @@
 import Foundation
 
 
-// reason: status - require_interaction is mentioned in Interaction Required Response section in spec
-// should we keep OpenId4VpPresentationResponse as is or rename it to PresentationInteractionRequiredResponse implementng InteractionRequiredResponse protocol ?
+// TODO: rename OpenId4VpPresentationResponse PresentationInteractionResponse implementng InteractionResponse protocol ?
 final class OpenId4VpPresentationResponse: InteractiveAuthorizationResponse, Decodable {
     var openid4vpRequest: [String: Any]
 
