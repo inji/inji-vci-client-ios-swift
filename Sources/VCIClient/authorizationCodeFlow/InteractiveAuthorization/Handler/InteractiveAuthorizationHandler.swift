@@ -102,7 +102,7 @@ final class InteractiveAuthorizationHandler {
         endpoint: String
     ) async throws -> AuthorizationResponse {
             
-        guard let parsed = try JsonUtils.deserialize(responseBody, as: OpenId4VpPresentationResponse.self) else {
+        guard let parsed = try JsonUtils.deserialize(responseBody, as: PresentationInteractionResponse.self) else {
             throw InteractiveAuthorizationException(message: "Failed to parse OpenID4VP response")
         }
 

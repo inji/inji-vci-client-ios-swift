@@ -1,6 +1,6 @@
 import Foundation
 
-class InteractiveAuthorizationResponse {
+class InteractionResponse {
     let status: String?
     let type: String?
     let authSession: String?

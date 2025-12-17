@@ -1,8 +1,6 @@
 import Foundation
 
-
-// TODO: rename OpenId4VpPresentationResponse PresentationInteractionResponse implementng InteractionResponse protocol ?
-final class OpenId4VpPresentationResponse: InteractiveAuthorizationResponse, Decodable {
+final class PresentationInteractionResponse: InteractionResponse, Decodable {
     var openid4vpRequest: [String: Any]
 
     private enum CodingKeys: String, CodingKey {
@@ -34,7 +32,7 @@ final class OpenId4VpPresentationResponse: InteractiveAuthorizationResponse, Dec
         // Since Swift’s Decodable cannot decode Any directly, this is a pragmatic bridge.
         if let nestedDecoder = try? container.superDecoder(forKey: .openid4vpRequest) {
             // Attempt to decode an arbitrary JSON structure into Foundation objects
-            let any = try OpenId4VpPresentationResponse.decodeAny(from: nestedDecoder)
+            let any = try PresentationInteractionResponse.decodeAny(from: nestedDecoder)
             guard let dict = any as? [String: Any] else {
                 throw ValidationError.invalid("openid4vp_request")
             }

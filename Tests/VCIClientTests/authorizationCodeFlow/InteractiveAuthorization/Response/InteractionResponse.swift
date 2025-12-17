@@ -1,10 +1,10 @@
 import XCTest
 @testable import VCIClient
 
-final class InteractiveAuthorizationResponseTests: XCTestCase {
+final class InteractionResponseTests: XCTestCase {
 
     func testInit_success_whenStatusRequireInteraction_withTypeAndAuthSession() throws {
-        let sut = try InteractiveAuthorizationResponse(
+        let sut = try InteractionResponse(
             status: "require_interaction",
             type: "some_type",
             authSession: "session123"
@@ -15,7 +15,7 @@ final class InteractiveAuthorizationResponseTests: XCTestCase {
     }
 
     func testInit_success_whenStatusIsOther_allowsMissingTypeAndAuthSession() throws {
-        let sut = try InteractiveAuthorizationResponse(
+        let sut = try InteractionResponse(
             status: "done",
             type: nil,
             authSession: nil
@@ -26,7 +26,7 @@ final class InteractiveAuthorizationResponseTests: XCTestCase {
     }
 
     func testInit_throws_whenStatusMissing() {
-        XCTAssertThrowsError(try InteractiveAuthorizationResponse(
+        XCTAssertThrowsError(try InteractionResponse(
             status: nil,
             type: "x",
             authSession: "y"
@@ -39,7 +39,7 @@ final class InteractiveAuthorizationResponseTests: XCTestCase {
     }
 
     func testInit_throws_whenStatusBlank() {
-        XCTAssertThrowsError(try InteractiveAuthorizationResponse(
+        XCTAssertThrowsError(try InteractionResponse(
             status: "   ",
             type: "x",
             authSession: "y"
@@ -52,7 +52,7 @@ final class InteractiveAuthorizationResponseTests: XCTestCase {
     }
 
     func testInit_throws_whenRequireInteraction_butTypeMissing() {
-        XCTAssertThrowsError(try InteractiveAuthorizationResponse(
+        XCTAssertThrowsError(try InteractionResponse(
             status: "require_interaction",
             type: nil,
             authSession: "session"
@@ -65,7 +65,7 @@ final class InteractiveAuthorizationResponseTests: XCTestCase {
     }
 
     func testInit_throws_whenRequireInteraction_butTypeBlank() {
-        XCTAssertThrowsError(try InteractiveAuthorizationResponse(
+        XCTAssertThrowsError(try InteractionResponse(
             status: "require_interaction",
             type: "",
             authSession: "session"
@@ -78,7 +78,7 @@ final class InteractiveAuthorizationResponseTests: XCTestCase {
     }
 
     func testInit_throws_whenRequireInteraction_butAuthSessionMissing() {
-        XCTAssertThrowsError(try InteractiveAuthorizationResponse(
+        XCTAssertThrowsError(try InteractionResponse(
             status: "require_interaction",
             type: "some_type",
             authSession: nil
@@ -91,7 +91,7 @@ final class InteractiveAuthorizationResponseTests: XCTestCase {
     }
 
     func testInit_throws_whenRequireInteraction_butAuthSessionBlank() {
-        XCTAssertThrowsError(try InteractiveAuthorizationResponse(
+        XCTAssertThrowsError(try InteractionResponse(
             status: "require_interaction",
             type: "some_type",
             authSession: ""
