@@ -157,9 +157,7 @@ class AuthorizationCodeFlowService {
         credentialConfigurationId: String,
         authorizationMethods: [AuthorizationMethod]
     ) async throws -> String {
-        
-        print("Using Interactive Authorization Endpoint: \(endpoint) for issuer=\(issuerMetadata.credentialIssuer)"
-        )
+        print("Using Interactive Authorization Endpoint: \(endpoint) for issuer=\(issuerMetadata.credentialIssuer)")
         
         let response: AuthorizationResponse
         do {
@@ -187,7 +185,6 @@ class AuthorizationCodeFlowService {
     
     private func obtainAuthorizationCodeViaAuthorizationEndpoint(
         authorizationServerMetadata: AuthorizationServerMetadata,
-        authorizeUser: AuthorizeUserCallback? = nil,
         issuerMetadata: IssuerMetadata,
         clientMetadata: ClientMetadata,
         pkceSession: PKCESessionManager.PKCESession,
@@ -229,7 +226,7 @@ class AuthorizationCodeFlowService {
                 ).authorizeUser(requestData: requestData)
             } catch {
                 throw DownloadFailedException(
-                    "Redirect-to-web authorization failed at endpoint \(authorizationEndpoint): \(error.localizedDescription)"
+                    "Implicit authorization failed at authorization endpoint \(authorizationEndpoint): \(error.localizedDescription)"
                 )
             }
             
@@ -242,15 +239,9 @@ class AuthorizationCodeFlowService {
             return authorizationCode
             
         } else {
-            
-            guard let authorizationCode =
-                    try await authorizeUser?(authorizationEndpoint) else {
-                throw DownloadFailedException(
-                    "No authorization method available to obtain authorization code from \(authorizationEndpoint)"
-                )
-            }
-            
-            return authorizationCode
+            throw DownloadFailedException(
+                "No authorization method available to obtain authorization code from \(authorizationEndpoint)"
+            )
         }
     }
     

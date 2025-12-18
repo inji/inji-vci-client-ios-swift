@@ -17,7 +17,16 @@ final class InteractiveAuthorizationHandler {
         
         do {
             // interaction types supported will be populated from the authorization methods once redirect_to_web interaction is supported
-            let interactionTypesSupported = [InteractionType.openId4VpPresentation.rawValue]
+            let interactionTypesSupported = authorizationMethods.compactMap { method in
+                let type = method.type.rawValue
+                return type != InteractionType.redirectToWeb.rawValue ? type : nil
+            }
+            
+            if(interactionTypesSupported.isEmpty) {
+                throw InteractiveAuthorizationException(
+                    message: "No supported interaction types found in authorization methods"
+                )
+            }
             
             let initialIarRequest = buildInitialIarRequest(
                 clientMetadata: clientMetadata,
