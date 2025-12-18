@@ -128,10 +128,8 @@ class AuthorizationCodeFlowService {
         
         let hasInteractiveAuthorizationMethods = !(authorizationMethods.isEmpty)
         
-        if let interactiveEndpoint,
-           hasInteractiveAuthorizationMethods {
-            
-            return try await obtainAuthorizationCodeViaInteractiveEndpoint(
+        if let interactiveEndpoint {
+            return try await obtainAuthorizationCodeViaInteractiveAuthorizationEndpoint(
                 endpoint: interactiveEndpoint,
                 issuerMetadata: issuerMetadata,
                 clientMetadata: clientMetadata,
@@ -139,10 +137,9 @@ class AuthorizationCodeFlowService {
                 credentialConfigurationId: credentialConfigurationId,
                 authorizationMethods: authorizationMethods
             )
-            
         } else {
             
-            return try await obtainAuthorizationCodeViaStandardRedirectToWeb(
+            return try await obtainAuthorizationCodeViaAuthorizationEndpoint(
                 authorizationServerMetadata: authorizationServerMetadata,
                 issuerMetadata: issuerMetadata,
                 clientMetadata: clientMetadata,
@@ -152,7 +149,7 @@ class AuthorizationCodeFlowService {
         }
     }
     
-    private func obtainAuthorizationCodeViaInteractiveEndpoint(
+    private func obtainAuthorizationCodeViaInteractiveAuthorizationEndpoint(
         endpoint: String,
         issuerMetadata: IssuerMetadata,
         clientMetadata: ClientMetadata,
@@ -181,19 +178,14 @@ class AuthorizationCodeFlowService {
         
         guard let authorizationCode = response.authorizationCode else {
             throw DownloadFailedException(
-                """
-                Authorization failed: code not received from interactive \
-                authorization endpoint \(endpoint).
-                Error: \(response.error ?? "unknown"),
-                Description: \(response.errorDescription ?? "unknown")
-                """
+                "Authorization failed: code not received from interactive authorization endpoint \(endpoint). Error: \(response.error ?? "unknown"), Description: \(response.errorDescription ?? "unknown")"
             )
         }
         
         return authorizationCode
     }
     
-    private func obtainAuthorizationCodeViaStandardRedirectToWeb(
+    private func obtainAuthorizationCodeViaAuthorizationEndpoint(
         authorizationServerMetadata: AuthorizationServerMetadata,
         authorizeUser: AuthorizeUserCallback? = nil,
         issuerMetadata: IssuerMetadata,
@@ -209,19 +201,18 @@ class AuthorizationCodeFlowService {
             )
         }
         
-        let redirectToWebAuthMethod =
+        let redirectToWebAuthorizationMethod =
         authorizationMethods?
             .first {
                 if case .redirectToWeb = $0 { return true }
                 return false
             }
         
-        if let redirectMethod = redirectToWebAuthMethod,
+        if let redirectMethod = redirectToWebAuthorizationMethod,
            case let .redirectToWeb(openWebPage) = redirectMethod {
             
             print(
-                "Using non-interactive authorization endpoint: \(authorizationEndpoint) " +
-                "(redirect_to_web) for issuer=\(issuerMetadata.credentialIssuer)"
+                "Using non-interactive authorization endpoint: \(authorizationEndpoint) (redirect_to_web) for issuer=\(issuerMetadata.credentialIssuer)"
             )
             
             let requestData = ImplicitAuthorizationRequestData(
@@ -244,7 +235,7 @@ class AuthorizationCodeFlowService {
             
             guard let authorizationCode = response.authorizationCode else {
                 throw DownloadFailedException(
-                    "Authorization code not received from non-interactive authorization endpoint \(authorizationEndpoint)"
+                    "Authorization code not received from authorization endpoint \(authorizationEndpoint)"
                 )
             }
             

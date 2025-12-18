@@ -122,12 +122,12 @@ public class VCIClient {
         }
     }
     
-    public func fetchCredentialFromTrustedIssuerV2(
+    public func fetchCredentialFromTrustedIssuer(
         credentialIssuer: String,
         credentialConfigurationId: String,
         clientMetadata: ClientMetadata,
         getTokenResponse: @escaping TokenResponseCallback,
-        authorizations: [AuthorizationMethod],
+        authorizationMethods: [AuthorizationMethod],
         getProofJwt: @escaping ProofJwtCallback,
         downloadTimeoutInMillis: Int64 = Constants.DEFAULT_NETWORK_TIMEOUT_IN_MILLIS
     ) async throws -> CredentialResponse? {
@@ -137,7 +137,7 @@ public class VCIClient {
                 credentialIssuer: credentialIssuer,
                 credentialConfigurationId: credentialConfigurationId,
                 clientMetadata: clientMetadata,
-                authorizationMethods: authorizations,
+                authorizationMethods: authorizationMethods,
                 getTokenResponse: getTokenResponse,
                 getProofJwt: getProofJwt,
                 downloadTimeoutInMillis: downloadTimeoutInMillis
@@ -155,11 +155,11 @@ public class VCIClient {
     }
 
     
-    public func fetchCredentialByCredentialOfferV2(
+    public func fetchCredentialUsingCredentialOffer(
         credentialOffer: String,
         clientMetadata: ClientMetadata,
         getTxCode: TxCodeCallback,
-        authorizations: [AuthorizationMethod],
+        authorizationMethods: [AuthorizationMethod],
         getTokenResponse: @escaping TokenResponseCallback,
         getProofJwt: @escaping ProofJwtCallback,
         onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
@@ -171,7 +171,7 @@ public class VCIClient {
                 credentialOffer: credentialOffer,
                 clientMetadata: clientMetadata,
                 getTxCode: getTxCode,
-                authorizationMethods: authorizations,
+                authorizationMethods: authorizationMethods,
                 getTokenResponse: getTokenResponse,
                 getProofJwt: getProofJwt,
                 onCheckIssuerTrust: onCheckIssuerTrust,
