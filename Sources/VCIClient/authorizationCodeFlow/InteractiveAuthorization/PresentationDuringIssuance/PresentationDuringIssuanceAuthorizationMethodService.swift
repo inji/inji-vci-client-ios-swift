@@ -10,14 +10,14 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
     private let handlePresentationTimeoutMs: Int64
     private let signVPTokensTimeoutMs: Int64
     private let networkManager: NetworkManager
-    private let resolvePublicKey: (_ uri: String) async throws -> PublicKeyType
+    private let resolvePublicKeyType: (_ uri: String) async throws -> String
     
     init(
         selectCredentialsForPresentation: @escaping SelectCredentialsForPresentationCallback,
         signVerifiablePresentation: @escaping SignVerifiablePresentationCallback,
         networkManger: NetworkManager = NetworkManager.shared,
         openId4vp: OpenID4VPInteracting? = nil,
-        resolvePublicKey: ((_ uri: String) async throws -> PublicKeyType)? = nil
+        resolvePublicKeyType: ((_ uri: String) async throws -> String)? = nil
     ) {
         self.selectCredentialsForPresentation = selectCredentialsForPresentation
         self.signVerifiablePresentation = signVerifiablePresentation
@@ -25,8 +25,14 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
         self.handlePresentationTimeoutMs = 500 * 1000
         self.signVPTokensTimeoutMs = 5 * 1000
         self.networkManager = networkManger
-        self.resolvePublicKey = resolvePublicKey ?? { uri in
-            try await DidPublicKeyResolver().resolve(uri: uri)
+        self.resolvePublicKeyType = resolvePublicKeyType ?? { uri in
+            let publicKey = try await DidPublicKeyResolver().resolve(uri: uri)
+            switch publicKey {
+            case .ed25519(_):
+                return "Ed25519Signature2020"
+            default:
+                return "JsonWebSignature2020"
+            }
         }
     }
     
@@ -75,8 +81,8 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
             throw AccessDenied(message: "No credentials selected by user", className: "PresentationDuringIssuanceAuthorizationMethodService")
         }
         
-        let holderId = extractHolderId(credentials: selectedCredentials)
-        let signatureSuite: String? = holderId != nil ? try await resolveSignatureSuite(for: holderId!) : nil
+        let holderId: String? = extractHolderId(credentials: selectedCredentials)
+        let signatureSuite: String? = try await resolveSignatureSuite(for: holderId)
         
         let unsignedVpTokens: [FormatType: UnsignedVPToken] = try await openId4vp.constructUnsignedVPToken(
             verifiableCredentials: selectedCredentials,
@@ -140,18 +146,11 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
         return authorizationResponse
     }
     
-    private func resolveSignatureSuite(for holderId: String) async throws -> String {
-        let signatureSuite: String
-        let publicKey : PublicKeyType = try await resolvePublicKey(holderId)
-        
-        switch publicKey {
-        case .ed25519(_):
-            signatureSuite = "Ed25519Signature2020"
-        default:
-            signatureSuite = "JsonWebSignature2020"
+    private func resolveSignatureSuite(for holderId: String?) async throws -> String? {
+        if let holderId = holderId {
+            return try await resolvePublicKeyType(holderId)
         }
-        
-        return signatureSuite
+        return nil
     }
     
     private func withTimeout<T>(milliseconds: Int64, operation: @escaping () async throws -> T) async throws -> T {
