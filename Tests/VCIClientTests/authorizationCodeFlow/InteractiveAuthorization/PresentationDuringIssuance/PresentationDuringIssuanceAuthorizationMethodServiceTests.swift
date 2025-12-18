@@ -175,9 +175,9 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         XCTAssertEqual(presentationDuringIssuanceAuthorizationMethodService.type(), InteractionType.openId4VpPresentation.rawValue)
     }
     
-    func test_authorizeUser_withInvalidRequestData_returnsInvalidRequestErrorResponse() async {
+    func test_authorizeUser_withInvalidRequestData_returnsInvalidRequestErrorResponse() async throws{
         let presentationDuringIssuanceAuthorizationMethodService = makeService(openId4vp: FakeOpenID4VP())
-        let response = await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: DummyAuthorizationRequestData())
+        let response = try await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: DummyAuthorizationRequestData())
         XCTAssertEqual(response.status, "error")
         XCTAssertEqual(response.error, "invalid_request")
         XCTAssertEqual(response.errorDescription, "Expected PresentationDuringIssuanceRequestData")
@@ -185,14 +185,14 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         XCTAssertNil(response.authorizationCode)
     }
     
-    func test_validatePresentationRequest_throws_then_network_error_maps_to_errorResponse() async {
+    func test_validatePresentationRequest_throws_then_network_error_maps_to_errorResponse() async throws {
         let fake = FakeOpenID4VP()
         fake.behavior = .authThrows(GenericFailure(message: "bad auth", className: "Fake"))
         let network = MockNetworkManager()
         network.shouldThrowNetworkError = true
         
         let presentationDuringIssuanceAuthorizationMethodService = makeService(openId4vp: fake, network: network)
-        let response = await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: makeRequestData())
+        let response = try await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: makeRequestData())
         
         XCTAssertEqual(response.status, "error")
         XCTAssertEqual(response.error, "network_error")
@@ -200,7 +200,7 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         XCTAssertEqual(response.authSession, "auth-session-1")
     }
     
-    func test_validatePresentationRequest_throws_then_invalid_response_maps_to_errorResponse() async {
+    func test_validatePresentationRequest_throws_then_invalid_response_maps_to_errorResponse() async throws {
         let fake = FakeOpenID4VP()
         fake.behavior = .authThrows(GenericFailure(message: "bad auth", className: "Fake"))
         let network = MockNetworkManager()
@@ -208,14 +208,14 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         network.responseBody = "not a json"
         
         let presentationDuringIssuanceAuthorizationMethodService = makeService(openId4vp: fake, network: network)
-        let response = await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: makeRequestData())
+        let response = try await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: makeRequestData())
         
         XCTAssertEqual(response.status, "error")
         XCTAssertEqual(response.error, "invalid_response")
         XCTAssertEqual(response.authSession, "auth-session-1")
     }
     
-    func test_full_success_flow_returns_AuthorizationResponse_success() async {
+    func test_full_success_flow_returns_AuthorizationResponse_success() async throws {
         let fake = FakeOpenID4VP()
         let network = MockNetworkManager()
         // Prepare a successful AuthorizationResponse body
@@ -232,7 +232,7 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         network.responseBody = String(data: data, encoding: .utf8) ?? ""
         
         let presentationDuringIssuanceAuthorizationMethodService = makeService(openId4vp: fake, network: network)
-        let response = await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: makeRequestData())
+        let response = try await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: makeRequestData())
         
         XCTAssertEqual(response.status, "success")
         XCTAssertEqual(response.authorizationCode, "code-123")
@@ -245,7 +245,7 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         XCTAssertNotNil(network.capturedParams["openid4vp_response"])
     }
     
-    func test_selectCredentials_timeout_is_mapped_to_constructed_error_and_posted() async {
+    func test_selectCredentials_timeout_is_mapped_to_constructed_error_and_posted() async throws{
         let fake = FakeOpenID4VP()
         let network = MockNetworkManager()
         // Make selectCredentials hang beyond timeout by sleeping
@@ -275,13 +275,13 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
             }
         )
         
-        let response = await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: makeRequestData())
+        let response = try await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: makeRequestData())
         XCTAssertEqual(response.status, "error")
         XCTAssertEqual(response.error, "access_denied")
         XCTAssertEqual(network.capturedParams["auth_session"], "auth-session-1")
     }
     
-    func test_signVerifiablePresentation_timeout_is_mapped_to_constructed_error_and_posted() async {
+    func test_signVerifiablePresentation_timeout_is_mapped_to_constructed_error_and_posted() async throws {
         let fake = FakeOpenID4VP()
         let network = MockNetworkManager()
         // select returns quickly
@@ -315,13 +315,13 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
             }
         )
         
-        let response = await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: makeRequestData())
+        let response = try await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: makeRequestData())
         XCTAssertEqual(response.status, "error")
         XCTAssertEqual(response.error, "server_error")
         XCTAssertEqual(response.authSession, "auth-session-1")
     }
     
-    func test_publicKey_resolution_decides_signatureSuite_branch() async {
+    func test_publicKey_resolution_decides_signatureSuite_branch() async throws {
         var resolvedEdPublicKey = false
         
         let network = MockNetworkManager()
@@ -334,7 +334,7 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         }
         
         let presentationDuringIssuanceAuthorizationMethodService = makeService(openId4vp: FakeOpenID4VP(), network: network, resolvePublicKey: resolver)
-        _ = await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: makeRequestData())
+        _ = try await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: makeRequestData())
         
         XCTAssertTrue(resolvedEdPublicKey, "Expected resolvePublicKey to be invoked and choose Ed25519Signature2020 path")
         

@@ -1,56 +1,61 @@
 import Foundation
 
 final class InteractiveAuthorizationHandler {
-
+    private let networkManager: NetworkManager
+    
+    init(networkManager: NetworkManager = NetworkManager.shared) {
+        self.networkManager = networkManager
+    }
+    
     func handle(
         endpoint: String,
         clientMetadata: ClientMetadata,
         credentialConfigurationId: String,
         authorizationMethods: [AuthorizationMethod],
         pkceSession: PKCESessionManager.PKCESession,
-        networkSession: NetworkManager = NetworkManager.shared
     ) async throws -> AuthorizationResponse {
-
+        
         do {
-            let interactionTypesSupported =
-                authorizationMethods.map { $0.type.rawValue }
-
-            let requestMap = buildIarRequest(
+            // interaction types supported will be populated from the authorization methods once redirect_to_web interaction is supported
+            let interactionTypesSupported = [InteractionType.openId4VpPresentation.rawValue]
+            
+            let initialIarRequest = buildInitialIarRequest(
                 clientMetadata: clientMetadata,
-                credentialConfigId: credentialConfigurationId,
+                credentialConfigurationId: credentialConfigurationId,
                 pkce: pkceSession,
                 interactionTypesSupported: interactionTypesSupported
             )
-
-            let response = try await networkSession.sendRequest(
+            
+            let interactiveAuthorizationResponse = try await self.networkManager.sendRequest(
                 url: endpoint,
                 method: .post,
-                headers: ["Content-Type": "application/x-www-form-urlencoded"], bodyParams: requestMap
+                headers: [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue],
+                bodyParams: initialIarRequest
             )
-
+            
             let type: String
             do {
-                type = try extractInteractionType(response.body)
+                type = try extractInteractionType(interactiveAuthorizationResponse.body)
             } catch {
                 throw InteractiveAuthorizationException(
                     message: "Failed to parse and extract interaction type: \(error.localizedDescription)"
                 )
             }
-
+            
             switch type {
             case InteractionType.openId4VpPresentation.rawValue:
                 return try await handlePresentationInteraction(
-                    responseBody: response.body,
+                    presentationInteractionResponse: interactiveAuthorizationResponse.body,
                     authorizationMethods: authorizationMethods,
                     endpoint: endpoint
                 )
-
+                
             default:
                 throw InteractiveAuthorizationException(
                     message: "Unsupported interaction type: \(type)"
                 )
             }
-
+            
         } catch let e as InteractiveAuthorizationException {
             print("IAR Error: \(e.message)")
             throw e
@@ -61,21 +66,21 @@ final class InteractiveAuthorizationHandler {
             )
         }
     }
-
-    private func buildIarRequest(
+    
+    private func buildInitialIarRequest(
         clientMetadata: ClientMetadata,
-        credentialConfigId: String,
+        credentialConfigurationId: String,
         pkce: PKCESessionManager.PKCESession,
         interactionTypesSupported: [String]
     ) -> [String: String] {
-
+        
         let details = [
             AuthorizationDetail(
                 type: "openid_credential",
-                credentialConfigurationId: [credentialConfigId]
+                credentialConfigurationId: [credentialConfigurationId]
             )
         ]
-
+        
         return IARInitialRequestBody(
             clientId: clientMetadata.clientId,
             codeChallenge: pkce.codeChallenge,
@@ -84,32 +89,25 @@ final class InteractiveAuthorizationHandler {
             interactionTypesSupported: interactionTypesSupported
         ).toFormMap()
     }
-
+    
     private func extractInteractionType(_ responseBody: String) throws -> String {
-        guard
-            let data = responseBody.data(using: .utf8),
-            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        else {
-            throw InteractiveAuthorizationException(message: "Invalid JSON response")
-        }
-
-        return json["type"] as? String ?? ""
+        return JsonUtils.toMap(responseBody)["type"] as? String ?? ""
     }
-
+    
     private func handlePresentationInteraction(
-        responseBody: String,
+        presentationInteractionResponse: String,
         authorizationMethods: [AuthorizationMethod],
         endpoint: String
     ) async throws -> AuthorizationResponse {
-            
-        guard let parsed = try JsonUtils.deserialize(responseBody, as: PresentationInteractionResponse.self) else {
-            throw InteractiveAuthorizationException(message: "Failed to parse OpenID4VP response")
+        
+        guard let parsedPresentationInteractionResponse = try JsonUtils.deserialize(presentationInteractionResponse, as: PresentationInteractionResponse.self) else {
+            throw InteractiveAuthorizationException(message: "Failed to parse presentation interaction response")
         }
-
+        
         do {
-            try parsed.validate()
+            try parsedPresentationInteractionResponse.validate()
         } catch {
-            throw InteractiveAuthorizationException(  message: "Invalid OpenID4VP response: \(error.localizedDescription)"            )
+            throw InteractiveAuthorizationException(  message: "Invalid presentation interaction response: \(error.localizedDescription)")
         }
         
         guard
@@ -117,23 +115,22 @@ final class InteractiveAuthorizationHandler {
         else {
             throw InteractiveAuthorizationException(message: "Presentation callback missing")
         }
-
-        let request = PresentationDuringIssuanceRequestData(
-            ovpRequest: parsed.openid4vpRequest,
-            authSession: parsed.authSession ?? "",
-            iar: endpoint
-        )
-
-        let handler = PresentationDuringIssuanceAuthorizationMethodService(
+        
+        let authorizationService = PresentationDuringIssuanceAuthorizationMethodService(
             selectCredentialsForPresentation: selectCredentialsForPresentation,
             signVerifiablePresentation: signVerifiablePresentation
         )
-
-        return await handler.authorizeUser(requestData: request)
+        
+        return try await authorizationService.authorizeUser(
+            requestData: PresentationDuringIssuanceRequestData(
+                ovpRequest: parsedPresentationInteractionResponse.openid4vpRequest,
+                authSession: parsedPresentationInteractionResponse.authSession ?? "",
+                iar: endpoint
+            )
+        )
     }
 }
 
-//TODO: move to separate files
 
 
 

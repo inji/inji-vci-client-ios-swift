@@ -15,15 +15,13 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
     init(
         selectCredentialsForPresentation: @escaping SelectCredentialsForPresentationCallback,
         signVerifiablePresentation: @escaping SignVerifiablePresentationCallback,
-        
         networkManger: NetworkManager = NetworkManager.shared,
         openId4vp: OpenID4VPInteracting? = nil,
         resolvePublicKey: ((_ uri: String) async throws -> PublicKeyType)? = nil
     ) {
         self.selectCredentialsForPresentation = selectCredentialsForPresentation
         self.signVerifiablePresentation = signVerifiablePresentation
-        //TODO: get traceabilityId from vci client instance
-        self.openId4vp = openId4vp ?? OpenID4VPInteraction(traceabilityId: "")
+        self.openId4vp = openId4vp ?? OpenID4VPInteraction(traceabilityId: Util.getTraceabilityId())
         self.handlePresentationTimeoutMs = 500 * 1000
         self.signVPTokensTimeoutMs = 5 * 1000
         self.networkManager = networkManger
@@ -36,10 +34,10 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
         return InteractionType.openId4VpPresentation.rawValue
     }
     
-    func authorizeUser(requestData: AuthorizationRequestData) async -> AuthorizationResponse {
+    func authorizeUser(requestData: AuthorizationRequestData) async throws -> AuthorizationResponse {
         let vpResponse: [String: Any]
         guard let presentationRequestData = requestData as? PresentationDuringIssuanceRequestData else {
-            return errorResponse(error: "invalid_request", description: "Expected PresentationDuringIssuanceRequestData")
+            throw InteractiveAuthorizationException(message: "Expected PresentationDuringIssuanceRequestData")
         }
         
         let authSession = presentationRequestData.authSession
@@ -47,7 +45,6 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
             do {
                 let vpRequest = try await validatePresentationRequest(request: presentationRequestData.ovpRequest)
                 vpResponse = try await handlePresentation(vpRequest: vpRequest)
-                //TODO: removed extra wrapping of InteractiveAuthorizationException on sendOVPAuthorizationResponseToIssuer
             } catch {
                 print("Error during presentation handling: \(error.localizedDescription)")
                 vpResponse = openId4vp.constructErrorInfo(exception: error)
@@ -59,71 +56,52 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
                 vpResponse: vpResponse
             )
         } catch let ex as InteractiveAuthorizationException {
-            return errorResponse(error: ex.code, description: ex.message, authSession: presentationRequestData.authSession)
+            throw ex
         } catch {
-            return errorResponse(error: "server_error", description: "Unexpected error occurred: \(error.localizedDescription)")
+            throw InteractiveAuthorizationException(message: "Unexpected error occurred: \(error.localizedDescription)")
         }
     }
     
-    // TODO: changed validateAuthorizationRequest to validatePresentationRequest to avoid confusion
     private func validatePresentationRequest(request: [String: Any]) async throws -> AuthorizationRequest {
-        do {
-            return try await openId4vp.authenticateVerifier(authRequest: request, trustedVerifiers: [Verifier](), shouldValidateClient: false)
-        } catch {
-            // TODO: changed validateAuthorizationRequest to validatePresentationRequest to avoid confusion
-            throw InteractiveAuthorizationException(code: (error as? OpenID4VPException)?.errorCode ?? "invalid_request", message: "Malformed authorization request. \(error.localizedDescription)")
-        }
+        return try await openId4vp.authenticateVerifier(authRequest: request, trustedVerifiers: [Verifier](), shouldValidateClient: false)
     }
     
     private func handlePresentation(vpRequest: AuthorizationRequest) async throws -> [String: Any] {
-        let selectedCredentials: [String: [FormatType: [OpenID4VPAnyCodable]]]
-        do {
-            selectedCredentials = try await withTimeout(milliseconds: handlePresentationTimeoutMs) {
-                try await self.selectCredentialsForPresentation(vpRequest)
+        let selectedCredentials: [String: [FormatType: [OpenID4VPAnyCodable]]] = try await withTimeout(milliseconds: handlePresentationTimeoutMs) {
+            try await self.selectCredentialsForPresentation(vpRequest)
+        }
+        
+        if(selectedCredentials.isEmpty) {
+            throw AccessDenied(message: "No credentials selected by user", className: "PresentationDuringIssuanceAuthorizationMethodService")
+        }
+        
+        let holderId = extractHolderId(credentials: selectedCredentials)
+        let signatureSuite: String? = holderId != nil ? try await resolveSignatureSuite(for: holderId!) : nil
+        
+        let unsignedVpTokens: [FormatType: UnsignedVPToken] = try await openId4vp.constructUnsignedVPToken(
+            verifiableCredentials: selectedCredentials,
+            holderId: holderId,
+            signatureSuite: signatureSuite
+        )
+        
+        
+        let signedVpTokens: [FormatType: VPTokenSigningResult] = try await withTimeout(milliseconds: signVPTokensTimeoutMs) {
+            try await self.signVerifiablePresentation(unsignedVpTokens)
+        }
+        
+        return openId4vp.constructVPResponse(vpTokenSigningResults: signedVpTokens)
+    }
+    
+    private func extractHolderId(credentials: [String: [FormatType: [OpenID4VPAnyCodable]]]) -> String? {
+        return credentials.values.compactMap { formatMap in
+            guard let ldpVcCredentials = formatMap[.ldp_vc],
+                  let firstLdpVcCredential = ldpVcCredentials.first?.value as? [String: Any],
+                  let credentialSubject = firstLdpVcCredential["credentialSubject"] as? [String: Any],
+                  let holderId = credentialSubject["id"] as? String else {
+                return nil
             }
-        } catch {
-            //TODO: check the error code needs to be server_error or access_denied
-            throw InteractiveAuthorizationException(code: "server_error", message: "Failed to fetch matching credentials. \(error.localizedDescription)")
-        }
-        
-        //TODO: populate holderId and signatureSuite properly
-        // take the first ldp_vc from selectedCredentials - extract holderId and signatureSuite from there
-        let holderId = "did:example:holder"
-        let publicKey : PublicKeyType = try await resolvePublicKey(holderId)
-        
-        let signatureSuite: String
-        switch publicKey {
-        case .ed25519(_):
-            signatureSuite = "Ed25519Signature2020"
-        default:
-            signatureSuite = "JsonWebSignature2020"
-        }
-        
-        let unsignedVpTokens: [FormatType: UnsignedVPToken]
-        do {
-            unsignedVpTokens = try await openId4vp.constructUnsignedVPToken(
-                verifiableCredentials: selectedCredentials,
-                holderId: holderId,
-                signatureSuite: signatureSuite
-            )
-        } catch {
-            //TODO: check the error code needs to be server_error or any other
-            throw InteractiveAuthorizationException(code: "server_error", message: "Failed to construct unsigned VP token. \(error.localizedDescription)")
-        }
-        
-        let signedVpTokens: [FormatType: VPTokenSigningResult]
-        do {
-            signedVpTokens = try await withTimeout(milliseconds: signVPTokensTimeoutMs) {
-                try await self.signVerifiablePresentation(unsignedVpTokens)
-            }
-        } catch {
-            //TODO: check the error code needs to be server_error or any other
-            throw InteractiveAuthorizationException(code: "server_error", message: "Failed to sign VP token. \(error.localizedDescription)")
-        }
-        
-        let vpResponse: [String: Any] = openId4vp.constructVPResponse(vpTokenSigningResults: signedVpTokens)
-        
-        return vpResponse
+            return holderId
+        }.first
     }
     
     private func sendOVPAuthorizationResponseToIssuer(
@@ -162,18 +140,18 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
         return authorizationResponse
     }
     
-    private func errorResponse(
-        error: String,
-        description: String,
-        authSession: String? = nil
-    ) -> AuthorizationResponse {
-        return AuthorizationResponse(
-            authorizationCode: nil,
-            status: "error",
-            error: error,
-            errorDescription: description,
-            authSession: authSession ?? ""
-        )
+    private func resolveSignatureSuite(for holderId: String) async throws -> String {
+        let signatureSuite: String
+        let publicKey : PublicKeyType = try await resolvePublicKey(holderId)
+        
+        switch publicKey {
+        case .ed25519(_):
+            signatureSuite = "Ed25519Signature2020"
+        default:
+            signatureSuite = "JsonWebSignature2020"
+        }
+        
+        return signatureSuite
     }
     
     private func withTimeout<T>(milliseconds: Int64, operation: @escaping () async throws -> T) async throws -> T {

@@ -10,6 +10,10 @@ class Util {
         return "INJI-VCI-Client : \(className) | traceID \(self.traceabilityId ?? "")"
     }
     
+    static func getTraceabilityId() -> String {
+        return traceabilityId ?? "VciClient"
+    }
+    
     static func convertToAnyCodable(dict: [String: Any]) -> [String: AnyCodable] {
         var result: [String: AnyCodable] = [:]
         

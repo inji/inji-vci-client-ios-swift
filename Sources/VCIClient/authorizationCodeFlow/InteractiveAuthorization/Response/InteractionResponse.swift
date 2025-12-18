@@ -5,6 +5,7 @@ class InteractionResponse {
     let type: String?
     let authSession: String?
 
+    //TODO: status. type , value are mandatory params in the response, can this be synced?
     init(
         status: String?,
         type: String?,
