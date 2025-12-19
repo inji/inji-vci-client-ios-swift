@@ -7,8 +7,6 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
     private let selectCredentialsForPresentation: SelectCredentialsForPresentationCallback
     private let signVerifiablePresentation: SignVerifiablePresentationCallback
     private let openId4vp: OpenID4VPInteracting
-    private let handlePresentationTimeoutMs: Int64
-    private let signVPTokensTimeoutMs: Int64
     private let networkManager: NetworkManager
     private let resolvePublicKeyType: (_ uri: String) async throws -> String
     
@@ -22,8 +20,6 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
         self.selectCredentialsForPresentation = selectCredentialsForPresentation
         self.signVerifiablePresentation = signVerifiablePresentation
         self.openId4vp = openId4vp ?? OpenID4VPInteraction(traceabilityId: Util.getTraceabilityId())
-        self.handlePresentationTimeoutMs = 500 * 1000
-        self.signVPTokensTimeoutMs = 5 * 1000
         self.networkManager = networkManger
         self.resolvePublicKeyType = resolvePublicKeyType ?? { uri in
             let publicKey = try await DidPublicKeyResolver().resolve(uri: uri)
@@ -74,27 +70,19 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
     }
     
     private func handlePresentation(vpRequest: AuthorizationRequest) async throws -> [String: Any] {
-        let selectedCredentials: [String: [FormatType: [OpenID4VPAnyCodable]]] = try await withTimeout(milliseconds: handlePresentationTimeoutMs) {
-            try await self.selectCredentialsForPresentation(vpRequest)
-        }
-        
+        let selectedCredentials: [String: [FormatType: [OpenID4VPAnyCodable]]] = try await self.selectCredentialsForPresentation(vpRequest)
         if(selectedCredentials.isEmpty) {
             throw AccessDenied(message: "No credentials selected by user", className: "PresentationDuringIssuanceAuthorizationMethodService")
         }
         
         let holderId: String? = extractHolderId(credentials: selectedCredentials)
         let signatureSuite: String? = try await resolveSignatureSuite(for: holderId)
-        
         let unsignedVpTokens: [FormatType: UnsignedVPToken] = try await openId4vp.constructUnsignedVPToken(
             verifiableCredentials: selectedCredentials,
             holderId: holderId,
             signatureSuite: signatureSuite
         )
-        
-        
-        let signedVpTokens: [FormatType: VPTokenSigningResult] = try await withTimeout(milliseconds: signVPTokensTimeoutMs) {
-            try await self.signVerifiablePresentation(unsignedVpTokens)
-        }
+        let signedVpTokens: [FormatType: VPTokenSigningResult] = try await self.signVerifiablePresentation(unsignedVpTokens)
         
         return openId4vp.constructVPResponse(vpTokenSigningResults: signedVpTokens)
     }
@@ -152,23 +140,6 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
             return try await resolvePublicKeyType(holderId)
         }
         return nil
-    }
-    
-    private func withTimeout<T>(milliseconds: Int64, operation: @escaping () async throws -> T) async throws -> T {
-        try await withThrowingTaskGroup(of: T.self) { group in
-            group.addTask {
-                try await operation()
-            }
-            
-            group.addTask {
-                try await Task.sleep(nanoseconds: UInt64(milliseconds * 1_000_000))
-                throw TimeoutError()
-            }
-            
-            let result = try await group.next()!
-            group.cancelAll()
-            return result
-        }
     }
 }
 
