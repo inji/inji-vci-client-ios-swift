@@ -107,7 +107,7 @@ final class AuthorizationModelTests: XCTestCase {
     func test_AuthorizationResponse_success_decode_encode() throws {
         // Simulate a success JSON from issuer
         let json: [String: Any] = [
-            "authorization_code": "code-xyz",
+            "code": "code-xyz",
             "status": "success",
             "auth_session": "sess-1"
         ]
@@ -123,7 +123,7 @@ final class AuthorizationModelTests: XCTestCase {
         // Round-trip encode
         let encoded = try JSONEncoder().encode(decoded)
         let roundTrip = try JSONSerialization.jsonObject(with: encoded) as? [String: Any]
-        XCTAssertEqual(roundTrip?["authorization_code"] as? String, "code-xyz")
+        XCTAssertEqual(roundTrip?["code"] as? String, "code-xyz")
         XCTAssertEqual(roundTrip?["status"] as? String, "success")
         XCTAssertEqual(roundTrip?["auth_session"] as? String, "sess-1")
         XCTAssertNil(roundTrip?["error"])

@@ -174,14 +174,15 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         XCTAssertEqual(presentationDuringIssuanceAuthorizationMethodService.type(), InteractionType.openId4VpPresentation.rawValue)
     }
     
-    func test_authorizeUser_withInvalidRequestData_returnsInvalidRequestErrorResponse() async throws{
+    func test_authorizeUser_withInvalidRequestData_throws_error() async throws{
         let presentationDuringIssuanceAuthorizationMethodService = makeService(openId4vp: FakeOpenID4VP())
-        let response = try await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: DummyAuthorizationRequestData())
-        XCTAssertEqual(response.status, "error")
-        XCTAssertEqual(response.error, "invalid_request")
-        XCTAssertEqual(response.errorDescription, "Expected PresentationDuringIssuanceRequestData")
-        XCTAssertEqual(response.authSession, "")
-        XCTAssertNil(response.authorizationCode)
+        
+        await XCTAssertThrowsErrorAsync {
+            _ = try await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: DummyAuthorizationRequestData())
+        } verify: { error in
+            XCTAssertTrue(error is InteractiveAuthorizationException)
+            XCTAssertEqual(error.localizedDescription, "Failed to authorize via interaction: Expected PresentationDuringIssuanceRequestData")
+        }
     }
     
     func test_validatePresentationRequest_throws_then_network_error_maps_to_errorResponse() async throws {
@@ -191,12 +192,12 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         network.shouldThrowNetworkError = true
         
         let presentationDuringIssuanceAuthorizationMethodService = makeService(openId4vp: fake, network: network)
-        let response = try await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: makeRequestData())
-        
-        XCTAssertEqual(response.status, "error")
-        XCTAssertEqual(response.error, "network_error")
-        XCTAssertTrue((response.errorDescription ?? "").contains("Network error while posting VP response"))
-        XCTAssertEqual(response.authSession, "auth-session-1")
+        await XCTAssertThrowsErrorAsync {
+            _ = try await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: self.makeRequestData())
+        } verify: { error in
+            XCTAssertTrue(error is InteractiveAuthorizationException)
+            XCTAssertEqual(error.localizedDescription, "Failed to authorize via interaction: Network error while posting VP response. Failed to download Credential: Simulated network failure")
+        }
     }
     
     func test_validatePresentationRequest_throws_then_invalid_response_maps_to_errorResponse() async throws {
@@ -207,11 +208,12 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         network.responseBody = "not a json"
         
         let presentationDuringIssuanceAuthorizationMethodService = makeService(openId4vp: fake, network: network)
-        let response = try await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: makeRequestData())
-        
-        XCTAssertEqual(response.status, "error")
-        XCTAssertEqual(response.error, "invalid_response")
-        XCTAssertEqual(response.authSession, "auth-session-1")
+        await XCTAssertThrowsErrorAsync {
+            _ = try await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: self.makeRequestData())
+        } verify: { error in
+            XCTAssertTrue(error is InteractiveAuthorizationException)
+            XCTAssertEqual(error.localizedDescription, "Failed to authorize via interaction: Issuer response deserialization failed.")
+        }
     }
     
     func ignore_test_full_success_flow_returns_AuthorizationResponse_success() async throws {
@@ -320,10 +322,14 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
     
     func test_publicKey_resolution_decides_signatureSuite_branch() async throws {
         var resolvedEdPublicKey = false
-        
         let network = MockNetworkManager()
-        network.shouldThrowNetworkError = true
-        
+        network.responseBody = """
+        {
+            "code": "code-123",
+            "status": "success",
+            "auth_session": "auth-session-1"
+        }
+        """
         let resolver: (String) async throws -> String = { _ in
             resolvedEdPublicKey = true
             return "Ed25519Signature2020"

@@ -91,7 +91,6 @@ final class PresentationInteractionResponse: InteractionResponse, Decodable {
         init?(intValue: Int) { return nil }
     }
     
-    //TODO : validation of iar request content requried?
     override func validate() throws {
         guard let type = type, type == "openid4vp_presentation" else {
             throw IllegalArgumentException("Invalid type: expected 'openid4vp_presentation'")
@@ -109,7 +108,6 @@ final class PresentationInteractionResponse: InteractionResponse, Decodable {
     }
 
     private func validateUnsignedRequest() throws {
-        //TODO: remove this - OVP lib does it not needed
         guard let responseType = openid4vpRequest["response_type"] as? String else {
             throw ValidationError.missing("response_type")
         }

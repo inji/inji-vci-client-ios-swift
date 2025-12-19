@@ -110,13 +110,15 @@ final class InteractiveAuthorizationHandlerTests: XCTestCase {
                 endpoint: "https://issuer.example.com/iar",
                 clientMetadata: self.makeClientMetadata(),
                 credentialConfigurationId: "cfg-1",
-                authorizationMethods: [],
+                authorizationMethods: [
+                    .presentationDuringIssuance(selectCredentialsForPresentation: {_ in [:]}, signVerifiablePresentation: {_ in [:]})
+                ],
                 pkceSession: self.makePKCE()
             )
         } verify: { error in
             let iae = error as? InteractiveAuthorizationException
             XCTAssertNotNil(iae)
-            XCTAssertTrue(iae?.message.contains("Failed to parse and extract interaction type") == true)
+            XCTAssertEqual("Failed to authorize via interaction: Missing 'type' in interaction response from authorization server", iae?.message ?? "")
         }
     }
 
@@ -135,7 +137,9 @@ final class InteractiveAuthorizationHandlerTests: XCTestCase {
                 endpoint: "https://issuer.example.com/iar",
                 clientMetadata: self.makeClientMetadata(),
                 credentialConfigurationId: "cfg-1",
-                authorizationMethods: [],
+                authorizationMethods: [
+                    .presentationDuringIssuance(selectCredentialsForPresentation: {_ in [:]}, signVerifiablePresentation: {_ in [:]})
+                ],
                 pkceSession: self.makePKCE()
             )
         } verify: { error in
@@ -202,43 +206,7 @@ final class InteractiveAuthorizationHandlerTests: XCTestCase {
         }
     }
 
-    // MARK: - Failure: missing presentation callback
-
-    func test_handlePresentationInteraction_missing_callback_throws() async {
-        let initialNetwork = MockNetworkManager()
-        // Valid presentation response
-        let json: [String: Any] = [
-            "type": InteractionType.openId4VpPresentation.rawValue,
-            "status": "require_interaction",
-            "auth_session": "s",
-            "openid4vp_request": [
-                "response_type": "vp_token",
-                "response_mode": "iar_post"
-            ]
-        ]
-        let data = try! JSONSerialization.data(withJSONObject: json)
-        initialNetwork.responseBody = String(data: data, encoding: .utf8) ?? ""
-
-        let handler = InteractiveAuthorizationHandler(networkManager: initialNetwork)
-
-        await XCTAssertThrowsErrorAsync {
-            _ = try await handler.handle(
-                endpoint: "https://issuer.example.com/iar",
-                clientMetadata: self.makeClientMetadata(),
-                credentialConfigurationId: "cfg-1",
-                authorizationMethods: [], // missing .presentationDuringIssuance
-                pkceSession: self.makePKCE()
-            )
-        } verify: { error in
-            let iae = error as? InteractiveAuthorizationException
-            XCTAssertNotNil(iae)
-            XCTAssertTrue(iae?.message.contains("Presentation callback missing") == true)
-        }
-    }
-
-    // MARK: - Failure: outer network error mapped
-
-    func test_handle_outer_network_error_mapped() async {
+    func test_throws_error_during_network_error_on_initial_iar_request() async {
         let initialNetwork = MockNetworkManager()
         initialNetwork.shouldThrowNetworkError = true
 
@@ -249,26 +217,17 @@ final class InteractiveAuthorizationHandlerTests: XCTestCase {
                 endpoint: "https://issuer.example.com/iar",
                 clientMetadata: self.makeClientMetadata(),
                 credentialConfigurationId: "cfg-1",
-                authorizationMethods: [],
+                authorizationMethods: [
+                    .presentationDuringIssuance(selectCredentialsForPresentation: {_ in [:]}, signVerifiablePresentation: {_ in [:]})
+                ],
                 pkceSession: self.makePKCE()
             )
         } verify: { error in
             let iae = error as? InteractiveAuthorizationException
             XCTAssertNotNil(iae)
-            XCTAssertTrue(iae?.message.contains("Interactive authorization failed") == true)
+            XCTAssertEqual("Failed to authorize via interaction: Interactive authorization failed: Failed to download Credential: Simulated network failure", iae?.message ?? "")
         }
     }
 }
 
-// Async throw helper
-private func XCTAssertThrowsErrorAsync(
-    _ expression: @escaping () async throws -> Void,
-    verify: (Error) -> Void
-) async {
-    do {
-        try await expression()
-        XCTFail("Expected error to be thrown")
-    } catch {
-        verify(error)
-    }
-}
+

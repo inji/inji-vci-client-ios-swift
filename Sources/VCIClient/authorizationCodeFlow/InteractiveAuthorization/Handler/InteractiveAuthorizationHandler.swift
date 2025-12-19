@@ -42,14 +42,7 @@ final class InteractiveAuthorizationHandler {
                 bodyParams: initialIarRequest
             )
             
-            let type: String
-            do {
-                type = try extractInteractionType(interactiveAuthorizationResponse.body)
-            } catch {
-                throw InteractiveAuthorizationException(
-                    message: "Failed to parse and extract interaction type: \(error.localizedDescription)"
-                )
-            }
+            let type: String = try extractTypeAndThrowIfError(interactiveAuthorizationResponse.body)
             
             switch type {
             case InteractionType.openId4VpPresentation.rawValue:
@@ -66,10 +59,10 @@ final class InteractiveAuthorizationHandler {
             }
             
         } catch let e as InteractiveAuthorizationException {
-            print("IAR Error: \(e.message)")
+            print("Interactive authorization failed: \(e.message)")
             throw e
         } catch {
-            print("IAR Fatal Error: \(error.localizedDescription)")
+            print("Interactive authorization failed: \(error.localizedDescription)")
             throw InteractiveAuthorizationException(
                 message: "Interactive authorization failed: \(error.localizedDescription)"
             )
@@ -98,9 +91,24 @@ final class InteractiveAuthorizationHandler {
             interactionTypesSupported: interactionTypesSupported
         ).toFormMap()
     }
-    
-    private func extractInteractionType(_ responseBody: String) throws -> String {
-        return JsonUtils.toMap(responseBody)["type"] as? String ?? ""
+
+    private func extractTypeAndThrowIfError(_ responseBody: String) throws -> String {
+        let json = JsonUtils.toMap(responseBody)
+        
+        if let type = json["type"] as? String {
+            return type
+        }
+        
+        if let error = json["error"] as? String {
+            let errorDescription = (json["error_description"] as? String) ?? ""
+            var message = "authorization server error: \(error)"
+            if !errorDescription.isEmpty {
+                message += " - \(errorDescription)"
+            }
+            throw InteractiveAuthorizationException(message: message)
+        } else {
+            throw InteractiveAuthorizationException(message: "Missing 'type' in interaction response from authorization server")
+        }
     }
     
     private func handlePresentationInteraction(
@@ -109,7 +117,7 @@ final class InteractiveAuthorizationHandler {
         endpoint: String
     ) async throws -> AuthorizationResponse {
         
-        guard let parsedPresentationInteractionResponse = try JsonUtils.deserialize(presentationInteractionResponse, as: PresentationInteractionResponse.self) else {
+        guard let parsedPresentationInteractionResponse = try? JsonUtils.deserialize(presentationInteractionResponse, as: PresentationInteractionResponse.self) else {
             throw InteractiveAuthorizationException(message: "Failed to parse presentation interaction response")
         }
         

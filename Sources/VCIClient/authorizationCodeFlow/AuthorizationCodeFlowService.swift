@@ -126,8 +126,6 @@ class AuthorizationCodeFlowService {
         
         let interactiveEndpoint = authorizationServerMetadata.interactiveAuthorizationEndpoint
         
-        let hasInteractiveAuthorizationMethods = !(authorizationMethods.isEmpty)
-        
         if let interactiveEndpoint {
             return try await obtainAuthorizationCodeViaInteractiveAuthorizationEndpoint(
                 endpoint: interactiveEndpoint,
@@ -244,7 +242,6 @@ class AuthorizationCodeFlowService {
             )
         }
     }
-    
 }
 
 

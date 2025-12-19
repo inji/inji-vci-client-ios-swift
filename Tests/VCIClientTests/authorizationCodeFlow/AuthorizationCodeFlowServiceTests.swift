@@ -22,6 +22,11 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         let result = try await service.requestCredentials(
             issuerMetadata: IssuerMetadata.mock(),
             clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
+            authorizationMethods: [
+                .redirectToWeb(openWebPage: {
+                    _ in ["code": "mock-auth-code"]
+                })
+            ],
             getTokenResponse: {_ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer")},
             getProofJwt: { _, _, _ in "mock-jwt" },
             credentialConfigurationId: "vc1",
@@ -38,7 +43,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         let service = makeService(resolver: resolver)
 
         do {
-            let result = try await service.requestCredentials(
+            _ = try await service.requestCredentials(
                 issuerMetadata: IssuerMetadata.mock(),
                 clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
                 getTokenResponse: {_ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer")},
@@ -89,7 +94,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
             XCTFail("Expected to throw due to nil credential response")
         } catch {
             print("-------", error.localizedDescription)
-            XCTAssertTrue(error.localizedDescription.contains("Credential request returned nil"))
+            XCTAssertTrue(error.localizedDescription.contains("Failed to download Credential: Download failed via authorization code flow"))
         }
     }
 }

@@ -62,6 +62,7 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
                 vpResponse: vpResponse
             )
         } catch let ex as InteractiveAuthorizationException {
+            print("InteractiveAuthorizationException: \(ex.message)")
             throw ex
         } catch {
             throw InteractiveAuthorizationException(message: "Unexpected error occurred: \(error.localizedDescription)")

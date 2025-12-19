@@ -8,7 +8,7 @@ struct AuthorizationResponse: Codable {
     let authSession: String?
 
     enum CodingKeys: String, CodingKey {
-        case authorizationCode = "authorization_code"
+        case authorizationCode = "code"
         case status
         case error
         case errorDescription = "error_description"
