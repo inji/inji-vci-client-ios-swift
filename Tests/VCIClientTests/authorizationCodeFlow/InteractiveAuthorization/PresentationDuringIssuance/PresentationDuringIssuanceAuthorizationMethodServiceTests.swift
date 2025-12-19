@@ -341,5 +341,19 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         XCTAssertTrue(resolvedEdPublicKey, "Expected resolvePublicKey to be invoked and choose Ed25519Signature2020 path")
         
     }
+    
+    func test_handle_network_timeout_during_vp_submission() async throws {
+        let network = MockNetworkManager()
+        network.shouldThrowTimeout = true
+        
+        let presentationDuringIssuanceAuthorizationMethodService = makeService(openId4vp: FakeOpenID4VP(), network: network)
+        await XCTAssertThrowsErrorAsync {
+            _ = try await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: self.makeRequestData())
+        } verify: { error in
+            XCTAssertTrue(error is InteractiveAuthorizationException)
+            XCTAssertEqual(error.localizedDescription, "Failed to authorize via interaction: Network error while posting VP response. Download failed due to request timeout: Simulated timeout")
+        }
+        
+    }
 }
 

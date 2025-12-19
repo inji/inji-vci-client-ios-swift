@@ -11,7 +11,8 @@ final class RedirectToWebAuthorizationMethodService: AuthorizationMethodService 
     }
 
     func authorizeUser(
-        requestData: AuthorizationRequestData
+        requestData: AuthorizationRequestData,
+        networkTimeout: Int64 = Constants.defaultNetworkTimeoutInMillis
     ) async throws -> AuthorizationResponse {
 
         guard let request = requestData as? ImplicitAuthorizationRequestData else {

@@ -151,6 +151,10 @@ final class MockNetworkManager: NetworkManager {
             try await Task.sleep(nanoseconds: UInt64(simulateDelay * 1_000_000_000))
         }
 
+        if shouldThrowTimeout {
+            throw NetworkRequestTimeoutException("Simulated timeout")
+        }
+        
         if shouldThrowNetworkError {
             throw DownloadFailedException("Simulated network failure")
         }

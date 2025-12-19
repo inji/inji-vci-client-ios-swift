@@ -54,7 +54,8 @@ class AuthorizationCodeFlowService {
                     authorizationMethods: authorizationMethods,
                     pkceSession: pkceSession,
                     getTokenResponse: getTokenResponse,
-                    credentialConfigurationId: credentialConfigurationId
+                    credentialConfigurationId: credentialConfigurationId,
+                    timeoutInMillis: downloadTimeOutInMillis
                 )
             } catch {
                 throw DownloadFailedException("Failed to obtain access token via authorization code flow: \(error.localizedDescription)")
@@ -97,13 +98,14 @@ class AuthorizationCodeFlowService {
         authorizationMethods: [AuthorizationMethod],
         pkceSession: PKCESessionManager.PKCESession,
         getTokenResponse: @escaping TokenResponseCallback,
-        credentialConfigurationId : String
+        credentialConfigurationId : String,
+        timeoutInMillis: Int64
     ) async throws -> TokenResponse {
         guard let tokenEndpoint = issuerMetadata.tokenEndpoint ?? authServerMetadata.tokenEndpoint else {
             throw DownloadFailedException("Missing token endpoint for issuer \(issuerMetadata.credentialIssuer)")
         }
 
-        let authCode = try await obtainAuthorizationCode(authorizationServerMetadata: authServerMetadata, issuerMetadata: issuerMetadata, clientMetadata: clientMetadata, pkceSession: pkceSession, credentialConfigurationId: credentialConfigurationId, authorizationMethods: authorizationMethods)
+        let authCode = try await obtainAuthorizationCode(authorizationServerMetadata: authServerMetadata, issuerMetadata: issuerMetadata, clientMetadata: clientMetadata, pkceSession: pkceSession, credentialConfigurationId: credentialConfigurationId, authorizationMethods: authorizationMethods, timeoutInMillis: timeoutInMillis)
         
         return try await tokenService.getAccessToken(
             getTokenResponse: getTokenResponse,
@@ -121,7 +123,8 @@ class AuthorizationCodeFlowService {
         clientMetadata: ClientMetadata,
         pkceSession: PKCESessionManager.PKCESession,
         credentialConfigurationId: String,
-        authorizationMethods: [AuthorizationMethod]
+        authorizationMethods: [AuthorizationMethod],
+        timeoutInMillis: Int64
     ) async throws -> String {
         
         let interactiveEndpoint = authorizationServerMetadata.interactiveAuthorizationEndpoint
@@ -133,7 +136,8 @@ class AuthorizationCodeFlowService {
                 clientMetadata: clientMetadata,
                 pkceSession: pkceSession,
                 credentialConfigurationId: credentialConfigurationId,
-                authorizationMethods: authorizationMethods
+                authorizationMethods: authorizationMethods,
+                timeoutInMillis: timeoutInMillis
             )
         } else {
             
@@ -153,7 +157,8 @@ class AuthorizationCodeFlowService {
         clientMetadata: ClientMetadata,
         pkceSession: PKCESessionManager.PKCESession,
         credentialConfigurationId: String,
-        authorizationMethods: [AuthorizationMethod]
+        authorizationMethods: [AuthorizationMethod],
+        timeoutInMillis: Int64
     ) async throws -> String {
         print("Using Interactive Authorization Endpoint: \(endpoint) for issuer=\(issuerMetadata.credentialIssuer)")
         
@@ -164,7 +169,8 @@ class AuthorizationCodeFlowService {
                 clientMetadata: clientMetadata,
                 credentialConfigurationId: credentialConfigurationId,
                 authorizationMethods: authorizationMethods,
-                pkceSession: pkceSession
+                pkceSession: pkceSession,
+                timeoutInMillis: timeoutInMillis
             )
         } catch {
             throw DownloadFailedException(
