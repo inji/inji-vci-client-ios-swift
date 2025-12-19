@@ -163,7 +163,7 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         return PresentationDuringIssuanceAuthorizationMethodService(
             selectCredentialsForPresentation: select,
             signVerifiablePresentation: sign,
-            networkManger: network,
+            networkManager: network,
             openId4vp: openId4vp,
             resolvePublicKeyType: resolvePublicKeyType
         )
@@ -268,7 +268,7 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         let presentationDuringIssuanceAuthorizationMethodService = PresentationDuringIssuanceAuthorizationMethodService(
             selectCredentialsForPresentation: select,
             signVerifiablePresentation: { _ in [.ldp_vc: StubVPTokenSigningResult()] },
-            networkManger: network,
+            networkManager: network,
             openId4vp: fake,
             resolvePublicKeyType: { _ in
                 return "Ed25519Signature2020"
@@ -307,7 +307,7 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         let presentationDuringIssuanceAuthorizationMethodService = PresentationDuringIssuanceAuthorizationMethodService(
             selectCredentialsForPresentation: select,
             signVerifiablePresentation: sign,
-            networkManger: network,
+            networkManager: network,
             openId4vp: fake,
             resolvePublicKeyType: { _ in
                 return "Ed25519Signature2020"

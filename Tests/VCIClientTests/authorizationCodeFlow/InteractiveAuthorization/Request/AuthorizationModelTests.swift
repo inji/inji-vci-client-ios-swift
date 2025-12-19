@@ -154,7 +154,7 @@ final class AuthorizationModelTests: XCTestCase {
         XCTAssertEqual(roundTrip?["error"] as? String, "invalid_request")
         XCTAssertEqual(roundTrip?["error_description"] as? String, "bad stuff")
         XCTAssertEqual(roundTrip?["auth_session"] as? String, "sess-2")
-        XCTAssertNil(roundTrip?["authorization_code"])
+        XCTAssertNil(roundTrip?["code"])
     }
 
     // MARK: - AuthorizationRequestData

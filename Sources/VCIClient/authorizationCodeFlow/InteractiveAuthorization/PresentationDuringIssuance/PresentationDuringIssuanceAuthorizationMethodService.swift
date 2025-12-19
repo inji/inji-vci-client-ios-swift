@@ -13,14 +13,14 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
     init(
         selectCredentialsForPresentation: @escaping SelectCredentialsForPresentationCallback,
         signVerifiablePresentation: @escaping SignVerifiablePresentationCallback,
-        networkManger: NetworkManager = NetworkManager.shared,
+        networkManager: NetworkManager = NetworkManager.shared,
         openId4vp: OpenID4VPInteracting? = nil,
         resolvePublicKeyType: ((_ uri: String) async throws -> String)? = nil
     ) {
         self.selectCredentialsForPresentation = selectCredentialsForPresentation
         self.signVerifiablePresentation = signVerifiablePresentation
         self.openId4vp = openId4vp ?? OpenID4VPInteraction(traceabilityId: Util.getTraceabilityId())
-        self.networkManager = networkManger
+        self.networkManager = networkManager
         self.resolvePublicKeyType = resolvePublicKeyType ?? { uri in
             let publicKey = try await DidPublicKeyResolver().resolve(uri: uri)
             switch publicKey {
@@ -145,5 +145,3 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
         return nil
     }
 }
-
-struct TimeoutError: Error {}

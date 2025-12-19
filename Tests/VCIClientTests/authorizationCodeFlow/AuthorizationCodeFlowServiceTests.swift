@@ -93,7 +93,6 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
             )
             XCTFail("Expected to throw due to nil credential response")
         } catch {
-            print("-------", error.localizedDescription)
             XCTAssertTrue(error.localizedDescription.contains("Failed to download Credential: Download failed via authorization code flow"))
         }
     }
