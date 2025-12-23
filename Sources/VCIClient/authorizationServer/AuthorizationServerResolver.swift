@@ -91,7 +91,10 @@ class AuthorizationServerResolver {
         }
 
         if expectedGrantType == GrantType.authorizationCode.rawValue,
-           authServerMetadata.authorizationEndpoint?.isEmpty ?? true {
+           //either authorization_endpoint or interactive_authorization_endpoint is required
+           authServerMetadata.authorizationEndpoint == nil &&
+            authServerMetadata.interactiveAuthorizationEndpoint == nil
+           {
             throw AutorizationServerDiscoveryException(
                 "Missing authorization_endpoint for authorization_code flow."
             )
