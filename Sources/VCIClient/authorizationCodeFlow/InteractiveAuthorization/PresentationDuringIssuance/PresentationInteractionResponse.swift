@@ -132,8 +132,8 @@ final class PresentationInteractionResponse: InteractionResponse, Decodable {
         guard let responseMode = openid4vpRequest["response_mode"] as? String else {
             throw IllegalArgumentException("Missing or invalid 'response_mode'")
         }
-        guard responseMode == "iar_post" || responseMode == "iar_post.jwt" else {
-            throw IllegalArgumentException("response_mode must be 'iar_post' or 'iar_post.jwt'")
+        guard responseMode == "iar-post" || responseMode == "iar-post.jwt" else {
+            throw IllegalArgumentException("response_mode must be 'iar-post' or 'iar-post.jwt'")
         }
     }
 
