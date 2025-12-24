@@ -2,7 +2,7 @@ import Foundation
 
 struct AuthorizationDetail: Codable {
     let type: String
-    let credentialConfigurationId: [String]
+    let credentialConfigurationId: String
     let claims: [String: String]?
 
     enum CodingKeys: String, CodingKey {
@@ -11,7 +11,7 @@ struct AuthorizationDetail: Codable {
         case claims
     }
 
-    init(type: String, credentialConfigurationId: [String], claims: [String: String]? = nil) {
+    init(type: String, credentialConfigurationId: String, claims: [String: String]? = nil) {
         self.type = type
         self.credentialConfigurationId = credentialConfigurationId
         self.claims = claims
