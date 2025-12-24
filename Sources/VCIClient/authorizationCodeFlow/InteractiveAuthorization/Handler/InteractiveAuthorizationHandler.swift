@@ -29,18 +29,19 @@ final class InteractiveAuthorizationHandler {
                 )
             }
             
-            let initialIarRequest = buildInitialIarRequest(
+            let initialIarRequest = try buildInitialIarRequest(
                 clientMetadata: clientMetadata,
                 credentialConfigurationId: credentialConfigurationId,
                 pkce: pkceSession,
                 interactionTypesSupported: interactionTypesSupported
             )
             
-            let interactiveAuthorizationResponse = try await self.networkManager.sendRequest(
+            let interactiveAuthorizationResponse = try await self.networkManager.sendRequestV2(
                 url: endpoint,
                 method: .post,
                 headers: [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue],
-                bodyParams: initialIarRequest,
+//                bodyParams: initialIarRequest,
+                body: initialIarRequest,
                 timeoutMillis: timeoutInMillis
             )
             
@@ -72,17 +73,72 @@ final class InteractiveAuthorizationHandler {
         }
     }
     
+    private func buildInitialIarRequestV2(
+        clientMetadata: ClientMetadata,
+        credentialConfigurationId: String,
+        pkce: PKCESessionManager.PKCESession,
+        interactionTypesSupported: [String]
+    ) throws -> Data {
+        
+        let details = [
+            AuthorizationDetail(
+                type: "openid_credential",
+                credentialConfigurationId: credentialConfigurationId
+            )
+        ]
+        
+        let iarRequest = IARInitialRequestBody(
+            clientId: clientMetadata.clientId,
+            codeChallenge: pkce.codeChallenge,
+            redirectUri: clientMetadata.redirectUri,
+            authorizationDetails: details,
+            interactionTypesSupported: interactionTypesSupported
+        )
+        
+        do {
+            let jsonData = try JSONEncoder().encode(iarRequest)
+            return jsonData
+        } catch {
+            throw InteractiveAuthorizationException(message: "Error in constructing request")
+        }
+    }
+    
+    private func buildInitialIarRequestV3(
+        clientMetadata: ClientMetadata,
+        credentialConfigurationId: String,
+        pkce: PKCESessionManager.PKCESession,
+        interactionTypesSupported: [String]
+    ) throws -> Data {
+        
+        let details = [
+            AuthorizationDetail(
+                type: "openid_credential",
+                credentialConfigurationId: credentialConfigurationId
+            )
+        ]
+        
+        let iarRequest = IARInitialRequestBody(
+            clientId: clientMetadata.clientId,
+            codeChallenge: pkce.codeChallenge,
+            redirectUri: clientMetadata.redirectUri,
+            authorizationDetails: details,
+            interactionTypesSupported: interactionTypesSupported
+        )
+        
+        return try iarRequest.makeIARFormBody()
+    }
+    
     private func buildInitialIarRequest(
         clientMetadata: ClientMetadata,
         credentialConfigurationId: String,
         pkce: PKCESessionManager.PKCESession,
         interactionTypesSupported: [String]
-    ) -> [String: String] {
+    ) -> Data {
         
         let details = [
             AuthorizationDetail(
                 type: "openid_credential",
-                credentialConfigurationId: [credentialConfigurationId]
+                credentialConfigurationId: credentialConfigurationId
             )
         ]
         
@@ -92,7 +148,7 @@ final class InteractiveAuthorizationHandler {
             redirectUri: clientMetadata.redirectUri,
             authorizationDetails: details,
             interactionTypesSupported: interactionTypesSupported
-        ).toFormMap()
+        ).toFormMapV2()
     }
 
     private func extractTypeAndThrowIfError(_ responseBody: String) throws -> String {
