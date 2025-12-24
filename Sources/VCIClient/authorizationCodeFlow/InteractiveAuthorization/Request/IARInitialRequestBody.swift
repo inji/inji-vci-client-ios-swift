@@ -41,13 +41,13 @@ struct IARInitialRequestBody: Codable {
         let authDetailsJson: String = JsonUtils.serialize(authorizationDetails, empty: "[]")
 
         return [
-            "response_type": responseType,
-            "client_id": clientId,
-            "code_challenge": codeChallenge,
-            "code_challenge_method": codeChallengeMethod,
-            "redirect_uri": redirectUri,
-            "authorization_details": authDetailsJson,
-            "interaction_types_supported": interactionTypesSupported.joined(separator: ",")
+            "responseType": responseType,
+            "clientId": clientId,
+            "codeChallenge": codeChallenge,
+            "codeChallengeMethod": codeChallengeMethod,
+            "redirectUri": redirectUri,
+            "authorizationDetails": authDetailsJson,
+            "interactionTypeSupported": interactionTypesSupported.joined(separator: ",")
         ]
     }
 }
