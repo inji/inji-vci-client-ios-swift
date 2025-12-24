@@ -38,7 +38,7 @@ struct IARInitialRequestBody: Codable {
     }
 
     func toFormMap() -> [String: String] {
-        let authDetailsJson: String = JsonUtils.serialize(authorizationDetails, empty: "[]")
+        let authDetailsJson: String = JsonUtils.encode(authorizationDetails, empty: "[]")
 
         return [
             "responseType": responseType,

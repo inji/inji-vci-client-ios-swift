@@ -13,6 +13,17 @@ enum JsonUtils {
         }
     }
     
+    static func encode<T: Encodable>(_ data: T, empty: String = "{}") -> String {
+        do {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = .withoutEscapingSlashes
+            let jsonData = try encoder.encode(data)
+            return String(decoding: jsonData, as: UTF8.self)
+        } catch {
+            return empty
+        }
+    }
+    
     static func deserialize<T: Decodable>(_ json: String, as type: T.Type) throws -> T? {
         guard !json.isEmpty, let data = json.data(using: .utf8) else { return nil }
         let decoder = JSONDecoder()
