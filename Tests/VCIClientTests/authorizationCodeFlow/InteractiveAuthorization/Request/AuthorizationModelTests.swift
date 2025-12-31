@@ -7,9 +7,9 @@ final class AuthorizationModelTests: XCTestCase {
     // MARK: - AuthorizationDetail
 
     func test_AuthorizationDetail_encodeDecode_withClaims() throws {
-        let detail = AuthorizationDetail(
+        let detail = AuthorizationDetails(
             type: "openid_credential",
-            credentialConfigurationId: ["credConfig1", "credConfig2"],
+            credentialConfigurationId: "credConfig1",
             claims: ["given_name": "true", "family_name": "true"]
         )
 
@@ -23,17 +23,17 @@ final class AuthorizationModelTests: XCTestCase {
         XCTAssertEqual(claims?["family_name"], "true")
 
         // Round-trip
-        let decoded = try JSONDecoder().decode(AuthorizationDetail.self, from: data)
+        let decoded = try JSONDecoder().decode(AuthorizationDetails.self, from: data)
         XCTAssertEqual(decoded.type, "openid_credential")
-        XCTAssertEqual(decoded.credentialConfigurationId, ["credConfig1", "credConfig2"])
+        XCTAssertEqual(decoded.credentialConfigurationId, "credConfig1")
         XCTAssertEqual(decoded.claims?["given_name"], "true")
         XCTAssertEqual(decoded.claims?["family_name"], "true")
     }
 
     func test_AuthorizationDetail_encodeDecode_withoutClaims() throws {
-        let detail = AuthorizationDetail(
+        let detail = AuthorizationDetails(
             type: "openid_credential",
-            credentialConfigurationId: ["credConfig1"]
+            credentialConfigurationId: "credConfig1"
         )
 
         let data = try JSONEncoder().encode(detail)
@@ -42,9 +42,9 @@ final class AuthorizationModelTests: XCTestCase {
         XCTAssertEqual(json["credential_configuration_id"] as? [String], ["credConfig1"])
         XCTAssertNil(json["claims"], "claims should be omitted when nil")
 
-        let decoded = try JSONDecoder().decode(AuthorizationDetail.self, from: data)
+        let decoded = try JSONDecoder().decode(AuthorizationDetails.self, from: data)
         XCTAssertEqual(decoded.type, "openid_credential")
-        XCTAssertEqual(decoded.credentialConfigurationId, ["credConfig1"])
+        XCTAssertEqual(decoded.credentialConfigurationId, "credConfig1")
         XCTAssertNil(decoded.claims)
     }
 
@@ -52,7 +52,7 @@ final class AuthorizationModelTests: XCTestCase {
 
     func test_IARInitialRequestBody_defaults_and_toFormMap() throws {
         let details = [
-            AuthorizationDetail(type: "openid_credential", credentialConfigurationId: ["cfg1"])
+            AuthorizationDetails(type: "openid_credential", credentialConfigurationId: "cfg1")
         ]
         let body = IARInitialRequestBody(
             clientId: "client-123",

@@ -129,7 +129,7 @@ final class PresentationInteractionResponse: InteractionResponse, Decodable {
     }
     
     private func validateResponseMode(_ vpRequest: [String: Any]) throws {
-        guard let responseMode = openid4vpRequest["response_mode"] as? String else {
+        guard let responseMode = vpRequest["response_mode"] as? String else {
             throw IllegalArgumentException("Missing or invalid 'response_mode'")
         }
         guard responseMode == "iar-post" || responseMode == "iar-post.jwt" else {

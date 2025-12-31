@@ -7,7 +7,7 @@ class Util {
         if let traceId = traceabilityId {
             self.traceabilityId = traceId
         }
-        return "INJI-VCI-Client : \(className) | traceID \(self.traceabilityId ?? "")"
+        return "INJI-VCI-Client : \(className) | traceID \(Self.getTraceabilityId())"
     }
     
     static func getTraceabilityId() -> String {

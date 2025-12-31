@@ -1,7 +1,7 @@
 import OpenID4VP
 import OpenID4VPBridge
 
-protocol OpenID4VPInteracting {
+internal protocol OpenID4VPInteracting {
     func authenticateVerifier(
         authRequest: [String: Any],
         trustedVerifiers: [Verifier],

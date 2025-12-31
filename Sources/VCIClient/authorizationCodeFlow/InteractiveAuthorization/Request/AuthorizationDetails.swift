@@ -1,6 +1,6 @@
 import Foundation
 
-struct AuthorizationDetail: Codable {
+struct AuthorizationDetails: Codable {
     let type: String
     let credentialConfigurationId: String
     let claims: [String: String]?

@@ -6,7 +6,7 @@ struct IARInitialRequestBody: Codable {
     let codeChallenge: String
     let codeChallengeMethod: String
     let redirectUri: String
-    let authorizationDetails: [AuthorizationDetail]
+    let authorizationDetails: [AuthorizationDetails]
     let interactionTypesSupported: [String]
     
     //    enum CodingKeys: String, CodingKey {
@@ -33,7 +33,7 @@ struct IARInitialRequestBody: Codable {
         clientId: String,
         codeChallenge: String,
         redirectUri: String,
-        authorizationDetails: [AuthorizationDetail],
+        authorizationDetails: [AuthorizationDetails],
         interactionTypesSupported: [String],
         responseType: String = "code",
         codeChallengeMethod: String = "S256"
@@ -97,7 +97,7 @@ struct IARInitialRequestBody: Codable {
     }
     
     func flattenAuthorizationDetails(
-        _ details: [AuthorizationDetail]
+        _ details: [AuthorizationDetails]
     ) -> [String: String] {
 
         var params: [String: String] = [:]

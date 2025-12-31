@@ -129,11 +129,11 @@ public class VCIClient {
         getTokenResponse: @escaping TokenResponseCallback,
         authorizationMethods: [AuthorizationMethod],
         getProofJwt: @escaping ProofJwtCallback,
-        downloadTimeoutInMillis: Int64 = Constants.DEFAULT_NETWORK_TIMEOUT_IN_MILLIS
+        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
     ) async throws -> CredentialResponse? {
 
         do {
-            return try await TrustedIssuerFlowHandler().downloadCredentials(
+            return try await self.trustedIssuerFlowHandler.downloadCredentials(
                 credentialIssuer: credentialIssuer,
                 credentialConfigurationId: credentialConfigurationId,
                 clientMetadata: clientMetadata,
@@ -163,11 +163,11 @@ public class VCIClient {
         getTokenResponse: @escaping TokenResponseCallback,
         getProofJwt: @escaping ProofJwtCallback,
         onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
-        downloadTimeoutInMillis: Int64 = Constants.DEFAULT_NETWORK_TIMEOUT_IN_MILLIS
+        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
     ) async throws -> CredentialResponse? {
 
         do {
-            return try await CredentialOfferFlowHandler().downloadCredentials(
+            return try await self.credentialOfferFlowHandler.downloadCredentials(
                 credentialOffer: credentialOffer,
                 clientMetadata: clientMetadata,
                 getTxCode: getTxCode,

@@ -81,7 +81,7 @@ final class InteractiveAuthorizationHandler {
     ) throws -> Data {
         
         let details = [
-            AuthorizationDetail(
+            AuthorizationDetails(
                 type: "openid_credential",
                 credentialConfigurationId: credentialConfigurationId
             )
@@ -111,7 +111,7 @@ final class InteractiveAuthorizationHandler {
     ) throws -> Data {
         
         let details = [
-            AuthorizationDetail(
+            AuthorizationDetails(
                 type: "openid_credential",
                 credentialConfigurationId: credentialConfigurationId
             )
@@ -136,7 +136,7 @@ final class InteractiveAuthorizationHandler {
     ) -> [String: String] {
         
         let details = [
-            AuthorizationDetail(
+            AuthorizationDetails(
                 type: "openid_credential",
                 credentialConfigurationId: credentialConfigurationId
             )
@@ -195,7 +195,8 @@ final class InteractiveAuthorizationHandler {
         
         let authorizationService = PresentationDuringIssuanceAuthorizationMethodService(
             selectCredentialsForPresentation: selectCredentialsForPresentation,
-            signVerifiablePresentation: signVerifiablePresentation
+            signVerifiablePresentation: signVerifiablePresentation,
+            networkManager: self.networkManager
         )
         
         return try await authorizationService.authorizeUser(
