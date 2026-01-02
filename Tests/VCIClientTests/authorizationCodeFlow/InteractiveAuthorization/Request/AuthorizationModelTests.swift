@@ -17,7 +17,7 @@ final class AuthorizationModelTests: XCTestCase {
         // Ensure keys are mapped as expected
         let json = try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
         XCTAssertEqual(json["type"] as? String, "openid_credential")
-        XCTAssertEqual(json["credential_configuration_id"] as? [String], ["credConfig1", "credConfig2"])
+        XCTAssertEqual(json["credential_configuration_id"] as? String, "credConfig1")
         let claims = json["claims"] as? [String: String]
         XCTAssertEqual(claims?["given_name"], "true")
         XCTAssertEqual(claims?["family_name"], "true")
@@ -39,7 +39,7 @@ final class AuthorizationModelTests: XCTestCase {
         let data = try JSONEncoder().encode(detail)
         let json = try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
         XCTAssertEqual(json["type"] as? String, "openid_credential")
-        XCTAssertEqual(json["credential_configuration_id"] as? [String], ["credConfig1"])
+        XCTAssertEqual(json["credential_configuration_id"] as? String, "credConfig1")
         XCTAssertNil(json["claims"], "claims should be omitted when nil")
 
         let decoded = try JSONDecoder().decode(AuthorizationDetails.self, from: data)
@@ -80,7 +80,7 @@ final class AuthorizationModelTests: XCTestCase {
         let authDetailsJson = try XCTUnwrap(json["authorization_details"] as? [[String: Any]])
         XCTAssertEqual(authDetailsJson.count, 1)
         XCTAssertEqual(authDetailsJson.first?["type"] as? String, "openid_credential")
-        XCTAssertEqual(authDetailsJson.first?["credential_configuration_id"] as? [String], ["cfg1"])
+        XCTAssertEqual(authDetailsJson.first?["credential_configuration_id"] as? String, "cfg1")
 
         // Verify toFormMap output
         let form = body.toFormMap()
@@ -99,7 +99,7 @@ final class AuthorizationModelTests: XCTestCase {
         let authDetailsParsed = try JSONSerialization.jsonObject(with: authDetailsData) as? [[String: Any]]
         XCTAssertEqual(authDetailsParsed?.count, 1)
         XCTAssertEqual(authDetailsParsed?.first?["type"] as? String, "openid_credential")
-        XCTAssertEqual(authDetailsParsed?.first?["credential_configuration_id"] as? [String], ["cfg1"])
+        XCTAssertEqual(authDetailsParsed?.first?["credential_configuration_id"] as? String, "cfg1")
     }
 
     // MARK: - AuthorizationResponse (Codable)

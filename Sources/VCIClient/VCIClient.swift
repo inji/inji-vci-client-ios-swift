@@ -252,29 +252,34 @@ public class VCIClient {
     // Wrap AuthorizeUserCallback into AuthorizationMethod.redirectToWeb
     private func wrapAuthorizeUser(_ authorizeUser: @escaping AuthorizeUserCallback) -> [AuthorizationMethod] {
         let method = AuthorizationMethod.redirectToWeb { authorizationUrl in
-            // The redirectToWeb callback is synchronous in signature; our AuthorizeUserCallback is async.
-            // We can block here by using Task and awaiting the async callback.
-            // However, AuthorizationMethod.OpenWebPageCallback is defined as (_ url: String) -> [String: Any].
-            // If your AuthorizationCodeFlowService expects to use this differently, adjust accordingly.
-            // For the V2 flow, AuthorizationCodeFlowService.requestCredentials takes [AuthorizationMethod] and internally
-            // will invoke the appropriate callback(s). Here we just encapsulate the provided authorizeUser.
-            // We return a dictionary payload; if not used, return an empty dictionary.
-            // Note: If your implementation needs to return the auth code synchronously, consider refactoring the callback type.
-            // For now, we store the result in a simple dictionary under "code" after executing the async callback synchronously.
-            var result: [String: Any] = [:]
-            let semaphore = DispatchSemaphore(value: 0)
-            Task {
-                do {
-                    let code = try await authorizeUser(authorizationUrl)
-                    result["code"] = code
-                } catch {
-                    result["error"] = error.localizedDescription
-                }
-                semaphore.signal()
+            // Bridge the async authorizeUser callback to a synchronous return without mutating captured state.
+            do {
+                let code: String = try {
+                    // Use a throwing continuation to synchronously wait for the async authorizeUser.
+                    var value: String!
+                    var thrownError: Error?
+                    let group = DispatchGroup()
+                    group.enter()
+                    Task {
+                        do {
+                            let c = try await authorizeUser(authorizationUrl)
+                            value = c
+                        } catch {
+                            thrownError = error
+                        }
+                        group.leave()
+                    }
+                    // Block the current thread until the Task completes.
+                    group.wait()
+                    if let thrownError = thrownError { throw thrownError }
+                    return value
+                }()
+                return ["code": code]
+            } catch {
+                return ["error": error.localizedDescription]
             }
-            semaphore.wait()
-            return result
         }
         return [method]
     }
 }
+

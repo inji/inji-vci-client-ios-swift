@@ -9,25 +9,25 @@ struct IARInitialRequestBody: Codable {
     let authorizationDetails: [AuthorizationDetails]
     let interactionTypesSupported: [String]
     
-    //    enum CodingKeys: String, CodingKey {
-    //        case responseType = "response_type"
-    //        case clientId = "client_id"
-    //        case codeChallenge = "code_challenge"
-    //        case codeChallengeMethod = "code_challenge_method"
-    //        case redirectUri = "redirect_uri"
-    //        case authorizationDetails = "authorization_details"
-    //        case interactionTypesSupported = "interaction_types_supported"
-    //    }
-    
     enum CodingKeys: String, CodingKey {
-        case responseType
-        case clientId
-        case codeChallenge
-        case codeChallengeMethod
-        case redirectUri
-        case authorizationDetails
-        case interactionTypesSupported
+        case responseType = "response_type"
+        case clientId = "client_id"
+        case codeChallenge = "code_challenge"
+        case codeChallengeMethod = "code_challenge_method"
+        case redirectUri = "redirect_uri"
+        case authorizationDetails = "authorization_details"
+        case interactionTypesSupported = "interaction_types_supported"
     }
+    
+    //    enum CodingKeys: String, CodingKey {
+    //        case responseType
+    //        case clientId
+    //        case codeChallenge
+    //        case codeChallengeMethod
+    //        case redirectUri
+    //        case authorizationDetails
+    //        case interactionTypesSupported
+    //    }
     
     init(
         clientId: String,
@@ -65,13 +65,13 @@ struct IARInitialRequestBody: Codable {
         let authDetailsJson: String = JsonUtils.encode(authorizationDetails, empty: "[]")
         
         return [
-            "responseType": responseType,
-            "clientId": clientId,
-            "codeChallenge": codeChallenge,
-            "codeChallengeMethod": codeChallengeMethod,
-            "redirectUri": redirectUri,
-            "authorizationDetails": authDetailsJson,
-            "interactionTypeSupported": interactionTypesSupported.joined(separator: ",")
+            "response_type": responseType,
+            "client_id": clientId,
+            "code_challenge": codeChallenge,
+            "code_challenge_method": codeChallengeMethod,
+            "redirect_uri": redirectUri,
+            "authorization_details": authDetailsJson,
+            "interaction_types_supported": interactionTypesSupported.joined(separator: ",")
         ]
     }
     
@@ -85,34 +85,34 @@ struct IARInitialRequestBody: Codable {
             "interaction_types_supported":
                 interactionTypesSupported.joined(separator: ",")
         ]
-
+        
         params.merge(
             flattenAuthorizationDetails(authorizationDetails),
             uniquingKeysWith: { $1 }
         )
-
+        
         let body = FormURLEncoder.encode(params)
-
+        
         return body
     }
     
     func flattenAuthorizationDetails(
         _ details: [AuthorizationDetails]
     ) -> [String: String] {
-
+        
         var params: [String: String] = [:]
-
+        
         for (index, detail) in details.enumerated() {
-
+            
             params["authorization_details[\(index)].type"] = detail.type
             params["authorization_details[\(index)].credential_configuration_id"] = detail.credentialConfigurationId
-
+            
             
         }
-
+        
         return params
     }
-
+    
     
     func makeIARFormBody() throws -> Data {
         let request: IARInitialRequestBody = self
@@ -171,21 +171,21 @@ extension String {
 }
 
 struct FormURLEncoder {
-
+    
     static func encode(_ parameters: [String: String]) -> Data {
         let formString = parameters
             .map { key, value in
                 "\(encode(key))=\(encode(value))"
             }
             .joined(separator: "&")
-
+        
         return Data(formString.utf8)
     }
-
+    
     private static func encode(_ string: String) -> String {
         var allowed = CharacterSet.alphanumerics
         allowed.insert(charactersIn: "-._*")
-
+        
         return string
             .addingPercentEncoding(withAllowedCharacters: allowed)?
             .replacingOccurrences(of: " ", with: "+")
