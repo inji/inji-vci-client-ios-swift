@@ -115,8 +115,8 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
                 url: iar,
                 method: .post,
                 bodyParams: [
-                    "openid4vpPresentation": vpResponseString,
-                    "authSession": authSession
+                    "openid4vp_response": vpResponseString,
+                    "auth_session": authSession
                 ],
                 timeoutMillis: networkTimeout
             )
