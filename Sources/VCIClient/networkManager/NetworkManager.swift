@@ -28,11 +28,18 @@ public class NetworkManager {
         headers?.forEach { request.setValue($0.value, forHTTPHeaderField: $0.key) }
 
         if method == .post, let params = bodyParams {
-            let bodyString = params
-                .map { "\($0.key)=\($0.value)" }
-                .joined(separator: "&")
             
-            request.httpBody = bodyString.data(using: .utf8)
+            
+            if((headers?[Header.contentType.rawValue] == ContentTypes.applicationFormUrlEncoded.rawValue)) {
+                let bodyString = params
+                    .map { "\($0.key.formURLEncoded())=\($0.value.formURLEncoded())" }
+                    .joined(separator: "&")
+                
+                request.httpBody = bodyString.data(using: .utf8)
+            } else {
+                let jsonData = try JSONEncoder().encode(bodyParams)
+                request.httpBody = jsonData
+            }
         }
 
         return try await sendRequest(request: request)
