@@ -114,6 +114,7 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
             response = try await networkManager.sendRequest(
                 url: iar,
                 method: .post,
+                headers: ["Content-Type": ContentTypes.applicationFormUrlEncoded.rawValue],
                 bodyParams: [
                     "openid4vp_response": vpResponseString,
                     "auth_session": authSession
