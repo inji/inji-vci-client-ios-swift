@@ -203,7 +203,7 @@ final class InteractiveAuthorizationHandler {
             requestData: PresentationDuringIssuanceRequestData(
                 ovpRequest: parsedPresentationInteractionResponse.openid4vpRequest,
                 authSession: parsedPresentationInteractionResponse.authSession ?? "",
-                iar: endpoint,
+                iar: endpoint
             )
         )
     }
