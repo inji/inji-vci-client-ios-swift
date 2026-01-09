@@ -74,7 +74,7 @@ final class AuthorizationModelTests: XCTestCase {
         XCTAssertEqual(json["code_challenge"] as? String, "abc123")
         XCTAssertEqual(json["code_challenge_method"] as? String, "S256")
         XCTAssertEqual(json["redirect_uri"] as? String, "app://callback")
-        XCTAssertEqual(json["interaction_types_supported"] as? [String], ["openid4vp_presentation", "something_else"])
+        XCTAssertEqual(json["interaction_types_supported"] as? String, "openid4vp_presentation,something_else")
 
         // authorization_details should be an array of objects
         let authDetailsJson = try XCTUnwrap(json["authorization_details"] as? [[String: Any]])

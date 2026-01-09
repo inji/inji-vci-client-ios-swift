@@ -86,11 +86,7 @@ class AuthorizationCodeFlowService {
             
             return response
             
-        } catch {
-            if let vciError = error as? VCIClientException {
-                throw vciError
-            }
-            
+        } catch {            
             throw DownloadFailedException("Download failed via authorization code flow: \(error.localizedDescription)")
         }
     }
