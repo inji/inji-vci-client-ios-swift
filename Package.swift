@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "VCIClient",
     platforms: [
-        .iOS(.v14),
+        .iOS(.v13),
         .macOS(.v12),
     ],
     products: [

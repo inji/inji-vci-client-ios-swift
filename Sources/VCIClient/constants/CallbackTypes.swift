@@ -19,4 +19,4 @@ public typealias SignVerifiablePresentationCallback = (_ payload: [FormatType: U
 
 // Redirect To Web related Callbacks
 
-public typealias OpenWebPageCallback = (_ url: String) -> [String: Any]
+public typealias OpenWebPageCallback = (_ url: String) async throws -> [String: Any]

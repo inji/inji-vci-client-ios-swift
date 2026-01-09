@@ -251,35 +251,11 @@ public class VCIClient {
     
     // Wrap AuthorizeUserCallback into AuthorizationMethod.redirectToWeb
     private func wrapAuthorizeUser(_ authorizeUser: @escaping AuthorizeUserCallback) -> [AuthorizationMethod] {
-        let method = AuthorizationMethod.redirectToWeb { authorizationUrl in
-            // Bridge the async authorizeUser callback to a synchronous return without mutating captured state.
-            do {
-                let code: String = try {
-                    // Use a throwing continuation to synchronously wait for the async authorizeUser.
-                    var value: String!
-                    var thrownError: Error?
-                    let group = DispatchGroup()
-                    group.enter()
-                    Task {
-                        do {
-                            let c = try await authorizeUser(authorizationUrl)
-                            value = c
-                        } catch {
-                            thrownError = error
-                        }
-                        group.leave()
-                    }
-                    // Block the current thread until the Task completes.
-                    group.wait()
-                    if let thrownError = thrownError { throw thrownError }
-                    return value
-                }()
-                return ["code": code]
-            } catch {
-                return ["error": error.localizedDescription]
-            }
-        }
-        return [method]
+        let redirectToWebMethod = AuthorizationMethod.redirectToWeb(openWebPage: { url in
+            let authCode = try await authorizeUser(url)
+            return ["code": authCode]
+        })
+        return [redirectToWebMethod]
     }
 }
 

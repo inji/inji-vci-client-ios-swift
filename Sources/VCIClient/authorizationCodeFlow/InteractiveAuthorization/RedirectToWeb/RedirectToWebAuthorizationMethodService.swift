@@ -31,7 +31,7 @@ final class RedirectToWebAuthorizationMethodService: AuthorizationMethodService 
             nonce: request.pkceSession.nonce
         )
 
-        let authorizationResponse = openWebPage(authUrl)
+        let authorizationResponse = try await openWebPage(authUrl)
 
         if authorizationResponse["error"] != nil {
             return AuthorizationResponse(
