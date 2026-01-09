@@ -161,7 +161,7 @@ final class AuthorizationModelTests: XCTestCase {
 
     func test_AuthorizationRequestData_conformance_with_PresentationDuringIssuanceRequestData() throws {
         // Since AuthorizationRequestData is an empty protocol, verify conformance via a concrete type
-        let payload: [String: Any] = ["response_type": "vp_token", "response_mode": "iar_post"]
+        let payload: [String: Any] = ["response_type": "vp_token", "response_mode": "iar-post"]
         let req = PresentationDuringIssuanceRequestData(
             ovpRequest: payload,
             authSession: "auth-session-123",
@@ -176,6 +176,6 @@ final class AuthorizationModelTests: XCTestCase {
         XCTAssertEqual(same.authSession, "auth-session-123")
         XCTAssertEqual(same.iar, "https://issuer.example.com/iar")
         XCTAssertEqual(same.ovpRequest["response_type"] as? String, "vp_token")
-        XCTAssertEqual(same.ovpRequest["response_mode"] as? String, "iar_post")
+        XCTAssertEqual(same.ovpRequest["response_mode"] as? String, "iar-post")
     }
 }

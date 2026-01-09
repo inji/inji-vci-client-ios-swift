@@ -216,7 +216,7 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         }
     }
     
-    func ignore_test_full_success_flow_returns_AuthorizationResponse_success() async throws {
+    func test_full_success_flow_returns_AuthorizationResponse_success() async throws {
         let fake = FakeOpenID4VP()
         let network = MockNetworkManager()
         // Prepare a successful AuthorizationResponse body

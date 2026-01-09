@@ -32,7 +32,7 @@ final class InteractiveAuthorizationHandlerTests: XCTestCase {
             "auth_session": "auth-session-1",
             "openid4vp_request": [
                 "response_type": "vp_token",
-                "response_mode": "iar_post"
+                "response_mode": "iar-post"
             ]
         ]
         let initialBody = try JSONSerialization.data(withJSONObject: presentationJSON)

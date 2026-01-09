@@ -17,7 +17,7 @@ final class RedirectToWebAuthorizationMethodService: AuthorizationMethodService 
 
         guard let request = requestData as? ImplicitAuthorizationRequestData else {
             throw IllegalArgumentException(
-                "RedirectToWebAuthorizationHandler expects ImplicitAuthorizationRequestData but received \(Swift.type(of: requestData))"
+                "RedirectToWebAuthorizationMethodService expects ImplicitAuthorizationRequestData but received \(Swift.type(of: requestData))"
             )
         }
 
