@@ -8,11 +8,12 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
     private let signVerifiablePresentation: SignVerifiablePresentationCallback
     private let openId4vp: OpenID4VPInteracting
     private let networkManager: NetworkManager
-    private let resolvePublicKeyType: (_ uri: String) async throws -> String
+    private let signatureSuite: String?
     
     init(
         selectCredentialsForPresentation: @escaping SelectCredentialsForPresentationCallback,
         signVerifiablePresentation: @escaping SignVerifiablePresentationCallback,
+        signatureSuite: String? = nil,
         networkManager: NetworkManager = NetworkManager.shared,
         openId4vp: OpenID4VPInteracting? = nil,
         resolvePublicKeyType: ((_ uri: String) async throws -> String)? = nil
@@ -21,15 +22,7 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
         self.signVerifiablePresentation = signVerifiablePresentation
         self.openId4vp = openId4vp ?? OpenID4VPInteraction(traceabilityId: Util.getTraceabilityId())
         self.networkManager = networkManager
-        self.resolvePublicKeyType = resolvePublicKeyType ?? { uri in
-            let publicKey = try await DidPublicKeyResolver().resolve(uri: uri)
-            switch publicKey {
-//            case .ed25519(_):
-//                return "Ed25519Signature2020"
-            default:
-                return "JsonWebSignature2020"
-            }
-        }
+        self.signatureSuite = signatureSuite
     }
     
     func type() -> String {
@@ -77,11 +70,21 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
         }
         
         let holderId: String? = extractHolderId(credentials: selectedCredentials)
-        let signatureSuite: String? = try await resolveSignatureSuite(for: holderId)
+        
+        let flattenedFormatEntries: [(FormatType, [OpenID4VPAnyCodable])] = selectedCredentials.values.flatMap { formatMap in
+            return formatMap.map { ($0.key, $0.value) }
+        }
+        let hasLdpVc = flattenedFormatEntries.filter { (formatType, _) in
+            return formatType == .ldp_vc
+        }.count != 0
+        if hasLdpVc && self.signatureSuite == nil {
+            throw InteractiveAuthorizationException(message: "Missing signature suite for LDP VC")
+        }
+        
         let unsignedVpTokens: [FormatType: UnsignedVPToken] = try await openId4vp.constructUnsignedVPToken(
             verifiableCredentials: selectedCredentials,
             holderId: holderId,
-            signatureSuite: signatureSuite
+            signatureSuite: self.signatureSuite
         )
         let signedVpTokens: [FormatType: VPTokenSigningResult] = try await self.signVerifiablePresentation(unsignedVpTokens)
         
@@ -137,12 +140,5 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
         }
         
         return authorizationResponse
-    }
-    
-    private func resolveSignatureSuite(for holderId: String?) async throws -> String? {
-        if let holderId = holderId {
-            return try await resolvePublicKeyType(holderId)
-        }
-        return nil
     }
 }

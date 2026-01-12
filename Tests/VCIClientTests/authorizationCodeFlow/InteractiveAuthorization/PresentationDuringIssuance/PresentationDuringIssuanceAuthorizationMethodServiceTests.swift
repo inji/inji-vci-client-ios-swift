@@ -148,9 +148,6 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
     private func makeService(
         openId4vp: OpenID4VPInteracting,
         network: MockNetworkManager = MockNetworkManager(),
-        resolvePublicKeyType: @escaping (_ uri: String) async throws -> String = { _ in
-            return "Ed25519Signature2020"
-        },
         selectCredentials: SelectCredentialsForPresentationCallback? = nil,
         signVP: SignVerifiablePresentationCallback? = nil
     ) -> PresentationDuringIssuanceAuthorizationMethodService {
@@ -164,8 +161,7 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
             selectCredentialsForPresentation: select,
             signVerifiablePresentation: sign,
             networkManager: network,
-            openId4vp: openId4vp,
-            resolvePublicKeyType: resolvePublicKeyType
+            openId4vp: openId4vp
         )
     }
     
@@ -320,8 +316,7 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         XCTAssertEqual(response.authSession, "auth-session-1")
     }
     
-    func test_publicKey_resolution_decides_signatureSuite_branch() async throws {
-        var resolvedEdPublicKey = false
+    func test_error_when_signature_suite_not_provided_for_ldp_vc_selected_credentials() async throws {
         let network = MockNetworkManager()
         network.responseBody = """
         {
@@ -330,16 +325,13 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
             "auth_session": "auth-session-1"
         }
         """
-        let resolver: (String) async throws -> String = { _ in
-            resolvedEdPublicKey = true
-            return "Ed25519Signature2020"
-        }
         
-        let presentationDuringIssuanceAuthorizationMethodService = makeService(openId4vp: FakeOpenID4VP(), network: network, resolvePublicKeyType: resolver)
+        let presentationDuringIssuanceAuthorizationMethodService = makeService(openId4vp: FakeOpenID4VP(), network: network)
         _ = try await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: makeRequestData())
         
-        XCTAssertTrue(resolvedEdPublicKey, "Expected resolvePublicKey to be invoked and choose Ed25519Signature2020 path")
-        
+        let errorSent = network.capturedParams
+        XCTAssertTrue(((errorSent["openid4vp_response"]?.contains("\"error_description\":\"constructed error: VCIClient.InteractiveAuthorizationException\"")) != nil))
+        XCTAssertEqual(errorSent["auth_session"], "auth-session-1")
     }
     
     func test_handle_network_timeout_during_vp_submission() async throws {
