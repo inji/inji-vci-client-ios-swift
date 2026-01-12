@@ -204,7 +204,8 @@ final class InteractiveAuthorizationHandler {
                 ovpRequest: parsedPresentationInteractionResponse.openid4vpRequest,
                 authSession: parsedPresentationInteractionResponse.authSession ?? "",
                 iar: endpoint
-            )
+            ),
+            networkTimeout: timeoutInMillis
         )
     }
 }
