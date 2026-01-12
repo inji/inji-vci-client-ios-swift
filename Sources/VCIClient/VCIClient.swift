@@ -59,36 +59,24 @@ public class VCIClient {
                 networkSession: networkSession,
                 downloadTimeoutInMillis: downloadTimeoutInMillis
             )
-        } catch let e as VCIClientException {
-            throw e
         } catch {
-            throw VCIClientException(code: "VCI-010", message: "Unknown exception occurred")
+            throw mapToVciClientException(error)
         }
     }
 
     public func getIssuerMetadata(credentialIssuer: String) async throws -> [String: Any] {
         do {
             return try await issuerMetadataService.fetchAndParseIssuerMetadata(from: credentialIssuer)
-        } catch let e as VCIClientException {
-            throw e
         } catch {
-            throw VCIClientException(
-                code: "VCI-010",
-                message: "Unknown exception occurred"
-            )
+            throw mapToVciClientException(error)
         }
     }
 
     public func getCredentialConfigurationsSupported(credentialIssuer: String) async throws -> [String: Any] {
         do {
             return try await issuerMetadataService.fetchCredentialConfigurationsSupported(from: credentialIssuer)
-        } catch let e as VCIClientException {
-            throw e
         } catch {
-            throw VCIClientException(
-                code: "VCI-010",
-                message: "Unknown exception occurred"
-            )
+            throw mapToVciClientException(error)
         }
     }
 
@@ -112,13 +100,8 @@ public class VCIClient {
                 downloadTimeoutInMillis: downloadTimeoutInMillis,
                 networkSession: networkSession
             )
-        } catch let e as VCIClientException {
-            throw e
         } catch {
-            throw VCIClientException(
-                code: "VCI-010",
-                message: "Unknown exception occurred"
-            )
+            throw mapToVciClientException(error)
         }
     }
     
@@ -142,12 +125,9 @@ public class VCIClient {
                 getProofJwt: getProofJwt,
                 downloadTimeoutInMillis: downloadTimeoutInMillis
             )
-        } catch let error as VCIClientException {
-            print("Downloading credential failed due to \(error.message)")
-            throw error
         } catch {
             print("Downloading credential failed due to \(error.localizedDescription)")
-            throw VCIClientException(
+            throw error as? VCIClientException ?? VCIClientException(
                 code: "VCI-010",
                 message: "Unknown Exception - \(error.localizedDescription)"
             )
@@ -178,12 +158,9 @@ public class VCIClient {
                 networkSession: networkSession,
                 downloadTimeoutInMillis: downloadTimeoutInMillis
             )
-        } catch let error as VCIClientException {
-            print("Downloading credential failed due to \(error.message)")
-            throw error
         } catch {
             print("Downloading credential failed due to \(error.localizedDescription)")
-            throw VCIClientException(
+            throw error as? VCIClientException ?? VCIClientException(
                 code: "VCI-010",
                 message: "Unknown Exception - \(error.localizedDescription)"
             )

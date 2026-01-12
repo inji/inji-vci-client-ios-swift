@@ -24,3 +24,8 @@ class Util {
         return result
     }
 }
+
+func mapToVciClientException(_ error: Error) -> VCIClientException {
+    error as? VCIClientException
+        ?? VCIClientException(code: "VCI-010", message: "Unknown exception occurred")
+}
