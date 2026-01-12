@@ -41,7 +41,7 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
                 let vpRequest = try await validatePresentationRequest(request: presentationRequestData.ovpRequest)
                 vpResponse = try await handlePresentation(vpRequest: vpRequest)
             } catch {
-                print("Error during presentation handling: \(error.localizedDescription)")
+                Util.logWarning(message: "Error during presentation handling: \(error.localizedDescription)", className: "PresentationDuringIssuanceAuthorizationMethodService")
                 vpResponse = openId4vp.constructErrorInfo(exception: error)
             }
             
