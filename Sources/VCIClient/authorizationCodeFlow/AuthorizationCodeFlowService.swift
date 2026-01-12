@@ -230,7 +230,7 @@ class AuthorizationCodeFlowService {
                 ).authorizeUser(requestData: requestData)
             } catch {
                 throw DownloadFailedException(
-                    "Implicit authorization failed at authorization endpoint \(authorizationEndpoint): \(error.localizedDescription)"
+                    "Authorization failed at authorization endpoint \(authorizationEndpoint): \(error.localizedDescription)"
                 )
             }
             
