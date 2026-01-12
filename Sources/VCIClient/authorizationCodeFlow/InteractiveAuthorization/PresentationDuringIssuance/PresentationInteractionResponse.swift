@@ -141,13 +141,7 @@ final class PresentationInteractionResponse: InteractionResponse, Decodable {
         let parts = jwt.split(separator: ".")
         guard parts.count == 3 else { throw ValidationError.malformedJwt }
 
-        // Base64 decode
-        let payloadString = String(parts[1])
-            .replacingOccurrences(of: "-", with: "+")
-            .replacingOccurrences(of: "_", with: "/")
-//            .padding(toLength: ((payloadString.count + 3) / 4) * 4, withPad: "=", startingAt: 0)
-
-        guard let data = Data(base64Encoded: payloadString) else {
+        guard let data = try? Data(base64URLEncodedString: String(parts[1])) else {
             throw ValidationError.malformedJwt
         }
 
