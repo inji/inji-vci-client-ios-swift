@@ -41,7 +41,6 @@ final class InteractiveAuthorizationHandler {
                 method: .post,
                 headers: [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue],
                 bodyParams: initialIarRequest,
-//                body: initialIarRequest,
                 timeoutMillis: timeoutInMillis
             )
             
@@ -71,61 +70,6 @@ final class InteractiveAuthorizationHandler {
                 message: "Interactive authorization failed: \(error.localizedDescription)"
             )
         }
-    }
-    
-    private func buildInitialIarRequestV2(
-        clientMetadata: ClientMetadata,
-        credentialConfigurationId: String,
-        pkce: PKCESessionManager.PKCESession,
-        interactionTypesSupported: [String]
-    ) throws -> Data {
-        
-        let details = [
-            AuthorizationDetails(
-                type: "openid_credential",
-                credentialConfigurationId: credentialConfigurationId
-            )
-        ]
-        
-        let iarRequest = IARInitialRequestBody(
-            clientId: clientMetadata.clientId,
-            codeChallenge: pkce.codeChallenge,
-            redirectUri: clientMetadata.redirectUri,
-            authorizationDetails: details,
-            interactionTypesSupported: interactionTypesSupported
-        )
-        
-        do {
-            let jsonData = try JSONEncoder().encode(iarRequest)
-            return jsonData
-        } catch {
-            throw InteractiveAuthorizationException(message: "Error in constructing request")
-        }
-    }
-    
-    private func buildInitialIarRequestV3(
-        clientMetadata: ClientMetadata,
-        credentialConfigurationId: String,
-        pkce: PKCESessionManager.PKCESession,
-        interactionTypesSupported: [String]
-    ) throws -> Data {
-        
-        let details = [
-            AuthorizationDetails(
-                type: "openid_credential",
-                credentialConfigurationId: credentialConfigurationId
-            )
-        ]
-        
-        let iarRequest = IARInitialRequestBody(
-            clientId: clientMetadata.clientId,
-            codeChallenge: pkce.codeChallenge,
-            redirectUri: clientMetadata.redirectUri,
-            authorizationDetails: details,
-            interactionTypesSupported: interactionTypesSupported
-        )
-        
-        return try iarRequest.makeIARFormBody()
     }
     
     private func buildInitialIarRequest(
