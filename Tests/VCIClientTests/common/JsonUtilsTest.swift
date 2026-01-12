@@ -8,16 +8,6 @@ final class JsonUtilsTests: XCTestCase {
         let lastName: String
     }
 
-
-    func testSerializeEncodesToJSONString() {
-        let user = TestUser(firstName: "John", lastName: "Doe")
-        let json = JsonUtils.serialize(user)
-
-        XCTAssertTrue(json.contains("\"first_name\":\"John\""), "Should use snake_case keys")
-        XCTAssertTrue(json.contains("\"last_name\":\"Doe\""))
-    }
-
-
     func testDeserializeParsesValidJSONString() async throws {
         let json = """
         {

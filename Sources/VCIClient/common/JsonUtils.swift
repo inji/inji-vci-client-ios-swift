@@ -1,18 +1,6 @@
 import Foundation
 
-enum JsonUtils {
-    static func serialize<T: Encodable>(_ object: T, empty: String = "{}") -> String {
-        let encoder = JSONEncoder()
-        encoder.keyEncodingStrategy = .convertToSnakeCase
-        encoder.outputFormatting = [.withoutEscapingSlashes]
-        do {
-            let data = try encoder.encode(object)
-            return String(data: data, encoding: .utf8) ?? empty
-        } catch {
-            return empty
-        }
-    }
-    
+enum JsonUtils {    
     static func encode<T: Encodable>(_ data: T, empty: String = "{}") -> String {
         do {
             let encoder = JSONEncoder()
