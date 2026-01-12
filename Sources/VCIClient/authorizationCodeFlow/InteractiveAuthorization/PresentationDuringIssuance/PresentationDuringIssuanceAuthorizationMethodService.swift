@@ -96,7 +96,7 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
                   let holderId = credentialSubject["id"] as? String else {
                 return nil
             }
-            return holderId
+            return holderId.trimmingCharacters(in: CharacterSet(charactersIn: "=")) + "#0"
         }.first
     }
     
