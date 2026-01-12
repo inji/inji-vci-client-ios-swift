@@ -24,8 +24,8 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
         self.resolvePublicKeyType = resolvePublicKeyType ?? { uri in
             let publicKey = try await DidPublicKeyResolver().resolve(uri: uri)
             switch publicKey {
-            case .ed25519(_):
-                return "Ed25519Signature2020"
+//            case .ed25519(_):
+//                return "Ed25519Signature2020"
             default:
                 return "JsonWebSignature2020"
             }
