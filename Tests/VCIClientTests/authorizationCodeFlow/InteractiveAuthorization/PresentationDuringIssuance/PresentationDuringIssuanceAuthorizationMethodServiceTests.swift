@@ -223,8 +223,6 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
             errorDescription: nil,
             authSession: "auth-session-1"
         )
-        let encoder = JSONEncoder()
-        encoder.keyEncodingStrategy = .convertToSnakeCase
         let data = try! JSONEncoder().encode(success)
         network.responseBody = String(data: data, encoding: .utf8) ?? ""
         
@@ -324,7 +322,7 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         _ = try await presentationDuringIssuanceAuthorizationMethodService.authorizeUser(requestData: makeRequestData())
         
         let errorSent = network.capturedParams
-        XCTAssertTrue(((errorSent["openid4vp_response"]?.contains("\"error_description\":\"constructed error: VCIClient.InteractiveAuthorizationException\"")) != nil))
+        XCTAssertTrue(((errorSent["openid4vp_response"]?.contains("\"error_description\":\"constructed error: VCIClient.InteractiveAuthorizationException\"") == true)))
         XCTAssertEqual(errorSent["auth_session"], "auth-session-1")
     }
     
