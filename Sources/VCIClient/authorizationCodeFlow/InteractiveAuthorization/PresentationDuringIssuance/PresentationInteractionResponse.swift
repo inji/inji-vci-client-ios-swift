@@ -19,27 +19,19 @@ final class PresentationInteractionResponse: InteractionResponse, Decodable {
         try super.init(status: json["status"] as? String, type: json["type"] as? String, authSession: json["auth_session"] as? String)
     }
     
-    // Custom Decodable init to keep [String: Any] without changing field type
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let status = try container.decode(String.self, forKey: .status)
         let type = try container.decode(String.self, forKey: .type)
         let authSession = try container.decode(String.self, forKey: .authSession)
 
-        // Decode openid4vp_request as raw JSON and convert to [String: Any]
-        // 1) Decode it as a generic JSON object using an intermediate Data approach
-        // We create a nested decoder for the key and re-encode to Data, then JSONSerialization to [String: Any].
-        // Since Swift’s Decodable cannot decode Any directly, this is a pragmatic bridge.
         if let nestedDecoder = try? container.superDecoder(forKey: .openid4vpRequest) {
-            // Attempt to decode an arbitrary JSON structure into Foundation objects
             let any = try PresentationInteractionResponse.decodeAny(from: nestedDecoder)
             guard let dict = any as? [String: Any] else {
                 throw ValidationError.invalid("openid4vp_request")
             }
             self.openid4vpRequest = dict
         } else {
-            // Fallback: try decoding as Data via a single-value container
-            // (This path is unlikely with a keyed container, but kept for resilience)
             let data = try container.decode(Data.self, forKey: .openid4vpRequest)
             let obj = try JSONSerialization.jsonObject(with: data, options: [])
             guard let dict = obj as? [String: Any] else {
@@ -50,7 +42,6 @@ final class PresentationInteractionResponse: InteractionResponse, Decodable {
         try super.init(status: status, type: type,  authSession: authSession)
     }
 
-    // Helper to decode arbitrary JSON into Foundation types
     private static func decodeAny(from decoder: Decoder) throws -> Any {
         if var arrayContainer = try? decoder.unkeyedContainer() {
             var arr: [Any] = []
@@ -75,7 +66,6 @@ final class PresentationInteractionResponse: InteractionResponse, Decodable {
         if let i = try? single.decode(Int.self) { return i }
         if let d = try? single.decode(Double.self) { return d }
         if let s = try? single.decode(String.self) { return s }
-        // As a last resort, try Data then JSON parse
         if let data = try? single.decode(Data.self),
            let obj = try? JSONSerialization.jsonObject(with: data, options: []) {
             return obj
@@ -83,7 +73,6 @@ final class PresentationInteractionResponse: InteractionResponse, Decodable {
         throw ValidationError.invalid("Unsupported JSON value")
     }
 
-    // CodingKey that can be created from any string key at runtime
     private struct DynamicCodingKeys: CodingKey {
         var stringValue: String
         init?(stringValue: String) { self.stringValue = stringValue }
