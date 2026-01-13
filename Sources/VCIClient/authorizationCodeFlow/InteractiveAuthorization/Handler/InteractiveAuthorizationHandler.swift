@@ -12,7 +12,7 @@ final class InteractiveAuthorizationHandler {
         clientMetadata: ClientMetadata,
         credentialConfigurationId: String,
         authorizationMethods: [AuthorizationMethod],
-        pkceSession: PKCESessionManager.PKCESession,
+        pkceSession: PKCESessionManager.PKCESession
     ) async throws -> AuthorizationResponse {
         
         do {
