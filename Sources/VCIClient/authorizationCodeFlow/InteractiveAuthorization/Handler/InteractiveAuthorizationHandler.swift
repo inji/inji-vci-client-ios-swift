@@ -13,7 +13,6 @@ final class InteractiveAuthorizationHandler {
         credentialConfigurationId: String,
         authorizationMethods: [AuthorizationMethod],
         pkceSession: PKCESessionManager.PKCESession,
-        timeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
     ) async throws -> AuthorizationResponse {
         
         do {
@@ -40,8 +39,7 @@ final class InteractiveAuthorizationHandler {
                 url: endpoint,
                 method: .post,
                 headers: [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue],
-                bodyParams: initialIarRequest,
-                timeoutMillis: timeoutInMillis
+                bodyParams: initialIarRequest
             )
             
             let type: String = try extractTypeAndThrowIfError(interactiveAuthorizationResponse.body)
@@ -51,8 +49,7 @@ final class InteractiveAuthorizationHandler {
                 return try await handlePresentationInteraction(
                     presentationInteractionResponse: interactiveAuthorizationResponse.body,
                     authorizationMethods: authorizationMethods,
-                    endpoint: endpoint,
-                    timeoutInMillis: timeoutInMillis
+                    endpoint: endpoint
                 )
                 
             default:
@@ -117,8 +114,7 @@ final class InteractiveAuthorizationHandler {
     private func handlePresentationInteraction(
         presentationInteractionResponse: String,
         authorizationMethods: [AuthorizationMethod],
-        endpoint: String,
-        timeoutInMillis: Int64
+        endpoint: String
     ) async throws -> AuthorizationResponse {
         
         guard let parsedPresentationInteractionResponse = try? JsonUtils.deserialize(presentationInteractionResponse, as: PresentationInteractionResponse.self) else {
@@ -149,8 +145,7 @@ final class InteractiveAuthorizationHandler {
                 ovpRequest: parsedPresentationInteractionResponse.openid4vpRequest,
                 authSession: parsedPresentationInteractionResponse.authSession ?? "",
                 iar: endpoint
-            ),
-            networkTimeout: timeoutInMillis
+            )
         )
     }
 }

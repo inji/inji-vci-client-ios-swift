@@ -8,7 +8,7 @@ private final class DummyAuthorizationMethodService: AuthorizationMethodService 
         "dummy_type"
     }
 
-    func authorizeUser(requestData: AuthorizationRequestData, networkTimeout: Int64 = Constants.defaultNetworkTimeoutInMillis) async throws -> AuthorizationResponse {
+    func authorizeUser(requestData: AuthorizationRequestData) async throws -> AuthorizationResponse {
         return AuthorizationResponse(
             authorizationCode: "dummy-code",
             status: "success",

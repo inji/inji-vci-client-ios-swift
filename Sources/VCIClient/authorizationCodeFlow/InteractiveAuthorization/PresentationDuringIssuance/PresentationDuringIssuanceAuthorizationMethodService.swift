@@ -29,7 +29,7 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
         return InteractionType.openId4VpPresentation.rawValue
     }
     
-    func authorizeUser(requestData: AuthorizationRequestData, networkTimeout: Int64 = Constants.defaultNetworkTimeoutInMillis) async throws -> AuthorizationResponse {
+    func authorizeUser(requestData: AuthorizationRequestData) async throws -> AuthorizationResponse {
         let vpResponse: [String: Any]
         guard let presentationRequestData = requestData as? PresentationDuringIssuanceRequestData else {
             throw InteractiveAuthorizationException(message: "Expected PresentationDuringIssuanceRequestData")
@@ -48,8 +48,7 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
             return try await sendOVPAuthorizationResponseToIssuer(
                 iar: presentationRequestData.iar,
                 authSession: authSession,
-                vpResponse: vpResponse,
-                networkTimeout: networkTimeout
+                vpResponse: vpResponse
             )
         } catch let ex as InteractiveAuthorizationException {
             print("InteractiveAuthorizationException: \(ex.message)")
@@ -106,8 +105,7 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
     private func sendOVPAuthorizationResponseToIssuer(
         iar: String,
         authSession: String,
-        vpResponse: [String: Any],
-        networkTimeout: Int64
+        vpResponse: [String: Any]
     ) async throws -> AuthorizationResponse {
         let response: NetworkResponse
         do {
@@ -121,8 +119,7 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
                 bodyParams: [
                     "openid4vp_response": vpResponseString,
                     "auth_session": authSession
-                ],
-                timeoutMillis: networkTimeout
+                ]
             )
         } catch {
             throw InteractiveAuthorizationException(
