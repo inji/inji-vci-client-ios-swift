@@ -8,7 +8,7 @@ final class AuthorizationServerResolverTests: XCTestCase {
         mockDiscovery.mockMetadataByUrl[url] = AuthorizationServerMetadata(
             issuer: url,
             grantTypesSupported: ["authorization_code"], tokenEndpoint: "https://mock-token",
-            authorizationEndpoint: "\(url)/auth"
+            authorizationEndpoint: "\(url)/auth", interactiveAuthorizationEndpoint: nil
         )
 
         let resolver = AuthorizationServerResolver(authServerDiscoveryService: mockDiscovery)
@@ -28,7 +28,8 @@ final class AuthorizationServerResolverTests: XCTestCase {
         mockDiscovery.mockMetadataByUrl[overrideUrl] = AuthorizationServerMetadata(
             issuer: overrideUrl,
             grantTypesSupported: ["authorization_code"], tokenEndpoint: "mock",
-            authorizationEndpoint: "\(overrideUrl)/auth"
+            authorizationEndpoint: "\(overrideUrl)/auth",
+            interactiveAuthorizationEndpoint: nil
         )
 
         let resolver = AuthorizationServerResolver(authServerDiscoveryService: mockDiscovery)
@@ -48,7 +49,8 @@ final class AuthorizationServerResolverTests: XCTestCase {
         mockDiscovery.mockMetadataByUrl["https://valid.com"] = AuthorizationServerMetadata(
             issuer: "https://valid.com",
             grantTypesSupported: ["authorization_code"], tokenEndpoint: "mock-token",
-            authorizationEndpoint: "https://valid.com/auth"
+            authorizationEndpoint: "https://valid.com/auth",
+            interactiveAuthorizationEndpoint: nil
         )
 
         let resolver = AuthorizationServerResolver(authServerDiscoveryService: mockDiscovery)
@@ -94,7 +96,8 @@ final class AuthorizationServerResolverTests: XCTestCase {
         mockDiscovery.mockMetadataByUrl[fallback] = AuthorizationServerMetadata(
             issuer: fallback,
             grantTypesSupported: ["authorization_code"], tokenEndpoint: "mock-token",
-            authorizationEndpoint: "\(fallback)/auth"
+            authorizationEndpoint: "\(fallback)/auth",
+            interactiveAuthorizationEndpoint: nil
         )
 
         let resolver = AuthorizationServerResolver(authServerDiscoveryService: mockDiscovery)
@@ -116,7 +119,8 @@ final class AuthorizationServerResolverTests: XCTestCase {
         mockDiscovery.mockMetadataByUrl[realUrl] = AuthorizationServerMetadata(
             issuer: "https://mismatch.com",
             grantTypesSupported: ["authorization_code"], tokenEndpoint: "mock",
-            authorizationEndpoint: "\(realUrl)/auth"
+            authorizationEndpoint: "\(realUrl)/auth",
+            interactiveAuthorizationEndpoint: nil
         )
 
         let resolver = AuthorizationServerResolver(authServerDiscoveryService: mockDiscovery)
@@ -143,7 +147,8 @@ final class AuthorizationServerResolverTests: XCTestCase {
         mockDiscovery.mockMetadataByUrl[url] = AuthorizationServerMetadata(
             issuer: url,
             grantTypesSupported: ["implicit"], tokenEndpoint: "mock",
-            authorizationEndpoint: "\(url)/auth"
+            authorizationEndpoint: "\(url)/auth",
+            interactiveAuthorizationEndpoint: nil
         )
 
         let resolver = AuthorizationServerResolver(authServerDiscoveryService: mockDiscovery)
@@ -171,7 +176,8 @@ final class AuthorizationServerResolverTests: XCTestCase {
         mockDiscovery.mockMetadataByUrl[url] = AuthorizationServerMetadata(
             issuer: url,
             grantTypesSupported: ["authorization_code"], tokenEndpoint: "mock",
-            authorizationEndpoint: nil // Intentionally missing
+            authorizationEndpoint: nil, // Intentionally missing
+            interactiveAuthorizationEndpoint: nil
         )
 
         let resolver = AuthorizationServerResolver(authServerDiscoveryService: mockDiscovery)

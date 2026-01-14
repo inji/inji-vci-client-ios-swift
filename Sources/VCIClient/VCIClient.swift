@@ -52,43 +52,31 @@ public class VCIClient {
                 credentialOffer: credentialOffer,
                 clientMetadata: clientMetadata,
                 getTxCode: getTxCode,
-                authorizeUser: authorizeUser,
+                authorizationMethods: wrapAuthorizeUser(authorizeUser),
                 getTokenResponse: getTokenResponse,
                 getProofJwt: getProofJwt,
                 onCheckIssuerTrust: onCheckIssuerTrust,
                 networkSession: networkSession,
                 downloadTimeoutInMillis: downloadTimeoutInMillis
             )
-        } catch let e as VCIClientException {
-            throw e
         } catch {
-            throw VCIClientException(code: "VCI-010", message: "Unknown exception occurred")
+            throw mapToVciClientException(error)
         }
     }
 
     public func getIssuerMetadata(credentialIssuer: String) async throws -> [String: Any] {
         do {
             return try await issuerMetadataService.fetchAndParseIssuerMetadata(from: credentialIssuer)
-        } catch let e as VCIClientException {
-            throw e
         } catch {
-            throw VCIClientException(
-                code: "VCI-010",
-                message: "Unknown exception occurred"
-            )
+            throw mapToVciClientException(error)
         }
     }
 
     public func getCredentialConfigurationsSupported(credentialIssuer: String) async throws -> [String: Any] {
         do {
             return try await issuerMetadataService.fetchCredentialConfigurationsSupported(from: credentialIssuer)
-        } catch let e as VCIClientException {
-            throw e
         } catch {
-            throw VCIClientException(
-                code: "VCI-010",
-                message: "Unknown exception occurred"
-            )
+            throw mapToVciClientException(error)
         }
     }
 
@@ -106,21 +94,79 @@ public class VCIClient {
                 credentialIssuer: credentialIssuer,
                 credentialConfigurationId: credentialConfigurationId,
                 clientMetadata: clientMetadata,
-                authorizeUser: authorizeUser,
+                authorizationMethods: wrapAuthorizeUser(authorizeUser),
                 getTokenResponse: getTokenResponse,
                 getProofJwt: getProofJwt,
                 downloadTimeoutInMillis: downloadTimeoutInMillis,
                 networkSession: networkSession
             )
-        } catch let e as VCIClientException {
-            throw e
         } catch {
-            throw VCIClientException(
+            throw mapToVciClientException(error)
+        }
+    }
+    
+    public func fetchCredentialFromTrustedIssuer(
+        credentialIssuer: String,
+        credentialConfigurationId: String,
+        clientMetadata: ClientMetadata,
+        getTokenResponse: @escaping TokenResponseCallback,
+        authorizationMethods: [AuthorizationMethod],
+        getProofJwt: @escaping ProofJwtCallback,
+        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
+    ) async throws -> CredentialResponse? {
+
+        do {
+            return try await self.trustedIssuerFlowHandler.downloadCredentials(
+                credentialIssuer: credentialIssuer,
+                credentialConfigurationId: credentialConfigurationId,
+                clientMetadata: clientMetadata,
+                authorizationMethods: authorizationMethods,
+                getTokenResponse: getTokenResponse,
+                getProofJwt: getProofJwt,
+                downloadTimeoutInMillis: downloadTimeoutInMillis
+            )
+        } catch {
+            print("Downloading credential failed due to \(error.localizedDescription)")
+            throw error as? VCIClientException ?? VCIClientException(
                 code: "VCI-010",
-                message: "Unknown exception occurred"
+                message: "Unknown Exception - \(error.localizedDescription)"
             )
         }
     }
+
+    
+    public func fetchCredentialUsingCredentialOffer(
+        credentialOffer: String,
+        clientMetadata: ClientMetadata,
+        getTxCode: TxCodeCallback,
+        authorizationMethods: [AuthorizationMethod],
+        getTokenResponse: @escaping TokenResponseCallback,
+        getProofJwt: @escaping ProofJwtCallback,
+        onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
+        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
+    ) async throws -> CredentialResponse? {
+
+        do {
+            return try await self.credentialOfferFlowHandler.downloadCredentials(
+                credentialOffer: credentialOffer,
+                clientMetadata: clientMetadata,
+                getTxCode: getTxCode,
+                authorizationMethods: authorizationMethods,
+                getTokenResponse: getTokenResponse,
+                getProofJwt: getProofJwt,
+                onCheckIssuerTrust: onCheckIssuerTrust,
+                networkSession: networkSession,
+                downloadTimeoutInMillis: downloadTimeoutInMillis
+            )
+        } catch {
+            print("Downloading credential failed due to \(error.localizedDescription)")
+            throw error as? VCIClientException ?? VCIClientException(
+                code: "VCI-010",
+                message: "Unknown Exception - \(error.localizedDescription)"
+            )
+        }
+    }
+
 
     @available(*, deprecated, message: "This method is deprecated as per the new VCI Client library contract.Use requestCredentialByCredentialOffer() or requestCredentialFromTrustedIssuer()")
     public func requestCredential(
@@ -179,4 +225,14 @@ public class VCIClient {
             throw DownloadFailedException(error.localizedDescription)
         }
     }
+    
+    // Wrap AuthorizeUserCallback into AuthorizationMethod.redirectToWeb
+    private func wrapAuthorizeUser(_ authorizeUser: @escaping AuthorizeUserCallback) -> [AuthorizationMethod] {
+        let redirectToWebMethod = AuthorizationMethod.redirectToWeb(openWebPage: { url in
+            let authCode = try await authorizeUser(url)
+            return ["code": authCode]
+        })
+        return [redirectToWebMethod]
+    }
 }
+

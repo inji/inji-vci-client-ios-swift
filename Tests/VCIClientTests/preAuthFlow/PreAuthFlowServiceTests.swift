@@ -17,10 +17,8 @@ final class PreAuthFlowServiceTests: XCTestCase {
     func test_requestCredentials_success() async throws {
         let service = makeService()
 
-        _ = IssuerMetadata.mock()
         let offer = CredentialOffer.mockWithTxCodeRequired()
-        let rawMetadata = ["key": "value"]
-
+        
         let result = try await service.requestCredentials(
             issuerMetadata: IssuerMetadata.mock(),
             credentialOffer: offer,

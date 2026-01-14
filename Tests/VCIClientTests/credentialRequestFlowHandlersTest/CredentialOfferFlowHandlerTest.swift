@@ -43,7 +43,7 @@ final class CredentialOfferFlowHandlerTests: XCTestCase {
             credentialOffer: "offer",
             clientMetadata: ClientMetadata(clientId: "id", redirectUri: "uri"),
             getTxCode: { _,_,_ in "tx-code" },
-            authorizeUser: {_ in "auth-code"},
+            authorizationMethods: [AuthorizationMethod.redirectToWeb(openWebPage: {_ in ["code": "auth_code"]})],
             getTokenResponse: {_ in TokenResponse(accessToken: "mock", tokenType: "Bearer")},
             getProofJwt: { _, _, _ in "jwt" }
         
@@ -79,7 +79,7 @@ final class CredentialOfferFlowHandlerTests: XCTestCase {
             credentialOffer: "offer",
             clientMetadata: ClientMetadata(clientId: "id", redirectUri: "uri"),
             getTxCode: { _,_,_ in "tx-code" },
-            authorizeUser: {_ in "auth-code"},
+            authorizationMethods: [AuthorizationMethod.redirectToWeb(openWebPage: {_ in ["code": "auth_code"]})],
             getTokenResponse: {_ in TokenResponse(accessToken: "mock", tokenType: "Bearer")},
             getProofJwt: { _, _, _ in "jwt" }
         )
@@ -115,7 +115,7 @@ final class CredentialOfferFlowHandlerTests: XCTestCase {
                 credentialOffer: "offer",
                 clientMetadata: ClientMetadata(clientId: "id", redirectUri: "uri"),
                 getTxCode: { _,_,_ in "tx-code" },
-                authorizeUser: {_ in "auth-code"},
+                authorizationMethods: [AuthorizationMethod.redirectToWeb(openWebPage: {_ in ["code": "auth_code"]})],
                 getTokenResponse: {_ in TokenResponse(accessToken: "mock", tokenType: "Bearer")},
                 getProofJwt: { _, _, _ in "jwt" },
                 onCheckIssuerTrust: {_,_ in false}
@@ -152,7 +152,7 @@ final class CredentialOfferFlowHandlerTests: XCTestCase {
                 credentialOffer: "offer",
                 clientMetadata: ClientMetadata(clientId: "id", redirectUri: "uri"),
                 getTxCode: { _,_,_ in "tx-code" },
-                authorizeUser: {_ in "auth-code"},
+                authorizationMethods: [AuthorizationMethod.redirectToWeb(openWebPage: {_ in ["code": "auth_code"]})],
                 getTokenResponse: {_ in TokenResponse(accessToken: "mock", tokenType: "Bearer")},
                 getProofJwt: { _, _, _ in "jwt" }
             )
@@ -198,7 +198,7 @@ final class CredentialOfferFlowHandlerTests: XCTestCase {
                 credentialOffer: "offer",
                 clientMetadata: ClientMetadata(clientId: "id", redirectUri: "uri"),
                 getTxCode: { _, _, _ in "tx-code" },
-                authorizeUser: { _ in "auth-code" },
+                authorizationMethods: [AuthorizationMethod.redirectToWeb(openWebPage: {_ in ["code": "auth_code"]})],
                 getTokenResponse: { _ in TokenResponse(accessToken: "mock", tokenType: "Bearer") },
                 getProofJwt: { _, _, _ in "jwt" }
             )

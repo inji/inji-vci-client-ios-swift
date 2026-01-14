@@ -15,7 +15,7 @@ final class TrustedIssuerHandlerTests: XCTestCase {
             credentialIssuer: "mock-issuer",
             credentialConfigurationId: "mock",
             clientMetadata: ClientMetadata(clientId: "", redirectUri: ""),
-            authorizeUser: { _ in "auth-code" },
+            authorizationMethods: [AuthorizationMethod.redirectToWeb(openWebPage: {_ in ["code": "auth_code"]})],
             getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer", expiresIn: nil) },
             getProofJwt: { _, _, _ in "jwt" }
         )
@@ -47,7 +47,7 @@ final class TrustedIssuerHandlerTests: XCTestCase {
                 credentialIssuer: "mock-issuer",
                 credentialConfigurationId: "mock",
                 clientMetadata: ClientMetadata(clientId: "", redirectUri: ""),
-                authorizeUser: { _ in "auth-code" },
+                authorizationMethods: [AuthorizationMethod.redirectToWeb(openWebPage: {_ in ["code": "auth_code"]})],
                 getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer", expiresIn: nil) },
                 getProofJwt: { _, _, _ in "jwt" }
             )

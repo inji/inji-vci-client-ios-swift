@@ -1,5 +1,6 @@
 import Foundation
 @testable import VCIClient
+import OpenID4VP
 
 extension IssuerMetadata {
     static func mock() -> IssuerMetadata {
@@ -80,3 +81,5 @@ extension TokenResponse {
         )
     }
 }
+
+struct DummyVPTokenSigningResult: VPTokenSigningResult {}
