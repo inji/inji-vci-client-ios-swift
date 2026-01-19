@@ -37,6 +37,7 @@ public class VCIClient {
         Util.getLogTag(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
     }
 
+    @available(*, deprecated, renamed: "fetchCredentialUsingCredentialOffer", message: "This method is deprecated as per the new VCI Client library contract. Use fetchCredentialUsingCredentialOffer()")
     public func requestCredentialByCredentialOffer(
         credentialOffer: String,
         clientMetadata: ClientMetadata,
@@ -80,6 +81,7 @@ public class VCIClient {
         }
     }
 
+    @available(*, deprecated, renamed: "fetchCredentialFromTrustedIssuer", message: "This method is deprecated as per the new VCI Client library contract. Use fetchCredentialUsingCredentialOffer()")
     public func requestCredentialFromTrustedIssuer(
         credentialIssuer: String,
         credentialConfigurationId: String,
