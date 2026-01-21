@@ -37,34 +37,6 @@ public class VCIClient {
         Util.getLogTag(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
     }
 
-    @available(*, deprecated, renamed: "fetchCredentialUsingCredentialOffer", message: "This method is deprecated as per the new VCI Client library contract. Use fetchCredentialUsingCredentialOffer()")
-    public func requestCredentialByCredentialOffer(
-        credentialOffer: String,
-        clientMetadata: ClientMetadata,
-        getTxCode: TxCodeCallback,
-        authorizeUser: @escaping AuthorizeUserCallback,
-        getTokenResponse: @escaping TokenResponseCallback,
-        getProofJwt: @escaping ProofJwtCallback,
-        onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
-        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
-    ) async throws -> CredentialResponse? {
-        do {
-            return try await credentialOfferFlowHandler.downloadCredentials(
-                credentialOffer: credentialOffer,
-                clientMetadata: clientMetadata,
-                getTxCode: getTxCode,
-                authorizationMethods: wrapAuthorizeUser(authorizeUser),
-                getTokenResponse: getTokenResponse,
-                getProofJwt: getProofJwt,
-                onCheckIssuerTrust: onCheckIssuerTrust,
-                networkSession: networkSession,
-                downloadTimeoutInMillis: downloadTimeoutInMillis
-            )
-        } catch {
-            throw mapToVciClientException(error)
-        }
-    }
-
     public func getIssuerMetadata(credentialIssuer: String) async throws -> [String: Any] {
         do {
             return try await issuerMetadataService.fetchAndParseIssuerMetadata(from: credentialIssuer)
@@ -76,32 +48,6 @@ public class VCIClient {
     public func getCredentialConfigurationsSupported(credentialIssuer: String) async throws -> [String: Any] {
         do {
             return try await issuerMetadataService.fetchCredentialConfigurationsSupported(from: credentialIssuer)
-        } catch {
-            throw mapToVciClientException(error)
-        }
-    }
-
-    @available(*, deprecated, renamed: "fetchCredentialFromTrustedIssuer", message: "This method is deprecated as per the new VCI Client library contract. Use fetchCredentialUsingCredentialOffer()")
-    public func requestCredentialFromTrustedIssuer(
-        credentialIssuer: String,
-        credentialConfigurationId: String,
-        clientMetadata: ClientMetadata,
-        authorizeUser: @escaping AuthorizeUserCallback,
-        getTokenResponse: @escaping TokenResponseCallback,
-        getProofJwt: @escaping ProofJwtCallback,
-        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
-    ) async throws -> CredentialResponse? {
-        do {
-            return try await trustedIssuerFlowHandler.downloadCredentials(
-                credentialIssuer: credentialIssuer,
-                credentialConfigurationId: credentialConfigurationId,
-                clientMetadata: clientMetadata,
-                authorizationMethods: wrapAuthorizeUser(authorizeUser),
-                getTokenResponse: getTokenResponse,
-                getProofJwt: getProofJwt,
-                downloadTimeoutInMillis: downloadTimeoutInMillis,
-                networkSession: networkSession
-            )
         } catch {
             throw mapToVciClientException(error)
         }
@@ -166,6 +112,60 @@ public class VCIClient {
                 code: "VCI-010",
                 message: "Unknown Exception - \(error.localizedDescription)"
             )
+        }
+    }
+    
+    @available(*, deprecated, renamed: "fetchCredentialFromTrustedIssuer", message: "This method is deprecated as per the new VCI Client library contract. Use fetchCredentialFromTrustedIssuer()")
+    public func requestCredentialFromTrustedIssuer(
+        credentialIssuer: String,
+        credentialConfigurationId: String,
+        clientMetadata: ClientMetadata,
+        authorizeUser: @escaping AuthorizeUserCallback,
+        getTokenResponse: @escaping TokenResponseCallback,
+        getProofJwt: @escaping ProofJwtCallback,
+        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
+    ) async throws -> CredentialResponse? {
+        do {
+            return try await trustedIssuerFlowHandler.downloadCredentials(
+                credentialIssuer: credentialIssuer,
+                credentialConfigurationId: credentialConfigurationId,
+                clientMetadata: clientMetadata,
+                authorizationMethods: wrapAuthorizeUser(authorizeUser),
+                getTokenResponse: getTokenResponse,
+                getProofJwt: getProofJwt,
+                downloadTimeoutInMillis: downloadTimeoutInMillis,
+                networkSession: networkSession
+            )
+        } catch {
+            throw mapToVciClientException(error)
+        }
+    }
+    
+    @available(*, deprecated, renamed: "fetchCredentialUsingCredentialOffer", message: "This method is deprecated as per the new VCI Client library contract. Use fetchCredentialUsingCredentialOffer()")
+    public func requestCredentialByCredentialOffer(
+        credentialOffer: String,
+        clientMetadata: ClientMetadata,
+        getTxCode: TxCodeCallback,
+        authorizeUser: @escaping AuthorizeUserCallback,
+        getTokenResponse: @escaping TokenResponseCallback,
+        getProofJwt: @escaping ProofJwtCallback,
+        onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
+        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
+    ) async throws -> CredentialResponse? {
+        do {
+            return try await credentialOfferFlowHandler.downloadCredentials(
+                credentialOffer: credentialOffer,
+                clientMetadata: clientMetadata,
+                getTxCode: getTxCode,
+                authorizationMethods: wrapAuthorizeUser(authorizeUser),
+                getTokenResponse: getTokenResponse,
+                getProofJwt: getProofJwt,
+                onCheckIssuerTrust: onCheckIssuerTrust,
+                networkSession: networkSession,
+                downloadTimeoutInMillis: downloadTimeoutInMillis
+            )
+        } catch {
+            throw mapToVciClientException(error)
         }
     }
 
