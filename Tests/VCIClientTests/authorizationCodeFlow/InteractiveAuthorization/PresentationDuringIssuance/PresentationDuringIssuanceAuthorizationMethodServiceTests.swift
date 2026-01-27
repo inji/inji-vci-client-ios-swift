@@ -43,7 +43,7 @@ private final class FakeOpenID4VP: OpenID4VPInteracting {
     func constructUnsignedVPToken(
         verifiableCredentials: [String : [FormatType : [OpenID4VPAnyCodable]]],
         holderId: String?,
-        signatureSuite: String?
+                ldpVpSignatureSuite: String?
     ) async throws -> [FormatType : UnsignedVPToken] {
         switch behavior {
         case .unsignedThrows(let err):

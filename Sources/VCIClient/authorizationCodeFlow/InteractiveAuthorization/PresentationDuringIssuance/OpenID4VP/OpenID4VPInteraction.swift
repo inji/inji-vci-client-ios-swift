@@ -7,17 +7,17 @@ internal protocol OpenID4VPInteracting {
         trustedVerifiers: [Verifier],
         shouldValidateClient: Bool
     ) async throws -> AuthorizationRequest
-
+    
     func constructUnsignedVPToken(
         verifiableCredentials: [String: [FormatType: [OpenID4VPAnyCodable]]],
         holderId: String?,
-        signatureSuite: String?
+        ldpVpSignatureSuite: String?
     ) async throws -> [FormatType: UnsignedVPToken]
-
+    
     func constructVPResponse(
         vpTokenSigningResults: [FormatType: VPTokenSigningResult]
     ) -> [String: Any]
-
+    
     func constructErrorInfo(exception: Error) -> [String: Any]
 }
 
@@ -39,25 +39,25 @@ class OpenID4VPInteraction : OpenID4VPInteracting {
             shouldValidateClient: shouldValidateClient
         )
     }
-
+    
     func constructUnsignedVPToken(
         verifiableCredentials: [String: [FormatType: [OpenID4VPAnyCodable]]],
         holderId: String?,
-        signatureSuite: String?
+        ldpVpSignatureSuite: String?
     ) async throws -> [FormatType: UnsignedVPToken] {
         try await self.openId4vp.constructUnsignedVPToken(
             verifiableCredentials: verifiableCredentials,
             holderId: holderId,
-            signatureSuite: signatureSuite
+            signatureSuite:         ldpVpSignatureSuite
         )
     }
-
+    
     func constructVPResponse(
         vpTokenSigningResults: [FormatType: VPTokenSigningResult]
     ) -> [String: Any] {
         self.openId4vp.constructVPResponse(vpTokenSigningResults: vpTokenSigningResults)
     }
-
+    
     func constructErrorInfo(exception: Error) -> [String: Any] {
         self.openId4vp.constructErrorInfo(exception: exception)
     }

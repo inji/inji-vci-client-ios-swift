@@ -8,7 +8,7 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
     private let signVerifiablePresentation: SignVerifiablePresentationCallback
     private let openId4vp: OpenID4VPInteracting
     private let networkManager: NetworkManager
-    private let signatureSuite: String?
+    private let ldpVpSignatureSuite: String?
     
     init(
         selectCredentialsForPresentation: @escaping SelectCredentialsForPresentationCallback,
@@ -22,7 +22,7 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
         self.signVerifiablePresentation = signVerifiablePresentation
         self.openId4vp = openId4vp ?? OpenID4VPInteraction(traceabilityId: Util.getTraceabilityId())
         self.networkManager = networkManager
-        self.signatureSuite = signatureSuite
+        self.ldpVpSignatureSuite = signatureSuite
     }
     
     func type() -> String {
@@ -76,14 +76,14 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
         let hasLdpVc = flattenedFormatEntries.filter { (formatType, _) in
             return formatType == .ldp_vc
         }.count != 0
-        if hasLdpVc && self.signatureSuite == nil {
+        if hasLdpVc && self.ldpVpSignatureSuite == nil {
             throw InteractiveAuthorizationException(message: "Missing signature suite for LDP VC")
         }
         
         let unsignedVpTokens: [FormatType: UnsignedVPToken] = try await openId4vp.constructUnsignedVPToken(
             verifiableCredentials: selectedCredentials,
             holderId: holderId,
-            signatureSuite: self.signatureSuite
+                    ldpVpSignatureSuite: self.ldpVpSignatureSuite
         )
         let signedVpTokens: [FormatType: VPTokenSigningResult] = try await self.signVerifiablePresentation(unsignedVpTokens)
         
