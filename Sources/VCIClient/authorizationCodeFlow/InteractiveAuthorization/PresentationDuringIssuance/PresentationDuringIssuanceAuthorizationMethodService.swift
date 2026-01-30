@@ -80,12 +80,12 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
             throw InteractiveAuthorizationException(message: "Missing signature suite for LDP VC")
         }
         
-        let unsignedVpTokens: [FormatType: UnsignedVPToken] = try await openId4vp.constructUnsignedVPToken(
+        let unsignedVpTokens: [UnsignedVPTokenV2] = try await openId4vp.constructUnsignedVPToken(
             verifiableCredentials: selectedCredentials,
             holderId: holderId,
                     ldpVpSignatureSuite: self.ldpVpSignatureSuite
         )
-        let signedVpTokens: [FormatType: VPTokenSigningResult] = try await self.signVerifiablePresentation(unsignedVpTokens)
+        let signedVpTokens: [VPTokenSigningResultV2] = try await self.signVerifiablePresentation(unsignedVpTokens)
         
         return openId4vp.constructVPResponse(vpTokenSigningResults: signedVpTokens)
     }

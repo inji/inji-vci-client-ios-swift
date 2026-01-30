@@ -12,20 +12,20 @@ internal protocol OpenID4VPInteracting {
         verifiableCredentials: [String: [FormatType: [OpenID4VPAnyCodable]]],
         holderId: String?,
         ldpVpSignatureSuite: String?
-    ) async throws -> [FormatType: UnsignedVPToken]
+    ) async throws -> [UnsignedVPTokenV2]
     
     func constructVPResponse(
-        vpTokenSigningResults: [FormatType: VPTokenSigningResult]
+        vpTokenSigningResults: [VPTokenSigningResultV2]
     ) -> [String: Any]
     
     func constructErrorInfo(exception: Error) -> [String: Any]
 }
 
-class OpenID4VPInteraction : OpenID4VPInteracting {
+class OpenID4VPInteraction: OpenID4VPInteracting {
     private let openId4vp: OpenID4VP
     
     init(traceabilityId: String) {
-        self.openId4vp = OpenID4VP(traceabilityId: traceabilityId, walletMetadata: nil)
+        openId4vp = OpenID4VP(traceabilityId: traceabilityId, walletMetadata: nil)
     }
     
     func authenticateVerifier(
@@ -33,8 +33,8 @@ class OpenID4VPInteraction : OpenID4VPInteracting {
         trustedVerifiers: [Verifier],
         shouldValidateClient: Bool
     ) async throws -> AuthorizationRequest {
-        try await self.openId4vp.authenticateVerifier(
-            authRequest: authRequest,
+        try await openId4vp.authenticateVerifier(
+            authorizationRequest: authRequest,
             trustedVerifiers: trustedVerifiers,
             shouldValidateClient: shouldValidateClient
         )
@@ -44,21 +44,21 @@ class OpenID4VPInteraction : OpenID4VPInteracting {
         verifiableCredentials: [String: [FormatType: [OpenID4VPAnyCodable]]],
         holderId: String?,
         ldpVpSignatureSuite: String?
-    ) async throws -> [FormatType: UnsignedVPToken] {
-        try await self.openId4vp.constructUnsignedVPToken(
+    ) async throws -> [UnsignedVPTokenV2] {
+        try await openId4vp.constructUnsignedVPTokenV2(
             verifiableCredentials: verifiableCredentials,
             holderId: holderId,
-            signatureSuite:         ldpVpSignatureSuite
+            signatureSuite: ldpVpSignatureSuite
         )
     }
     
     func constructVPResponse(
-        vpTokenSigningResults: [FormatType: VPTokenSigningResult]
+        vpTokenSigningResults: [VPTokenSigningResultV2]
     ) -> [String: Any] {
-        self.openId4vp.constructVPResponse(vpTokenSigningResults: vpTokenSigningResults)
+        openId4vp.constructVPResponseV2(vpTokenSigningResults: vpTokenSigningResults)
     }
     
     func constructErrorInfo(exception: Error) -> [String: Any] {
-        self.openId4vp.constructErrorInfo(exception: exception)
+        openId4vp.constructErrorInfo(exception: exception)
     }
 }
