@@ -298,6 +298,8 @@ val issuerMetadata = IssuerMetadata(
                         CredentialFormat.mso_mdoc )
 ```
 
+> **Note**: The `claims` parameter is optional in the OID4VCI specification for `mso_mdoc` format. While `claims` can be provided in `IssuerMetadata`, this implementation does not include `claims` in the credential request body for `mso_mdoc` format.
+
 3. Format: `vc+sd-jwt`
 ```
 val issuerMetadata = IssuerMetadata(
