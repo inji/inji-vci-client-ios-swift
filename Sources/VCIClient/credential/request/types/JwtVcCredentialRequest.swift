@@ -12,7 +12,10 @@ class JwtVcCredentialRequest: CredentialRequestProtocol {
     }
 
     func validateIssuerMetadata() -> ValidatorResult {
-        return ValidatorResult()
+        if issuerMetaData.credentialEndpoint.isEmpty {
+             return ValidatorResult(isValid: false, message: "Invalid or missing credentialEndpoint in issuer metadata")
+        }
+        return ValidatorResult(isValid: true)
     }
 
     func constructRequest() throws -> URLRequest {
@@ -34,6 +37,7 @@ class JwtVcCredentialRequest: CredentialRequestProtocol {
     private func generateRequestBody(proofJWT: JWTProof, issuer: IssuerMetadata) throws -> Data {
         let requestBody = JwtVcCredentialRequestBody(
             format: issuer.credentialFormat,
+            types: issuer.credentialType ?? [],
             proof: proofJWT
         )
 
@@ -47,10 +51,6 @@ class JwtVcCredentialRequest: CredentialRequestProtocol {
 
 struct JwtVcCredentialRequestBody: Encodable {
     let format: CredentialFormat
+    let types: [String]
     let proof: JWTProof
-
-    init(format: CredentialFormat, proof: JWTProof) {
-        self.format = format
-        self.proof = proof
-    }
 }
