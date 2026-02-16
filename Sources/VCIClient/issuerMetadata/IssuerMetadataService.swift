@@ -83,10 +83,10 @@ class IssuerMetadataService {
 
     private func resolveMetadata(credentialConfigurationId: String, rawIssuerMetadata: [String: Any]) throws -> IssuerMetadata {
         guard let configurations = rawIssuerMetadata["credential_configurations_supported"] as? [String: Any],
-            let credentialType = configurations[credentialConfigurationId] as? [String: Any] else {
+              let credentialType = configurations[credentialConfigurationId] as? [String: Any] else {
             throw IssuerMetadataFetchException("Missing or invalid credential configuration")
         }
-        
+
         guard let credentialEndpoint = rawIssuerMetadata["credential_endpoint"] as? String else {
             throw IssuerMetadataFetchException("Missing credential_endpoint")
         }
