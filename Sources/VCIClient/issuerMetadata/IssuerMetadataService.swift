@@ -147,7 +147,7 @@ class IssuerMetadataService {
                 scope: scope
             )
 
-        case .jwt_vc, .jwt_vc_json:
+        case .jwt_vc_json:
             let definition = credentialType["credential_definition"] as? [String: Any] ?? [:]
             let types = definition["type"] as? [String]
             let context = (definition["context"] as? [String]) ?? (definition["@context"] as? [String])

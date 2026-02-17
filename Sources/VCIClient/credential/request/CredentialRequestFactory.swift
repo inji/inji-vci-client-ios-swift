@@ -22,7 +22,7 @@ class CredentialRequestFactory: CredentialRequestFactoryProtocol {
                     issuerMetaData: issuer,
                     proof: proofJwt as? JWTProof ?? JWTProof(jwt: "")))
                     
-            case .jwt_vc, .jwt_vc_json:
+            case .jwt_vc_json:
                  return try validateAndConstructCredentialRequest(credentialRequest: JwtVcCredentialRequest(
                     accessToken: accessToken,
                     issuerMetaData: issuer,

@@ -35,9 +35,10 @@ class JwtVcCredentialRequest: CredentialRequestProtocol {
     }
 
     private func generateRequestBody(proofJWT: JWTProof, issuer: IssuerMetadata) throws -> Data {
+        let definition = CredentialDefinition(type: issuer.credentialType ?? [])
         let requestBody = JwtVcCredentialRequestBody(
             format: issuer.credentialFormat,
-            types: issuer.credentialType ?? [],
+            credential_definition: definition,
             proof: proofJWT
         )
 
@@ -48,9 +49,12 @@ class JwtVcCredentialRequest: CredentialRequestProtocol {
         }
     }
 }
+struct CredentialDefinition: Encodable {
+    let type: [String]
+}
 
 struct JwtVcCredentialRequestBody: Encodable {
     let format: CredentialFormat
-    let types: [String]
+    let credential_definition: CredentialDefinition
     let proof: JWTProof
 }
