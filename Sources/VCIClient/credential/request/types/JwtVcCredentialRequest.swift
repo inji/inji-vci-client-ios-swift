@@ -15,6 +15,9 @@ class JwtVcCredentialRequest: CredentialRequestProtocol {
         if issuerMetaData.credentialEndpoint.isEmpty {
              return ValidatorResult(isValid: false, message: "Invalid or missing credentialEndpoint in issuer metadata")
         }
+        if issuerMetaData.credentialType == nil || issuerMetaData.credentialType?.isEmpty == true {
+            return ValidatorResult(isValid: false, message: "Invalid or missing credentialType in issuer metadata")
+        }
         return ValidatorResult(isValid: true)
     }
 
@@ -49,6 +52,7 @@ class JwtVcCredentialRequest: CredentialRequestProtocol {
         }
     }
 }
+
 struct CredentialDefinition: Encodable {
     let type: [String]
 }
