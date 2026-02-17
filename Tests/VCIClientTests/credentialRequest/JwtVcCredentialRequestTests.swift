@@ -14,8 +14,8 @@ final class JwtVcCredentialRequestTests: XCTestCase {
         let issuer = IssuerMetadata(
             credentialIssuer: "https://issuer.example.com",
             credentialEndpoint: sampleEndpoint,
-            credentialType: sampleTypes, // FIXED: Moved before credentialFormat
-            credentialFormat: .jwt_vc_json // FIXED: Likely naming convention
+            credentialType: sampleTypes,
+            credentialFormat: .jwt_vc_json
         )
         credentialRequest = JwtVcCredentialRequest(accessToken: accessToken, issuerMetaData: issuer, proof: proofJWT)
     }
@@ -24,8 +24,6 @@ final class JwtVcCredentialRequestTests: XCTestCase {
         credentialRequest = nil
         super.tearDown()
     }
-
-    // MARK: - Validation Tests
 
     func testValidateIssuerMetadata_shouldReturnValid_whenCredentialTypeIsPresent() {
         let result = credentialRequest.validateIssuerMetadata()
@@ -36,7 +34,7 @@ final class JwtVcCredentialRequestTests: XCTestCase {
         let issuerMissingType = IssuerMetadata(
             credentialIssuer: "https://issuer.example.com",
             credentialEndpoint: sampleEndpoint,
-            credentialType: nil, // FIXED: Moved before credentialFormat
+            credentialType: nil,
             credentialFormat: .jwt_vc_json
         )
 
@@ -44,10 +42,7 @@ final class JwtVcCredentialRequestTests: XCTestCase {
         let result = requestWithMissingType.validateIssuerMetadata()
 
         XCTAssertFalse(result.isValid)
-        // Note: Removed message check because ValidatorResult doesn't support it
     }
-
-    // MARK: - Construction Tests
 
     func testConstructRequest_shouldReturnValidRequest_whenMetadataIsValid() {
         do {
