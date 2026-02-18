@@ -44,7 +44,25 @@ final class JwtVcCredentialRequestTests: XCTestCase {
         XCTAssertFalse(result.isValid)
     }
 
+    func testConstructRequest_shouldThrow_whenCredentialTypeIsMissing() {
+        let issuerMissingType = IssuerMetadata(
+            credentialIssuer: "https://issuer.example.com",
+            credentialEndpoint: sampleEndpoint,
+            credentialType: nil,
+            credentialFormat: .jwt_vc_json
+        )
+        
+        let requestWithMissingType = JwtVcCredentialRequest(accessToken: accessToken, issuerMetaData: issuerMissingType, proof: proofJWT)
+        
+        XCTAssertThrowsError(try requestWithMissingType.constructRequest()) { error in
+            XCTAssertTrue(error is InvalidDataProvidedException)
+            XCTAssertEqual((error as? InvalidDataProvidedException)?.message, "Required details not provided : Credential type is missing in issuer metadata")
+        }
+    }
+
     func testConstructRequest_shouldReturnValidRequest_whenMetadataIsValid() {
+        XCTAssertNoThrow(try credentialRequest.constructRequest())
+        
         do {
             let request = try credentialRequest.constructRequest()
 

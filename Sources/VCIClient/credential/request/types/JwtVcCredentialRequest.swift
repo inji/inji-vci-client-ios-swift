@@ -38,7 +38,11 @@ class JwtVcCredentialRequest: CredentialRequestProtocol {
     }
 
     private func generateRequestBody(proofJWT: JWTProof, issuer: IssuerMetadata) throws -> Data {
-        let definition = JwtCredentialDefinition(type: issuer.credentialType ?? [])
+        guard let credentialTypes = issuer.credentialType, !credentialTypes.isEmpty else {
+            throw InvalidDataProvidedException("Credential type is missing in issuer metadata")
+        }
+
+        let definition = JwtCredentialDefinition(type: credentialTypes)
         let requestBody = JwtVcCredentialRequestBody(
             format: issuer.credentialFormat,
             credential_definition: definition,
