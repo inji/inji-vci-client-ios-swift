@@ -75,10 +75,7 @@ public class VCIClient {
             )
         } catch {
             print("Downloading credential failed due to \(error.localizedDescription)")
-            throw error as? VCIClientException ?? VCIClientException(
-                code: "VCI-010",
-                message: "Unknown Exception - \(error.localizedDescription)"
-            )
+            throw mapToVciClientException(error)
         }
     }
 
@@ -108,10 +105,7 @@ public class VCIClient {
             )
         } catch {
             print("Downloading credential failed due to \(error.localizedDescription)")
-            throw error as? VCIClientException ?? VCIClientException(
-                code: "VCI-010",
-                message: "Unknown Exception - \(error.localizedDescription)"
-            )
+            throw mapToVciClientException(error)
         }
     }
     

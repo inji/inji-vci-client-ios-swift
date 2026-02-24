@@ -47,6 +47,18 @@ class Util {
 }
 
 func mapToVciClientException(_ error: Error) -> VCIClientException {
-    error as? VCIClientException
-        ?? VCIClientException(code: "VCI-010", message: "Unknown exception occurred")
+    
+    if let vciError = error as? VCIClientException {
+        return VCIClientException(
+            code: "VCI-010",
+            message: vciError.message,
+            serverErrorCode: vciError.serverErrorCode, serverErrorDescription: vciError.serverErrorDescription, cause: vciError.cause ?? vciError
+        )
+    }
+
+    return VCIClientException(
+        code: "VCI-010",
+        message: "Unknown Exception - \(error.localizedDescription)",
+        serverErrorCode: nil, serverErrorDescription: nil, cause: error
+    )
 }

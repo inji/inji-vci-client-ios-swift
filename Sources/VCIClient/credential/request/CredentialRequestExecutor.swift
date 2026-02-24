@@ -19,6 +19,9 @@ class CredentialRequestExecutor {
         timeoutInMillis: Int64 = 10000,
         session: NetworkManager = NetworkManager.shared
     ) async throws -> CredentialResponse? {
+
+        let timeoutSeconds = timeoutInMillis / 1000
+
         do {
             var request = try factory.createCredentialRequest(
                 credentialFormat: issuerMetadata.credentialFormat,
@@ -34,30 +37,78 @@ class CredentialRequestExecutor {
 
             print("\(logTag) Credential downloaded successfully.")
 
-            if !responseBody.isEmpty {
-                guard var result = try JsonUtils.deserialize(responseBody, as: CredentialResponse.self) else {
-                    throw DownloadFailedException("Failed to parse credential response.")
+            if !responseBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+
+                guard var result = try JsonUtils.deserialize(
+                    responseBody,
+                    as: CredentialResponse.self
+                ) else {
+                    throw DownloadFailedException(
+                        "Failed to parse credential response."
+                    )
                 }
+
                 result.credentialConfigurationId = credentialConfigurationId
                 result.credentialIssuer = issuerMetadata.credentialIssuer
+
                 return result
             }
 
-            print("\(logTag) Response body is empty.")
+            Util.logWarning(
+                message: "Credential endpoint returned empty body",
+                className: String(describing: type(of: self))
+            )
+
             return nil
 
-        } catch let error as NetworkRequestTimeoutException {
-            print("\(logTag) Request timed out after \(timeoutInMillis / 1000)s")
-            throw error
-        } catch let error as DownloadFailedException {
-            throw error
-        } catch let error as InvalidAccessTokenException {
-            throw error
-        } catch let error as InvalidPublicKeyException {
-            throw error
+        } catch let e as NetworkRequestTimeoutException {
+
+            Util.logWarning(
+                message: "Credential download timed out after \(timeoutSeconds)s",
+                className: String(describing: type(of: self))
+            )
+
+            throw DownloadFailedException(
+                message: "Credential download timed out after \(timeoutSeconds)s",
+                cause: e
+            )
+
+        } catch let e as NetworkRequestFailedException {
+
+            Util.logWarning(
+                message: "Credential download failed: \(e.message)",
+                className: String(describing: type(of: self))
+            )
+
+            throw DownloadFailedException(
+                message: e.message,
+                serverErrorCode: e.serverErrorCode,
+                serverErrorDescription: e.serverErrorDescription,
+                cause: e
+            )
+
+        } catch let e as InvalidPublicKeyException {
+
+            throw DownloadFailedException(
+                message: e.message,
+                cause: e
+            )
+
+        } catch let e as DownloadFailedException {
+
+            throw e
+
         } catch {
-            print("\(logTag) Unexpected error: \(error.localizedDescription)")
-            throw DownloadFailedException(error.localizedDescription)
+
+            Util.logWarning(
+                message: "Unexpected error during credential download: \(error.localizedDescription)",
+                className: String(describing: type(of: self))
+            )
+
+            throw DownloadFailedException(
+                message: error.localizedDescription,
+                cause: error
+            )
         }
     }
 }

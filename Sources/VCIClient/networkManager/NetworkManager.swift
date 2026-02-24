@@ -26,13 +26,11 @@ public class NetworkManager {
         headers?.forEach { request.setValue($0.value, forHTTPHeaderField: $0.key) }
 
         if method == .post, let params = bodyParams {
-            
-            
-            if((headers?[Header.contentType.rawValue] == ContentTypes.applicationFormUrlEncoded.rawValue)) {
+            if headers?[Header.contentType.rawValue] == ContentTypes.applicationFormUrlEncoded.rawValue {
                 let bodyString = params
                     .map { "\($0.key.formURLEncoded())=\($0.value.formURLEncoded())" }
                     .joined(separator: "&")
-                
+
                 request.httpBody = bodyString.data(using: .utf8)
             } else {
                 let jsonData = try JSONEncoder().encode(bodyParams)
@@ -42,7 +40,7 @@ public class NetworkManager {
 
         return try await sendRequest(request: request)
     }
-    
+
     func sendRequestV2(
         url: String,
         method: HttpMethod,
@@ -76,10 +74,15 @@ public class NetworkManager {
             }
 
             let body = String(data: data, encoding: .utf8) ?? ""
-            
-            guard (200...299).contains(httpResponse.statusCode) else {
+
+            guard (200 ... 299).contains(httpResponse.statusCode) else {
+                let (serverErrorCode, serverErrorDescription) =
+                    parseServerErrorResponse(body)
+
                 throw NetworkRequestFailedException(
-                    "HTTP \(httpResponse.statusCode): \(HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode)). Server response: \(body)"
+                    message: "HTTP \(httpResponse.statusCode)",
+                    serverErrorCode: serverErrorCode,
+                    serverErrorDescription: serverErrorDescription
                 )
             }
 
@@ -87,10 +90,31 @@ public class NetworkManager {
                 body: body,
                 headers: httpResponse.allHeaderFields
             )
-        } catch is URLError {
-            throw NetworkRequestTimeoutException("Request timed out")
+
+        } catch let error as URLError where error.code == .timedOut {
+            throw NetworkRequestTimeoutException(
+                message: error.localizedDescription,
+                cause: error
+            )
+        } catch let error as NetworkRequestFailedException {
+            throw error
         } catch {
-            throw NetworkRequestFailedException(error.localizedDescription)
+            throw NetworkRequestFailedException(
+                message: error.localizedDescription,
+                cause: error
+            )
         }
+    }
+
+    private func parseServerErrorResponse(_ body: String) -> (String?, String?) {
+        guard let data = body.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return (nil, body)
+        }
+
+        let errorCode = json["error"] as? String
+        let errorDescription = json["error_description"] as? String
+
+        return (errorCode, errorDescription)
     }
 }

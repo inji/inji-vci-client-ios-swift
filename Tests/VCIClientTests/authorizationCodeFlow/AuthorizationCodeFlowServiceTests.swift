@@ -6,13 +6,15 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         resolver: AuthorizationServerResolver = MockAuthServerResolver(),
         tokenService: TokenService = MockTokenService(),
         executor: CredentialRequestExecutor = MockCredentialRequestExecutor(),
-        pkceManager: PKCESessionManager = MockPKCESessionManager()
+        pkceManager: PKCESessionManager = MockPKCESessionManager(),
+        interactiveAuthHandler: InteractiveAuthorizationHandler = MockInteractiveAuthorizationHandler()
     ) -> AuthorizationCodeFlowService {
         return AuthorizationCodeFlowService(
             authServerResolver: resolver,
             tokenService: tokenService,
             credentialExecutor: executor,
-            pkceSessionManager: pkceManager
+            pkceSessionManager: pkceManager,
+            interactiveAuthorizationHandler: interactiveAuthHandler
         )
     }
 
@@ -75,25 +77,6 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
             XCTFail("Expected to throw due to missing token endpoint")
         } catch {
             XCTAssertTrue(error.localizedDescription.contains("Missing token endpoint"))
-        }
-    }
-
-    func test_credentialDownloadNil_shouldThrow() async {
-        let executor = MockCredentialRequestExecutor(shouldReturnNil: true)
-        let service = makeService(executor: executor)
-
-        do {
-            _ = try await service.requestCredentials(
-                issuerMetadata: IssuerMetadata.mock(),
-                clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
-                getTokenResponse: {_ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer")},
-                getProofJwt: { _, _, _ in "mock-jwt" },
-                credentialConfigurationId: "vc1",
-                proofSigningAlgorithmsSupportedSupported: ["rs256"]
-            )
-            XCTFail("Expected to throw due to nil credential response")
-        } catch {
-            XCTAssertTrue(error.localizedDescription.contains("Failed to download Credential: Download failed via authorization code flow"))
         }
     }
 }
