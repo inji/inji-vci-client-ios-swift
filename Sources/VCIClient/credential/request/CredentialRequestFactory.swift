@@ -10,25 +10,41 @@ public protocol CredentialRequestFactoryProtocol {
 
 class CredentialRequestFactory: CredentialRequestFactoryProtocol {
     static let shared = CredentialRequestFactory()
+    
     func createCredentialRequest(
         credentialFormat: CredentialFormat,
         accessToken: String,
         issuer: IssuerMetadata,
         proofJwt: Proof) throws -> URLRequest {
+
+            guard let proof = proofJwt as? JWTProof, !proof.jwt.isEmpty else {
+                throw InvalidDataProvidedException("Proof object cannot be empty or invalid")
+            }
+
             switch credentialFormat {
             case .ldp_vc:
                 return try validateAndConstructCredentialRequest(credentialRequest: LdpVcCredentialRequest(
                     accessToken: accessToken,
                     issuerMetaData: issuer,
-                    proof: proofJwt as? JWTProof ?? JWTProof(jwt: "")))
+                    proof: proof))
+                    
+            case .jwt_vc_json:
+                 return try validateAndConstructCredentialRequest(credentialRequest: JwtVcCredentialRequest(
+                    accessToken: accessToken,
+                    issuerMetaData: issuer,
+                    proof: proof))
+                    
             case .mso_mdoc:
-                return try validateAndConstructCredentialRequest(credentialRequest: MsoMdocVcCredentialRequest(accessToken: accessToken,
-                                                                                                               issuerMetaData: issuer,
-                                                                                                               proof: proofJwt as? JWTProof ?? JWTProof(jwt: "")))
-            case .vc_sd_jwt,.dc_sd_jwt:
-                return try validateAndConstructCredentialRequest(credentialRequest: SdJwtCredentialRequest(accessToken: accessToken,
-                                                                                                           issuerMetaData: issuer,
-                                                                                                           proof: proofJwt as? JWTProof ?? JWTProof(jwt: "")))
+                return try validateAndConstructCredentialRequest(credentialRequest: MsoMdocVcCredentialRequest(
+                    accessToken: accessToken, 
+                    issuerMetaData: issuer, 
+                    proof: proof))
+                    
+            case .vc_sd_jwt, .dc_sd_jwt:
+                return try validateAndConstructCredentialRequest(credentialRequest: SdJwtCredentialRequest(
+                    accessToken: accessToken, 
+                    issuerMetaData: issuer, 
+                    proof: proof))
             }
     }
 
