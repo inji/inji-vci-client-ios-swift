@@ -141,20 +141,20 @@ let credentialConfigurationsSupported : [String: Any] = try await vciClient.getC
 - User-trust based credential download supported through onCheckIssuerTrust callback.
 - This method is the recommended way to request credential using credential offer.
 
-###### Parameters
+##### Parameters
 
-| Name                    | Type                     | Required | Default Value | Description                                                                                                                                                                               |
-|-------------------------|--------------------------|----------|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| credentialOffer         | String                   | Yes      | N/A           | Credential offer as embedded JSON or `credential_offer_uri`                                                                                                                               |
-| clientMetadata          | ClientMetadata           | Yes      | N/A           | Contains client ID and redirect URI                                                                                                                                                       |
-| getTxCode               | TxCodeCallback           | No       | N/A           | Optional callback function for TX Code (for Pre-Auth flows)                                                                                                                               |
-| authorizationMethods    | [AuthorizationMethod]    | Yes      | N/A           | Callback functions list to handle authorization and return the resultant authorization response (for Authorization flows) [click [here](#authorizations) for details about authorization] |
-| getTokenResponse        | TokenResponseCallback    | Yes      | N/A           | Callback function to exchange Authorization Grant with Access Token response                                                                                                              |
-| getProofJwt             | ProofJwtCallback         | Yes      | N/A           | Callback function to prepare proof-jwt for Credential Request                                                                                                                             |
-| onCheckIssuerTrust      | CheckIssuerTrustCallback | No       | nil           | Callback function to get user trust with the Credential Issuer                                                                                                                            |
-| downloadTimeoutInMillis | Int64                    | No       | 10000         | Download timeout set for Credential Request call with Credential Issuer (defaults to 10000 ms)                                                                                            |
+| Name                    | Type                     | Required | Default Value | Description                                                                                                                                                            |
+|-------------------------|--------------------------|----------|---------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| credentialOffer         | String                   | Yes      | N/A           | Credential offer as embedded JSON or `credential_offer_uri`                                                                                                            |
+| clientMetadata          | ClientMetadata           | Yes      | N/A           | Contains client ID and redirect URI                                                                                                                                    |
+| getTxCode               | TxCodeCallback           | No       | N/A           | Optional callback function for TX Code (for Pre-Auth flows)                                                                                                            |
+| authorizationMethods    | [AuthorizationMethod]    | Yes      | N/A           | Callback functions list to handle authorization and return the resultant authorization response (for Authorization flows) [see authorization details](#authorizations) |
+| getTokenResponse        | TokenResponseCallback    | Yes      | N/A           | Callback function to exchange Authorization Grant with Access Token response                                                                                           |
+| getProofJwt             | ProofJwtCallback         | Yes      | N/A           | Callback function to prepare proof-jwt for Credential Request                                                                                                          |
+| onCheckIssuerTrust      | CheckIssuerTrustCallback | No       | nil           | Callback function to get user trust with the Credential Issuer                                                                                                         |
+| downloadTimeoutInMillis | Int64                    | No       | 10000         | Download timeout set for Credential Request call with Credential Issuer (defaults to 10000 ms)                                                                         |
 
-###### Returns
+##### Returns
 
 An instance of `CredentialResponse` containing:
 
@@ -164,10 +164,10 @@ An instance of `CredentialResponse` containing:
 | credentialConfigurationId | String?    | The identifier of the respective supported credential from well-known response |
 | credentialIssuer          | String?    | URI of the Credential Issuer                                                   |
 
-###### Example usage
+##### Example usage
 
 ```swift
-let credentialResponse : CredentialResponse = try await vciClient.fetchCredentialUsingCredentialOffer(
+let credentialResponse: CredentialResponse? = try await vciClient.fetchCredentialUsingCredentialOffer(
     credentialOffer: "openid-credential-offer://?credential_offer_uri=https%3A%2F%2Fsample-issuer.com%2Fcredential-offer",
     clientMetadata: ClientMetadata(clientId: "sample-client-id", redirectUri: "https://sample-wallet.com/callback"),
     getTxCode: { inputMode, description, length in
@@ -210,7 +210,7 @@ let credentialResponse : CredentialResponse = try await vciClient.fetchCredentia
 )
 
 // Consider the credential is a Driver's license credential (credential format `mso_mdoc`)
-let credentialResponse = try await vciClient.fetchCredentialUsingCredentialOffer(
+let credentialResponse: CredentialResponse? = try await vciClient.fetchCredentialUsingCredentialOffer(
     credentialOffer: credentialOffer,
     clientMetadata: clientMetadata,
     getTxCode: getTxCode,
@@ -233,7 +233,7 @@ credentialResponse?.credentialIssuer // eg - "https://sample-issuer.com"
 - The library handles the PKCE flow internally.
 - User-trust based credential download supported through onCheckIssuerTrust callback.
 
-###### Parameters
+##### Parameters
 
 | Name                    | Type                     | Required | Default Value | Description                                                                                    |
 |-------------------------|--------------------------|----------|---------------|------------------------------------------------------------------------------------------------|
@@ -246,7 +246,7 @@ credentialResponse?.credentialIssuer // eg - "https://sample-issuer.com"
 | onCheckIssuerTrust      | CheckIssuerTrustCallback | No       | nil           | Callback function to get user trust with the Credential Issuer                                 |
 | downloadTimeoutInMillis | Int64                    | No       | 10000         | Download timeout set for Credential Request call with Credential Issuer (defaults to 10000 ms) |
 
-###### Returns
+##### Returns
 
 An instance of `CredentialResponse` containing:
 
@@ -256,10 +256,10 @@ An instance of `CredentialResponse` containing:
 | credentialConfigurationId | String?    | The identifier of the respective supported credential from well-known response |
 | credentialIssuer          | String?    | URI of the Credential Issuer                                                   |
 
-###### Example usage
+##### Example usage
 
 ```swift
-let credentialResponse : CredentialResponse = try await vciClient.requestCredentialByCredentialOffer(
+let credentialResponse: CredentialResponse? = try await vciClient.requestCredentialByCredentialOffer(
     credentialOffer: "openid-credential-offer://?credential_offer_uri=https%3A%2F%2Fsample-issuer.com%2Fcredential-offer",
     clientMetadata: ClientMetadata(clientId: "sample-client-id", redirectUri: "https://sample-wallet.com/callback"),
     getTxCode: { inputMode, description, length in
@@ -297,7 +297,7 @@ let credentialResponse : CredentialResponse = try await vciClient.requestCredent
 )
 
 // Consider the credential is a Driver's license credential (credential format `mso_mdoc`)
-let credentialResponse = try await vciClient.requestCredentialByCredentialOffer(
+let credentialResponse: CredentialResponse? = try await vciClient.requestCredentialByCredentialOffer(
     credentialOffer: credentialOffer,
     clientMetadata: clientMetadata,
     getTxCode: getTxCode,
@@ -321,15 +321,15 @@ credentialResponse?.credentialIssuer // eg - "https://sample-issuer.com"
 
 #### Parameters
 
-| Name                      | Type                  | Required | Default Value | Description                                                                                                                                                                               |
-|---------------------------|-----------------------|----------|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| credentialIssuer          | String                | Yes      | N/A           | URI of the Credential Issuer                                                                                                                                                              |
-| credentialConfigurationId | String                | Yes      | N/A           | Identifier of the respective supported credential from well-known response                                                                                                                |
-| clientMetadata            | ClientMetadata        | Yes      | N/A           | Contains client ID and redirect URI                                                                                                                                                       |
-| authorizationMethods      | [AuthorizationMethod] | Yes      | N/A           | Callback functions list to handle authorization and return the resultant authorization response (for Authorization flows) [click [here](#authorizations) for details about authorization] |
-| getTokenResponse          | TokenResponseCallback | Yes      | N/A           | Callback function to exchange Authorization Grant with Access Token response                                                                                                              |
-| getProofJwt               | ProofJwtCallback      | Yes      | N/A           | Callback function to prepare proof-jwt for Credential Request                                                                                                                             |
-| downloadTimeoutInMillis   | Int64                 | No       | 10000         | Download timeout set for Credential Request call with Credential Issuer (defaults to 10000 ms)                                                                                            |
+| Name                      | Type                  | Required | Default Value | Description                                                                                                                                                            |
+|---------------------------|-----------------------|----------|---------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| credentialIssuer          | String                | Yes      | N/A           | URI of the Credential Issuer                                                                                                                                           |
+| credentialConfigurationId | String                | Yes      | N/A           | Identifier of the respective supported credential from well-known response                                                                                             |
+| clientMetadata            | ClientMetadata        | Yes      | N/A           | Contains client ID and redirect URI                                                                                                                                    |
+| authorizationMethods      | [AuthorizationMethod] | Yes      | N/A           | Callback functions list to handle authorization and return the resultant authorization response (for Authorization flows) [see authorization details](#authorizations) |
+| getTokenResponse          | TokenResponseCallback | Yes      | N/A           | Callback function to exchange Authorization Grant with Access Token response                                                                                           |
+| getProofJwt               | ProofJwtCallback      | Yes      | N/A           | Callback function to prepare proof-jwt for Credential Request                                                                                                          |
+| downloadTimeoutInMillis   | Int64                 | No       | 10000         | Download timeout set for Credential Request call with Credential Issuer (defaults to 10000 ms)                                                                         |
 
 #### Returns
 
@@ -344,7 +344,7 @@ An instance of `CredentialResponse` containing:
 #### Example usage
 
 ```swift
-let credentialResponse = try await vciClient.fetchCredentialFromTrustedIssuer(
+let credentialResponse: CredentialResponse? = try await vciClient.fetchCredentialFromTrustedIssuer(
     credentialIssuer: "https://sample-issuer.com",
     credentialConfigurationId: "DriversLicense",
     clientMetadata: ClientMetadata(
@@ -382,7 +382,7 @@ let credentialResponse = try await vciClient.fetchCredentialFromTrustedIssuer(
 )
 
 // Consider the credential is a Driver's license credential (credential format `mso_mdoc`)
-let credentialResponse : CredentialResponse = try await vciClient.fetchCredentialFromTrustedIssuer(
+let credentialResponse: CredentialResponse? = try await vciClient.fetchCredentialFromTrustedIssuer(
     credentialIssuer: credentialIssuer,
     credentialConfigurationId: credentialConfigurationId,
     clientMetadata: clientMetadata,
@@ -427,7 +427,7 @@ An instance of `CredentialResponse` containing:
 #### Example usage
 
 ```swift
-let credentialResponse : CredentialResponse = try await vciClient.requestCredentialFromTrustedIssuer(
+let credentialResponse: CredentialResponse? = try await vciClient.requestCredentialFromTrustedIssuer(
     credentialIssuer: "https://sample-issuer.com",
     credentialConfigurationId: "DriversLicense",
     clientMetadata: ClientMetadata(
@@ -460,7 +460,7 @@ let credentialResponse : CredentialResponse = try await vciClient.requestCredent
 )
 
 // Consider the credential is a Driver's license credential (credential format `mso_mdoc`)
-let credentialResponse : CredentialResponse = try await vciClient.requestCredentialFromTrustedIssuer(
+let credentialResponse: CredentialResponse? = try await vciClient.requestCredentialFromTrustedIssuer(
     credentialIssuer: credentialIssuer,
     credentialConfigurationId: credentialConfigurationId,
     clientMetadata: clientMetadata,
@@ -474,7 +474,7 @@ credentialResponse?.credentialConfigurationId // eg - "DriversLicense"
 credentialResponse?.credentialIssuer // eg - "https://sample-issuer.com"
 ```
 
-###### Authorizations
+##### Authorizations
 The `authorizations` parameter is a list of `Authorization` objects indicating the supported authorizations of the Wallet for the download flow. Currently, library supports two authorization flows - _Redirect To Web_ and _Presentation During Issuance_. Library exposes the supported authorization flows via class - `AuthorizationMethod`
 
 1. Redirect To Web (for Authorization flow)
@@ -528,7 +528,7 @@ AuthorizationMethod.presentationDuringIssuance(
     },
     signVerifiablePresentation: { payload in
         // Handle the logic to sign the data with the appropriate key as per the credential descriptor and signature suite
-        // From UnsignedVPTokenV2 use the data like format, holderKeyReference and signatureAlgorithm to identify the key to be used for signing and the algorithm to be used for signing the dataToSign, and then return the signature result back to the library
+        // From UnsignedVPTokenV2 use the data like format, holderKeyReference and signatureAlgorithm to identify the key to be used for signing and the algorithm to be used for signing the dataToSign, and then return the signature result to the library
         let signedData: [VPTokenSigningResultV2] = signDataForVP(payload)
         // since the payload is a list of data to be signed for each credential, the result is also a list containing the signature result for each credential, and the library will take care of constructing the VP with the respective proof for each credential accordingly
         // To avoid any confusion, the library will expect the implementation of this callback to return list of signature results corresponding to each credential in the same order as the payload, and the library will match the signature result with the respective credential based on the order of the payload list.
@@ -539,7 +539,7 @@ AuthorizationMethod.presentationDuringIssuance(
 ```
 
 [//]: # (The branch in inji-wallet for pdi docs link is pointed to master intentionally to ensure that the latest documentation is always referred.)
-> For more details on the Presentation During Issuance flow and the expected implementation of the callbacks, please refer to the documentation of `inji-wallet` [here](https://github.com/inji/inji-wallet/blob/master/docs/presentation-during-issuance-support.md)
+> For more details on the Presentation During Issuance flow and the expected implementation of the callbacks, please refer to the [inji-wallet Presentation During Issuance documentation](https://github.com/inji/inji-wallet/blob/master/docs/presentation-during-issuance-support.md)
 
 
 ### 3.3 Request Credential
@@ -556,7 +556,7 @@ AuthorizationMethod.presentationDuringIssuance(
 | proof       | Proof      | Yes      | N/A           | The proof used for making credential request. Supported proof types : JWT. |
 | accessToken | String     | Yes      | N/A           | token issued by providers based on auth code                               |
 
-###### Construction of issuerMetadata
+##### Construction of issuerMetadata
 
 1. Format: `ldp_vc`
 ```swift
@@ -612,7 +612,7 @@ An instance of `CredentialResponse` containing:
 ##### Sample returned response
 
 ```swift
-let credentialResponse = try await vciClient.requestCredential(
+let credentialResponse: CredentialResponse? = try await vciClient.requestCredential(
     issuerMeta: IssuerMeta(
         credentialAudience: CREDENTIAL_AUDIENCE,
         credentialEndpoint: CREDENTIAL_ENDPOINT,
@@ -635,11 +635,11 @@ credentialResponse?.credentialIssuer // This will be nil
 
 The following methods are deprecated and will be removed in future releases. Please migrate to the suggested alternatives.
 
-| Method Name                        | Description                                                                                                                                                              | Deprecated Since | Suggested Alternative                                                                                                                                                       |
-|------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| requestCredentialFromTrustedIssuer | Request for the download of Verifiable Credential through trusted flow has been improvised to accept different authorizations (web / presentation during issuance)       | 0.7.0            | [fetchCredentialFromTrustedIssuer](#fetchcredentialfromtrustedissuer)                                                                                                       |
-| requestCredentialByCredentialOffer | Request for download of Verifiable Credential through Credential Offer flow has been improvised to accept different authorizations (web / presentation during issuance). | 0.7.0            | [fetchCredentialUsingCredentialOffer](#fetchcredentialusingcredentialoffer)                                                                                                 |
-| requestCredential                  | Request for credential from the providers (credential issuer), and receive the credential back.                                                                          | 0.4.0            | [requestCredentialByCredentialOffer()](#31-request-credential-using-credential-offer) or [requestCredentialFromTrustedIssuer()](#32-request-credential-from-trusted-issuer) |
+| Method Name                        | Description                                                                                                                                                              | Deprecated Since | Suggested Alternative                                                                                                                                    |
+|------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| requestCredentialFromTrustedIssuer | Request for the download of Verifiable Credential through trusted flow has been improvised to accept different authorizations (web / presentation during issuance)       | 0.7.0            | [fetchCredentialFromTrustedIssuer](#fetchcredentialfromtrustedissuer)                                                                                    |
+| requestCredentialByCredentialOffer | Request for download of Verifiable Credential through Credential Offer flow has been improvised to accept different authorizations (web / presentation during issuance). | 0.7.0            | [fetchCredentialUsingCredentialOffer](#fetchcredentialusingcredentialoffer)                                                                              |
+| requestCredential                  | Request for credential from the providers (credential issuer), and receive the credential back.                                                                          | 0.4.0            | [fetchCredentialUsingCredentialOffer()](#fetchcredentialusingcredentialoffer) or [fetchCredentialFromTrustedIssuer()](#fetchcredentialfromtrustedissuer) |
 
 ---
 
