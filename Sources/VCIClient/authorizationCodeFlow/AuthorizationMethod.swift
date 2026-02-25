@@ -10,7 +10,7 @@ public enum AuthorizationMethod {
     case presentationDuringIssuance(
         selectCredentialsForPresentation: SelectCredentialsForPresentationCallback,
         signVerifiablePresentation: SignVerifiablePresentationCallback,
-        signatureSuite: String? = nil
+        ldpVpSignatureSuite: String? = nil
     )
 
     var type: InteractionType {
