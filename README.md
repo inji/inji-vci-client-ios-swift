@@ -41,7 +41,7 @@ This library is officially supported and available in both Kotlin and Swift, ens
 Add VCIClient to your Swift Package Manager dependencies:
 
 ```swift
-.package(url: "https://github.com/mosip/inji-vci-client-ios", from: "0.7.0")
+.package(url: "https://github.com/inji/inji-vci-client-ios", from: "0.7.0")
 ```
 
 ## 🏗️ Construction of VCIClient instance
@@ -505,7 +505,13 @@ AuthorizationMethod.redirectToWeb(
 
 Presentation During Issuance flow allows the Wallet to present a verifiable presentation to the Credential Issuer during the credential download process, which can be used by the issuer to verify certain claims about the user before issuing the credential. The authorization for the download here is presentation of another credential (or a verifiable presentation) instead of user-interaction-based authorization as in Redirect To Web flow.
 
-> Note: For Presentation During Issuance flow, this VCI client library internally uses [inji-openid4vp](https://github.com/inji/inji-openid4vp-ios-swift) library to construct the VP and handle the presentation exchange with the issuer.
+###### Specification Reference
+
+This implementation follows - [OpenID4VCI v1.1 Specification Commit](https://github.com/openid/OpenID4VCI/blob/31636e9bb7f0eef6933175e1e41c78ce79a69783/1.1/openid-4-verifiable-credential-issuance-1_1.md)
+
+> Note:
+> - While this library primarily implements OpenID4VCI draft 13 and 11, the Presentation During Issuance feature follows the v1.1 specification as mentioned above.
+> - For Presentation During Issuance flow, this VCI client library internally uses [inji-openid4vp-ios-swift](https://github.com/inji/inji-openid4vp-ios-swift) library to construct the VP and handle the presentation exchange with the issuer.
 
 **Parameters :**
 
@@ -689,9 +695,9 @@ Mock-based tests are available covering:
 - **Swift:** 5.7+
 - **iOS:** 13.0+
 
-Architecture decisions are noted as ADRs [here](https://github.com/mosip/inji-vci-client/tree/master/doc).
+Architecture decisions are documented in the [INJI VCI Client ADR directory](https://github.com/inji/inji-vci-client/tree/master/doc).
 
-**Note: The android library is available [here](https://github.com/mosip/inji-vci-client)**
+**Note: The Android library is available in the [INJI VCI Client repository](https://github.com/inji/inji-vci-client).**
 
 ---
 
@@ -699,7 +705,7 @@ Architecture decisions are noted as ADRs [here](https://github.com/mosip/inji-vc
 
 A complete sample app demonstrating credential issuance flows, proof JWT signing, and error handling with `VCIClient` is available here:
 
-[👉 Example iOS App Repository](https://github.com/mosip/inji-vci-client-ios-swift/tree/release-0.4.x/SwiftExample)
+[👉 Example iOS App Repository](./SwiftExample)
 
 - Shows both **Credential Offer** and **Trusted Issuer** flows
 - Includes best practices for callbacks and UI integration
