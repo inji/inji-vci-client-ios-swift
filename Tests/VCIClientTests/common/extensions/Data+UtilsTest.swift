@@ -76,5 +76,37 @@ final class DataBase64URLEncodedStringTests: XCTestCase {
         let urlSafe = data.base64URLEncodedString()
         XCTAssertEqual(urlSafe, "--__")
     }
+    
+    func testDecodeValidBase64URLString() throws {
+        let original = "Hello World!"
+        let encoded = original.data(using: .utf8)!.base64URLEncodedString()
+
+        let decodedData = try Data(base64URLEncodedString: encoded)
+        let decodedString = String(data: decodedData!, encoding: .utf8)
+
+        XCTAssertEqual(decodedString, original)
+    }
+
+    func testDecodeHandlesPaddingCorrectly() throws {
+        let original = "Hi"
+        let encoded = original.data(using: .utf8)!.base64URLEncodedString()
+
+        let decodedData = try Data(base64URLEncodedString: encoded)
+
+        XCTAssertEqual(String(data: decodedData!, encoding: .utf8), original)
+    }
+
+    func testDecodeHandlesUrlSafeCharacters() throws {
+        let encoded = "--__" // URL-safe version of "++//"
+        let decoded = try Data(base64URLEncodedString: encoded)
+
+        XCTAssertNotNil(decoded)
+    }
+
+    func testDecodeInvalidStringReturnsNil() throws {
+        let decoded = try Data(base64URLEncodedString: "!!!invalid%%%")
+
+        XCTAssertNil(decoded)
+    }
 
 }
