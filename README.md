@@ -25,7 +25,9 @@ The implementation follows
   - `ldp_vc`
   - `mso_mdoc`
   - `vc+sd-jwt` / `dc+sd-jwt`
-- Presentation During Issuance (PDI) support for both download flows
+
+[//]: # (The reference for PDI  is intentionally pointing to kotlin library master branch to be release agnostic, as the PDI support is available for both kotlin and swift libraries. The documentation for PDI support is also common for both libraries, hence it is placed in the common doc folder in the root of the repository.)
+- Presentation During Issuance (PDI) support for both download flows (For more details on PDI support, please refer to the [Presentation During Issuance documentation](https://github.com/inji/inji-vci-client/tree/master/doc/presentation-during-issuance-support.md))
 
 > ⚠️ Consumer of this library is responsible for processing and rendering the credential after it is downloaded.
 
@@ -41,7 +43,7 @@ This library is officially supported and available in both Kotlin and Swift, ens
 Add VCIClient to your Swift Package Manager dependencies:
 
 ```swift
-.package(url: "https://github.com/inji/inji-vci-client-ios", from: "0.7.0")
+.package(url: "https://github.com/inji/inji-vci-client-ios-swift", from: "0.7.0")
 ```
 
 ## 🏗️ Construction of VCIClient instance
@@ -695,7 +697,10 @@ Mock-based tests are available covering:
 - **Swift:** 5.7+
 - **iOS:** 13.0+
 
-Architecture decisions are documented in the [INJI VCI Client ADR directory](https://github.com/inji/inji-vci-client/tree/master/doc).
+## Documentation
+
+- Architecture decisions are documented in the [INJI VCI Client ADR directory](https://github.com/inji/inji-vci-client/tree/master/doc).
+- Documentation of the features are available in the [INJI VCI Client docs directory](https://github.com/inji/inji-vci-client/tree/master/doc).
 
 **Note: The Android library is available in the [INJI VCI Client repository](https://github.com/inji/inji-vci-client).**
 
