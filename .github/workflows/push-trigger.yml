@@ -44,7 +44,7 @@ jobs:
         if: "${{ github.event_name != 'pull_request' && failure() }}"
 
   sonar_analysis:
-    uses: tw-mosip/kattu/.github/workflows/swift-sonar-analysis.yml@debug-sonar-workflow
+    uses: mosip/kattu/.github/workflows/swift-sonar-analysis.yml@develop
     if: "${{  github.event_name != 'pull_request' }}"
     with:
       SERVICE_LOCATION: "."
