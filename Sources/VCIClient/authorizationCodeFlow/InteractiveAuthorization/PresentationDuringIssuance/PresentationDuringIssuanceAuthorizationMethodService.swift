@@ -16,7 +16,6 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
         signatureSuite: String? = nil,
         networkManager: NetworkManager = NetworkManager.shared,
         openId4vp: OpenID4VPInteracting? = nil,
-        resolvePublicKeyType: ((_ uri: String) async throws -> String)? = nil
     ) {
         self.selectCredentialsForPresentation = selectCredentialsForPresentation
         self.signVerifiablePresentation = signVerifiablePresentation
