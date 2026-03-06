@@ -77,7 +77,7 @@ final class PresentationInteractionResponse: InteractionResponse, Decodable {
         var stringValue: String
         init?(stringValue: String) { self.stringValue = stringValue }
         var intValue: Int? { return nil }
-        init?(intValue: Int) { return nil }
+        init?(intValue _: Int) { return nil }
     }
     
     override func validate() throws {

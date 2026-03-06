@@ -8,8 +8,6 @@ struct NetworkResponse {
 public class NetworkManager {
     public static let shared = NetworkManager()
 
-    init() {}
-
     func sendRequest(
         url: String,
         method: HttpMethod,
