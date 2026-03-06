@@ -16,7 +16,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/valpackett/SwiftCBOR", .upToNextMajor(from: "0.5.0")),
-        .package(url: "https://github.com/inji/inji-openid4vp-ios-swift", branch: "release-0.7.x")
+        .package(url: "https://github.com/inji/inji-openid4vp-ios-swift", .upToNextMajor(from: "0.7.0"))
     ],
     targets: [
         .target(
