@@ -44,15 +44,13 @@ final class InteractiveAuthorizationHandler {
             
             let type: String = try extractTypeAndThrowIfError(interactiveAuthorizationResponse.body)
             
-            switch type {
-            case InteractionType.openId4VpPresentation.rawValue:
+            if type == InteractionType.openId4VpPresentation.rawValue {
                 return try await handlePresentationInteraction(
                     presentationInteractionResponse: interactiveAuthorizationResponse.body,
                     authorizationMethods: authorizationMethods,
                     endpoint: endpoint
                 )
-                
-            default:
+            } else {
                 throw InteractiveAuthorizationException(
                     message: "Unsupported interaction type: \(type)"
                 )
@@ -91,7 +89,7 @@ final class InteractiveAuthorizationHandler {
             interactionTypesSupported: interactionTypesSupported
         ).toFormMap()
     }
-
+    
     private func extractTypeAndThrowIfError(_ responseBody: String) throws -> String {
         let json = JsonUtils.toMap(responseBody)
         
