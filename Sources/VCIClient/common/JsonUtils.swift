@@ -12,7 +12,7 @@ enum JsonUtils {
         }
     }
     
-    static func deserialize<T: Decodable>(_ json: String, as type: T.Type) throws -> T? {
+    static func deserialize<T: Decodable>(_ json: String, as _: T.Type) throws -> T? {
         guard !json.isEmpty, let data = json.data(using: .utf8) else { return nil }
         let decoder = JSONDecoder()
         
