@@ -68,4 +68,53 @@ final class JsonUtilsTests: XCTestCase {
         let map = JsonUtils.toMap(json)
         XCTAssertEqual(map["key"] as? String, "value")
     }
+    
+    func testEncodeEncodesObjectToJSONString() {
+        let user = TestUser(firstName: "John", lastName: "Doe")
+
+        let json = JsonUtils.encode(user)
+
+        XCTAssertTrue(json.contains("John"))
+        XCTAssertTrue(json.contains("Doe"))
+    }
+    
+    
+    struct FailingEncodable: Encodable {
+        func encode(to encoder: Encoder) throws {
+            throw NSError(domain: "EncodingError", code: 1)
+        }
+    }
+
+    func testEncodeReturnsEmptyOnFailure() {
+        let obj = FailingEncodable()
+
+        let json = JsonUtils.encode(obj, empty: "EMPTY")
+
+        XCTAssertEqual(json, "EMPTY")
+    }
+    
+    
+    func testToMapReturnsEmptyWhenJsonIsArray() {
+        let json = """
+        ["a", "b", "c"]
+        """
+
+        let map = JsonUtils.toMap(json)
+
+        XCTAssertTrue(map.isEmpty)
+    }
+    
+    struct FailingJsonEncodable: Encodable {
+        func encode(to encoder: Encoder) throws {
+            throw NSError(domain: "EncodingError", code: 1)
+        }
+    }
+
+    func testToJsonStringReturnsNilOnFailure() {
+        let obj = FailingJsonEncodable()
+
+        let json = JsonUtils.toJsonString(obj)
+
+        XCTAssertNil(json)
+    }
 }
