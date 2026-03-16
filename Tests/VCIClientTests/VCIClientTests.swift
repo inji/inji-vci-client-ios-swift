@@ -32,8 +32,8 @@ final class VCIClientTests: XCTestCase {
         )
 
         await assertThrowsVCIErrorContainingMessage(
-            expectedType: DownloadFailedException.self,
-            expectedCode: "VCI-009",
+            expectedType: VCIClientException.self,
+            expectedCode: "VCI-010",
             messageContains: "Simulated failure"
         ) {
             try await client.requestCredentialByCredentialOffer(
@@ -78,8 +78,8 @@ final class VCIClientTests: XCTestCase {
         )
 
         await assertThrowsVCIErrorContainingMessage(
-            expectedType: DownloadFailedException.self,
-            expectedCode: "VCI-009",
+            expectedType: VCIClientException.self,
+            expectedCode: "VCI-010",
             messageContains: "Simulated failure"
         ) {
             try await client.requestCredentialFromTrustedIssuer(
@@ -220,8 +220,8 @@ final class VCIClientTests: XCTestCase {
         )
 
         await assertThrowsVCIErrorContainingMessage(
-            expectedType: IssuerMetadataFetchException.self,
-            expectedCode: "VCI-009",
+            expectedType: VCIClientException.self,
+            expectedCode: "VCI-010",
             messageContains: "Mock error"
         ) {
             try await client.getIssuerMetadata(credentialIssuer: "https://issuer.example.com")
@@ -261,8 +261,8 @@ final class VCIClientTests: XCTestCase {
         )
         
         _ = await assertThrowsVCIErrorContainingMessage(
-            expectedType: IssuerMetadataFetchException.self,
-            expectedCode: "VCI-009",
+            expectedType: VCIClientException.self,
+            expectedCode: "VCI-010",
             messageContains: "Simulated failure"){
                 try await client.getCredentialConfigurationsSupported(
                     credentialIssuer: "https://issuer.example.com"

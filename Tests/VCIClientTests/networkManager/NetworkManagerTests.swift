@@ -43,8 +43,7 @@ final class NetworkManagerTests: XCTestCase {
             )
             XCTFail("Expected invalid URL error")
         } catch {
-            print(error)
-            XCTAssertTrue(error is NetworkRequestTimeoutException)
+            XCTAssertTrue(error is NetworkRequestFailedException)
         }
     }
 

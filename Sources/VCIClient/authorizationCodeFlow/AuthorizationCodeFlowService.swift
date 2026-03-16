@@ -6,20 +6,21 @@ class AuthorizationCodeFlowService {
     private let credentialRequestExecutor: CredentialRequestExecutor
     private let pkceSessionManager: PKCESessionManager
     private let interactiveAuthorizationHandler: InteractiveAuthorizationHandler
-    
+
     init(
         authServerResolver: AuthorizationServerResolver = AuthorizationServerResolver(),
         tokenService: TokenService = TokenService(),
         credentialExecutor: CredentialRequestExecutor = CredentialRequestExecutor(),
-        pkceSessionManager: PKCESessionManager = PKCESessionManager()
+        pkceSessionManager: PKCESessionManager = PKCESessionManager(),
+        interactiveAuthorizationHandler: InteractiveAuthorizationHandler = InteractiveAuthorizationHandler()
     ) {
         self.authServerResolver = authServerResolver
         self.tokenService = tokenService
-        self.credentialRequestExecutor = credentialExecutor
+        credentialRequestExecutor = credentialExecutor
         self.pkceSessionManager = pkceSessionManager
-        self.interactiveAuthorizationHandler = InteractiveAuthorizationHandler()
+        self.interactiveAuthorizationHandler = interactiveAuthorizationHandler
     }
-    
+
     func requestCredentials(
         issuerMetadata: IssuerMetadata,
         clientMetadata: ClientMetadata,
@@ -34,17 +35,23 @@ class AuthorizationCodeFlowService {
     ) async throws -> CredentialResponse {
         do {
             let pkceSession = pkceSessionManager.createSession()
-            
+
             let authServerMetadata: AuthorizationServerMetadata
             do {
                 authServerMetadata = try await authServerResolver.resolveForAuthCode(
                     issuerMetadata: issuerMetadata,
                     credentialOffer: credentialOffer
                 )
-            } catch {
-                throw DownloadFailedException("Failed to resolve authorization server metadata for issuer \(issuerMetadata.credentialIssuer): \(error.localizedDescription)")
+            } catch let e as DownloadFailedException {
+                throw e
+            } catch let e as VCIClientException {
+                throw DownloadFailedException(
+                    message: "Failed to resolve authorization server metadata for issuer \(e.localizedDescription)",
+                    serverErrorCode: e.serverErrorCode,
+                    serverErrorDescription: e.serverErrorDescription
+                )
             }
-            
+
             let token: TokenResponse
             do {
                 token = try await performAuthorizationAndGetToken(
@@ -56,13 +63,22 @@ class AuthorizationCodeFlowService {
                     getTokenResponse: getTokenResponse,
                     credentialConfigurationId: credentialConfigurationId
                 )
+            } catch let e as DownloadFailedException {
+                throw e
+            } catch let e as VCIClientException {
+                throw DownloadFailedException(
+                    message: "Failed to obtain access token via authorization code flow: \(e.localizedDescription)",
+                    serverErrorCode: e.serverErrorCode,
+                    serverErrorDescription: e.serverErrorDescription,
+                    cause: e
+                )
             } catch {
-                throw DownloadFailedException("Failed to obtain access token via authorization code flow: \(error.localizedDescription)")
+                throw DownloadFailedException(message: "Failed to obtain access token via authorization code flow: \(error.localizedDescription)", cause: error)
             }
-            
+
             let jwt: String
             do {
-                jwt  = try await getProofJwt(
+                jwt = try await getProofJwt(
                     issuerMetadata.credentialIssuer,
                     token.cNonce,
                     proofSigningAlgorithmsSupportedSupported
@@ -70,9 +86,9 @@ class AuthorizationCodeFlowService {
             } catch {
                 throw DownloadFailedException("Failed to obtain proof JWT from callback: \(error.localizedDescription)")
             }
-            
+
             let proof = JWTProof(jwt: jwt)
-            
+
             guard let response = try await credentialRequestExecutor.requestCredential(
                 issuerMetadata: issuerMetadata, credentialConfigurationId: credentialConfigurationId,
                 proof: proof,
@@ -82,14 +98,28 @@ class AuthorizationCodeFlowService {
             ) else {
                 throw DownloadFailedException("Credential request returned nil.")
             }
-            
+
             return response
-            
-        } catch {            
-            throw DownloadFailedException("Download failed via authorization code flow: \(error.localizedDescription)")
+
+        } catch let e as DownloadFailedException {
+            throw e
+
+        } catch let e as VCIClientException {
+            throw DownloadFailedException(
+                message: e.message,
+                serverErrorCode: e.serverErrorCode,
+                serverErrorDescription: e.serverErrorDescription,
+                cause: e
+            )
+
+        } catch {
+            throw DownloadFailedException(
+                message: "Download failed via authorization code flow: \(error.localizedDescription)",
+                cause: error
+            )
         }
     }
-    
+
     private func performAuthorizationAndGetToken(
         authServerMetadata: AuthorizationServerMetadata,
         issuerMetadata: IssuerMetadata,
@@ -97,14 +127,14 @@ class AuthorizationCodeFlowService {
         authorizationMethods: [AuthorizationMethod],
         pkceSession: PKCESessionManager.PKCESession,
         getTokenResponse: @escaping TokenResponseCallback,
-        credentialConfigurationId : String
+        credentialConfigurationId: String
     ) async throws -> TokenResponse {
         guard let tokenEndpoint = issuerMetadata.tokenEndpoint ?? authServerMetadata.tokenEndpoint else {
             throw DownloadFailedException("Missing token endpoint for issuer \(issuerMetadata.credentialIssuer)")
         }
 
         let authCode = try await obtainAuthorizationCode(authorizationServerMetadata: authServerMetadata, issuerMetadata: issuerMetadata, clientMetadata: clientMetadata, pkceSession: pkceSession, credentialConfigurationId: credentialConfigurationId, authorizationMethods: authorizationMethods)
-        
+
         return try await tokenService.getAccessToken(
             getTokenResponse: getTokenResponse,
             tokenEndpoint: tokenEndpoint,
@@ -114,7 +144,7 @@ class AuthorizationCodeFlowService {
             codeVerifier: pkceSession.codeVerifier
         )
     }
-    
+
     private func obtainAuthorizationCode(
         authorizationServerMetadata: AuthorizationServerMetadata,
         issuerMetadata: IssuerMetadata,
@@ -123,9 +153,8 @@ class AuthorizationCodeFlowService {
         credentialConfigurationId: String,
         authorizationMethods: [AuthorizationMethod]
     ) async throws -> String {
-        
         let interactiveEndpoint = authorizationServerMetadata.interactiveAuthorizationEndpoint
-        
+
         if let interactiveEndpoint {
             return try await obtainAuthorizationCodeViaInteractiveAuthorizationEndpoint(
                 endpoint: interactiveEndpoint,
@@ -136,7 +165,6 @@ class AuthorizationCodeFlowService {
                 authorizationMethods: authorizationMethods
             )
         } else {
-            
             return try await obtainAuthorizationCodeViaAuthorizationEndpoint(
                 authorizationServerMetadata: authorizationServerMetadata,
                 issuerMetadata: issuerMetadata,
@@ -146,7 +174,7 @@ class AuthorizationCodeFlowService {
             )
         }
     }
-    
+
     private func obtainAuthorizationCodeViaInteractiveAuthorizationEndpoint(
         endpoint: String,
         issuerMetadata: IssuerMetadata,
@@ -156,7 +184,7 @@ class AuthorizationCodeFlowService {
         authorizationMethods: [AuthorizationMethod]
     ) async throws -> String {
         print("Using Interactive Authorization Endpoint: \(endpoint) for issuer=\(issuerMetadata.credentialIssuer)")
-        
+
         let response: AuthorizationResponse
         do {
             response = try await interactiveAuthorizationHandler.handle(
@@ -166,21 +194,28 @@ class AuthorizationCodeFlowService {
                 authorizationMethods: authorizationMethods,
                 pkceSession: pkceSession
             )
+        } catch let error as VCIClientException {
+            throw DownloadFailedException(
+                message: "Interactive authorization failed at endpoint \(endpoint): \(error.localizedDescription)",
+                serverErrorCode: error.serverErrorCode,
+                serverErrorDescription: error.serverErrorDescription,
+                cause: error
+            )
         } catch {
             throw DownloadFailedException(
                 "Interactive authorization failed at endpoint \(endpoint): \(error.localizedDescription)"
             )
         }
-        
+
         guard let authorizationCode = response.authorizationCode else {
             throw DownloadFailedException(
                 "Authorization failed: code not received from interactive authorization endpoint \(endpoint). Error: \(response.error ?? "unknown"), Description: \(response.errorDescription ?? "unknown")"
             )
         }
-        
+
         return authorizationCode
     }
-    
+
     private func obtainAuthorizationCodeViaAuthorizationEndpoint(
         authorizationServerMetadata: AuthorizationServerMetadata,
         issuerMetadata: IssuerMetadata,
@@ -188,35 +223,33 @@ class AuthorizationCodeFlowService {
         pkceSession: PKCESessionManager.PKCESession,
         authorizationMethods: [AuthorizationMethod]? = nil
     ) async throws -> String {
-        
         guard let authorizationEndpoint =
-                authorizationServerMetadata.authorizationEndpoint else {
+            authorizationServerMetadata.authorizationEndpoint else {
             throw DownloadFailedException(
                 "Missing authorization endpoint for issuer \(issuerMetadata.credentialIssuer)"
             )
         }
-        
+
         let redirectToWebAuthorizationMethod =
-        authorizationMethods?
-            .first {
-                if case .redirectToWeb = $0 { return true }
-                return false
-            }
-        
+            authorizationMethods?
+                .first {
+                    if case .redirectToWeb = $0 { return true }
+                    return false
+                }
+
         if let redirectMethod = redirectToWebAuthorizationMethod,
            case let .redirectToWeb(openWebPage) = redirectMethod {
-            
             print(
                 "Using non-interactive authorization endpoint: \(authorizationEndpoint) (redirect_to_web) for issuer=\(issuerMetadata.credentialIssuer)"
             )
-            
+
             let requestData = ImplicitAuthorizationRequestData(
                 authorizeUrl: authorizationEndpoint,
                 clientMetadata: clientMetadata,
                 pkceSession: pkceSession,
                 scope: issuerMetadata.scope ?? "default"
             )
-            
+
             let response: AuthorizationResponse
             do {
                 response = try await RedirectToWebAuthorizationMethodService(
@@ -227,15 +260,15 @@ class AuthorizationCodeFlowService {
                     "Authorization failed at authorization endpoint \(authorizationEndpoint): \(error.localizedDescription)"
                 )
             }
-            
+
             guard let authorizationCode = response.authorizationCode else {
                 throw DownloadFailedException(
                     "Authorization code not received from authorization endpoint \(authorizationEndpoint)"
                 )
             }
-            
+
             return authorizationCode
-            
+
         } else {
             throw DownloadFailedException(
                 "No authorization method available to obtain authorization code from \(authorizationEndpoint)"
@@ -243,6 +276,3 @@ class AuthorizationCodeFlowService {
         }
     }
 }
-
-
-

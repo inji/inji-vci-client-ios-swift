@@ -148,13 +148,13 @@ final class MockNetworkManager: NetworkManager {
         timeoutMillis: Int64
     ) async throws -> NetworkResponse {
         if simulateDelay > 0 {
-            try await Task.sleep(nanoseconds: UInt64(simulateDelay * 1_000_000_000))
+            try await Task.sleep(nanoseconds: UInt64(simulateDelay * 1000000000))
         }
 
         if shouldThrowTimeout {
             throw NetworkRequestTimeoutException("Simulated timeout")
         }
-        
+
         if shouldThrowNetworkError {
             throw DownloadFailedException("Simulated network failure")
         }
@@ -165,7 +165,7 @@ final class MockNetworkManager: NetworkManager {
 
     override func sendRequest(request: URLRequest) async throws -> NetworkResponse {
         if simulateDelay > 0 {
-            try await Task.sleep(nanoseconds: UInt64(simulateDelay * 1_000_000_000))
+            try await Task.sleep(nanoseconds: UInt64(simulateDelay * 1000000000))
         }
 
         if shouldThrowTimeout {
@@ -229,6 +229,18 @@ class MockValidCredentialRequest: CredentialRequestProtocol {
     }
 }
 
+class MockInteractiveAuthorizationHandler: InteractiveAuthorizationHandler {
+    func handle(
+        endpoint: String,
+        clientMetadata: ClientMetadata,
+        credentialConfigurationId: String,
+        authorizationMethods: [AuthorizationMethod],
+        pkceSession: PKCESessionManager.PKCESession
+    ) -> AuthorizationResponse {
+        return AuthorizationResponse(authorizationCode: "dummy", status: "success", error: nil, errorDescription: nil, authSession: "dummy")
+    }
+}
+
 class MockInvalidCredentialRequest: CredentialRequestProtocol {
     required init(accessToken: String, issuerMetaData: IssuerMetadata, proof: JWTProof) {
     }
@@ -285,7 +297,7 @@ final class MockAuthorizationCodeFlowService: AuthorizationCodeFlowService {
     var responseToReturn: CredentialResponse?
 
     override func requestCredentials(
-        issuerMetadata: IssuerMetadata ,
+        issuerMetadata: IssuerMetadata,
         clientMetadata: ClientMetadata,
         authorizationMethods: [AuthorizationMethod],
         getTokenResponse: @escaping TokenResponseCallback,
@@ -316,7 +328,7 @@ final class MockIssuerMetadataService: IssuerMetadataService {
     var resultToReturn: IssuerMetadataResult!
     var shouldThrow: Bool = false
     var configurationsToReturn: [String: Any]?
-  
+
     override func fetchIssuerMetadataResult(
         credentialIssuer: String,
         credentialConfigurationId: String
@@ -331,13 +343,13 @@ final class MockIssuerMetadataService: IssuerMetadataService {
 
         return resultToReturn.raw as [String: Any]
     }
-    
+
     override func fetchCredentialConfigurationsSupported(from credentialIssuer: String) async throws -> [String: Any] {
-            if shouldThrow {
-                throw IssuerMetadataFetchException("Simulated failure")
-            }
-            return configurationsToReturn ?? [:]
+        if shouldThrow {
+            throw IssuerMetadataFetchException("Simulated failure")
         }
+        return configurationsToReturn ?? [:]
+    }
 }
 
 final class MockPreAuthFlowService: PreAuthCodeFlowService {
@@ -358,4 +370,3 @@ final class MockPreAuthFlowService: PreAuthCodeFlowService {
         return responseToReturn
     }
 }
-

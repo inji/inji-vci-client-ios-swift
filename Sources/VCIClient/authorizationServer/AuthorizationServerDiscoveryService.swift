@@ -6,7 +6,6 @@ class AuthorizationServerDiscoveryService {
         let openidUrl = "\(baseUrl)/.well-known/openid-configuration"
         let timeout = Constants.defaultNetworkTimeoutInMillis
 
-        // Try OAuth discovery
         do {
             let oauthResponse = try await NetworkManager.shared.sendRequest(
                 url: oauthUrl,
@@ -19,10 +18,12 @@ class AuthorizationServerDiscoveryService {
                 return metadata
             }
         } catch {
-            print("OAuth discovery failed, trying OpenID discovery: \(error.localizedDescription)")
+            Util.logWarning(
+                message: "OAuth discovery failed, trying OpenID discovery: \(error.localizedDescription)",
+                className: "AuthorizationServerDiscoveryService"
+            )
         }
 
-        // Fallback: Try OpenID discovery
         do {
             let openidResponse = try await NetworkManager.shared.sendRequest(
                 url: openidUrl,
@@ -30,12 +31,16 @@ class AuthorizationServerDiscoveryService {
                 timeoutMillis: timeout
             )
 
-            if !openidResponse.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            if openidResponse.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false,
                let metadata = try JsonUtils.deserialize(openidResponse.body, as: AuthorizationServerMetadata.self) {
                 return metadata
             }
+
         } catch {
-            print("OpenID discovery also failed: \(error.localizedDescription)")
+            Util.logWarning(
+                message: "OpenID discovery also failed: \(error.localizedDescription)",
+                className: "AuthorizationServerDiscoveryService"
+            )
         }
 
         throw AutorizationServerDiscoveryException("Failed to discover authorization server metadata at both endpoints.")

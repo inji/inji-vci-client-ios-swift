@@ -7,4 +7,19 @@ class InvalidAccessTokenException: VCIClientException {
             message: "Access token is invalid : \(message ?? "")"
         )
     }
+    
+    init(
+        message: String?,
+        serverErrorCode: String? = nil,
+        serverErrorDescription: String? = nil,
+        cause: Error? = nil
+    ) {
+        super.init(
+            code: "VCI-003",
+            message: "Access token is invalid : \(message ?? "")",
+            serverErrorCode: serverErrorCode,
+            serverErrorDescription: serverErrorDescription,
+            cause: cause
+        )
+    }
 }

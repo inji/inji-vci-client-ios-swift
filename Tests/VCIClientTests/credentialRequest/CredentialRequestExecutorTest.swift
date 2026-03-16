@@ -98,7 +98,7 @@ final class CredentialRequestExecutorTests: XCTestCase {
             }
         }
         
-        func testNetworkManagerThrowsTimeout_shouldThrowNetworkRequestTimeoutException() async {
+        func testNetworkManagerThrowsTimeout_shouldThrowDownloadFailedException() async {
             let factory = MockCredentialRequestFactory()
             let networkManager = MockNetworkManager()
             networkManager.shouldThrowTimeout = true
@@ -113,7 +113,7 @@ final class CredentialRequestExecutorTests: XCTestCase {
                     session: networkManager
                 )
                 XCTFail("Expected NetworkRequestTimeoutException but got success")
-            } catch is NetworkRequestTimeoutException {
+            } catch is DownloadFailedException {
                 // Success
             } catch {
                 XCTFail("Unexpected error type: \(error)")

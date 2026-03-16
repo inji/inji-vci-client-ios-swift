@@ -1,6 +1,6 @@
 import Foundation
 
-final class InteractiveAuthorizationHandler {
+class InteractiveAuthorizationHandler {
     private let networkManager: NetworkManager
     
     init(networkManager: NetworkManager = NetworkManager.shared) {
@@ -16,26 +16,25 @@ final class InteractiveAuthorizationHandler {
     ) async throws -> AuthorizationResponse {
         
         do {
-            // interaction types supported will be populated from the authorization methods once redirect_to_web interaction is supported
             let interactionTypesSupported = authorizationMethods.compactMap { method in
                 let type = method.type.rawValue
                 return type != InteractionType.redirectToWeb.rawValue ? type : nil
             }
             
-            if(interactionTypesSupported.isEmpty) {
+            if interactionTypesSupported.isEmpty {
                 throw InteractiveAuthorizationException(
                     message: "No supported interaction types found in authorization methods"
                 )
             }
             
-            let initialIarRequest =  buildInitialIarRequest(
+            let initialIarRequest = buildInitialIarRequest(
                 clientMetadata: clientMetadata,
                 credentialConfigurationId: credentialConfigurationId,
                 pkce: pkceSession,
                 interactionTypesSupported: interactionTypesSupported
             )
             
-            let interactiveAuthorizationResponse = try await self.networkManager.sendRequest(
+            let interactiveAuthorizationResponse = try await networkManager.sendRequest(
                 url: endpoint,
                 method: .post,
                 headers: [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue],
@@ -59,10 +58,21 @@ final class InteractiveAuthorizationHandler {
         } catch let e as InteractiveAuthorizationException {
             print("Interactive authorization failed: \(e.message)")
             throw e
-        } catch {
-            print("Interactive authorization failed: \(error.localizedDescription)")
+            
+        } catch let e as VCIClientException {
+            print("Interactive authorization failed: \(e.message)")
             throw InteractiveAuthorizationException(
-                message: "Interactive authorization failed: \(error.localizedDescription)"
+                message: "Interactive authorization failed: \(e.message)",
+                serverErrorCode: e.serverErrorCode,
+                serverErrorDescription: e.serverErrorDescription,
+                cause: e
+            )
+            
+        } catch {
+            print("Unexpected error during interactive authorization: \(error.localizedDescription)")
+            throw InteractiveAuthorizationException(
+                message: "Unexpected error during interactive authorization: \(error.localizedDescription)",
+                cause: error
             )
         }
     }
@@ -99,14 +109,22 @@ final class InteractiveAuthorizationHandler {
         
         if let error = json["error"] as? String {
             let errorDescription = (json["error_description"] as? String) ?? ""
+            
             var message = "authorization server error: \(error)"
             if !errorDescription.isEmpty {
                 message += " - \(errorDescription)"
             }
-            throw InteractiveAuthorizationException(message: message)
-        } else {
-            throw InteractiveAuthorizationException(message: "Missing 'type' in interaction response from authorization server")
+            
+            throw InteractiveAuthorizationException(
+                message: message,
+                serverErrorCode: error,
+                serverErrorDescription: errorDescription
+            )
         }
+        
+        throw InteractiveAuthorizationException(
+            message: "Missing 'type' in interaction response from authorization server"
+        )
     }
     
     private func handlePresentationInteraction(

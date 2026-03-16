@@ -18,7 +18,7 @@ class AuthorizationServerResolver {
             credentialIssuer: issuerMetadata.credentialIssuer
         )
     }
-    
+
     func resolveForAuthCode(
         issuerMetadata: IssuerMetadata,
         credentialOffer: CredentialOffer? = nil
@@ -31,7 +31,6 @@ class AuthorizationServerResolver {
             credentialIssuer: issuerMetadata.credentialIssuer
         )
     }
-
 
     private func resolveAuthServer(
         offerGrantAuthServer: String?,
@@ -89,12 +88,11 @@ class AuthorizationServerResolver {
                 "Grant type '\(expectedGrantType)' not supported by auth server."
             )
         }
-
         if expectedGrantType == GrantType.authorizationCode.rawValue,
-           //either authorization_endpoint or interactive_authorization_endpoint is required
+           // either authorization_endpoint or interactive_authorization_endpoint is required
            (authServerMetadata.authorizationEndpoint == nil || authServerMetadata.authorizationEndpoint?.isEmpty == true) &&
-            (authServerMetadata.interactiveAuthorizationEndpoint == nil || authServerMetadata.interactiveAuthorizationEndpoint?.isEmpty == true)
-           {
+           (authServerMetadata.interactiveAuthorizationEndpoint == nil || authServerMetadata.interactiveAuthorizationEndpoint?.isEmpty == true)
+        {
             throw AutorizationServerDiscoveryException(
                 "Missing authorization_endpoint for authorization_code flow."
             )
@@ -108,9 +106,13 @@ class AuthorizationServerResolver {
         expectedGrantType: String
     ) async throws -> AuthorizationServerMetadata {
         try await withThrowingTaskGroup(of: AuthorizationServerMetadata?.self) { group in
+
             for url in authServers {
                 group.addTask {
-                    try? await self.discoverAndValidate(authServerUrl: url, expectedGrantType: expectedGrantType)
+                    try? await self.discoverAndValidate(
+                        authServerUrl: url,
+                        expectedGrantType: expectedGrantType
+                    )
                 }
             }
 

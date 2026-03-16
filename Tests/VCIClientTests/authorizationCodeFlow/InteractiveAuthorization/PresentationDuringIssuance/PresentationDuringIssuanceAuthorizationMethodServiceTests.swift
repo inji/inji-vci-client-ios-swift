@@ -255,7 +255,7 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
             XCTAssertTrue(error is InteractiveAuthorizationException)
             XCTAssertTrue(
                 error.localizedDescription.contains(
-                    "Network error while posting VP response"
+                    "Error while posting VP response"
                 )
             )
         }
@@ -281,7 +281,7 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
             XCTAssertTrue(error is InteractiveAuthorizationException)
             XCTAssertEqual(
                 error.localizedDescription,
-                "Failed to authorize via interaction: Issuer response deserialization failed."
+                "Failed to authorize via interaction: Issuer response deserialization failed"
             )
         }
     }

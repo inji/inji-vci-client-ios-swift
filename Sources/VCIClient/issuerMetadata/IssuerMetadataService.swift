@@ -14,39 +14,75 @@ class IssuerMetadataService {
         credentialIssuer: String,
         credentialConfigurationId: String
     ) async throws -> IssuerMetadataResult {
-        let rawIssuerMetadata: [String: Any] = try await getOrFetchRawIssuerMetadata(for: credentialIssuer)
+        do {
+            let rawIssuerMetadata: [String: Any] =
+                try await getOrFetchRawIssuerMetadata(for: credentialIssuer)
 
-        let resolvedIssuerMetadata = try resolveMetadata(
-            credentialConfigurationId: credentialConfigurationId,
-            rawIssuerMetadata: rawIssuerMetadata
-        )
+            let resolvedIssuerMetadata = try resolveMetadata(
+                credentialConfigurationId: credentialConfigurationId,
+                rawIssuerMetadata: rawIssuerMetadata
+            )
 
-        return IssuerMetadataResult(
-            issuerMetadata: resolvedIssuerMetadata,
-            raw: rawIssuerMetadata,
-            credentialIssuer: credentialIssuer
-        )
+            return IssuerMetadataResult(
+                issuerMetadata: resolvedIssuerMetadata,
+                raw: rawIssuerMetadata,
+                credentialIssuer: credentialIssuer
+            )
+
+        } catch let e as IssuerMetadataFetchException {
+            throw e
+        } catch let e as VCIClientException {
+            throw IssuerMetadataFetchException(
+                e.message,
+                serverErrorCode: e.serverErrorCode,
+                serverErrorDescription: e.serverErrorDescription,
+                cause: e
+            )
+        } catch {
+            throw IssuerMetadataFetchException(
+                "Unexpected error while resolving issuer metadata: \(error.localizedDescription)",
+                cause: error
+            )
+        }
     }
 
     func fetchAndParseIssuerMetadata(from credentialIssuer: String) async throws -> [String: Any] {
         let wellKnownUrl = credentialIssuer + Constants.credentialIssuerWellknownUriSuffix
-        let response = try await session.sendRequest(
-            url: wellKnownUrl,
-            method: .get,
-            headers: ["Accept": "application/json"],
-            timeoutMillis: timeoutMillis
-        )
 
-        guard !response.body.isEmpty else {
-            throw IssuerMetadataFetchException("Issuer metadata response is empty.")
+        do {
+            let response = try await session.sendRequest(
+                url: wellKnownUrl,
+                method: .get,
+                headers: ["Accept": "application/json"],
+                timeoutMillis: timeoutMillis
+            )
+
+            guard !response.body.isEmpty else {
+                throw IssuerMetadataFetchException("Issuer metadata response is empty.")
+            }
+
+            guard let data = response.body.data(using: .utf8),
+                  let jsonObject = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                throw IssuerMetadataFetchException("Issuer metadata is not valid JSON.")
+            }
+
+            return jsonObject
+
+        } catch let e as IssuerMetadataFetchException {
+            throw e
+        } catch let e as VCIClientException {
+            throw IssuerMetadataFetchException(
+                e.message,
+                serverErrorCode: e.serverErrorCode,
+                serverErrorDescription: e.serverErrorDescription,
+                cause: e
+            )
+        } catch {
+            throw IssuerMetadataFetchException(
+                "Unexpected error while fetching issuer metadata: \(error.localizedDescription)",
+                cause: error
+            )
         }
-
-        guard let data = response.body.data(using: .utf8),
-              let jsonObject = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw IssuerMetadataFetchException("Issuer metadata is not valid JSON.")
-        }
-
-        return jsonObject
     }
 
     func fetchCredentialConfigurationsSupported(from credentialIssuer: String) async throws -> [String: Any] {

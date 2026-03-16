@@ -182,7 +182,7 @@ final class IssuerMetadataServiceTests: XCTestCase {
         let service = makeService(response: "{}", shouldThrow: true)
 
         await assertThrowsVCIErrorContainingMessage(
-            expectedType: DownloadFailedException.self,
+            expectedType: IssuerMetadataFetchException.self,
             messageContains: "Simulated network failure"
         ) {
             try await service.fetchIssuerMetadataResult(

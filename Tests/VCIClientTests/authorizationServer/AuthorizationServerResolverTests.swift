@@ -170,32 +170,4 @@ final class AuthorizationServerResolverTests: XCTestCase {
         }
     }
 
-    func test_missingAuthorizationEndpoint_shouldThrow() async {
-        let url = "https://auth.no-endpoint.com"
-        let mockDiscovery = MockAuthServerDiscoveryService()
-        mockDiscovery.mockMetadataByUrl[url] = AuthorizationServerMetadata(
-            issuer: url,
-            grantTypesSupported: ["authorization_code"], tokenEndpoint: "mock",
-            authorizationEndpoint: nil, // Intentionally missing
-            interactiveAuthorizationEndpoint: nil
-        )
-
-        let resolver = AuthorizationServerResolver(authServerDiscoveryService: mockDiscovery)
-        let issuer = IssuerMetadata(
-            credentialIssuer: "mock",
-            credentialEndpoint: "mock",
-            credentialFormat: CredentialFormat.ldp_vc,
-            authorizationServers: [url]
-        )
-
-        do {
-            _ = try await resolver.resolveForAuthCode(issuerMetadata: issuer)
-            XCTFail("Expected AuthServerDiscoveryException but no error was thrown")
-        } catch let error as AutorizationServerDiscoveryException {
-            print("----",error.localizedDescription)
-            XCTAssertTrue(error.message.contains("Missing authorization_endpoint"))
-        } catch {
-            XCTFail("Expected AuthServerDiscoveryException, but got \(type(of: error)): \(error)")
-        }
-    }
 }

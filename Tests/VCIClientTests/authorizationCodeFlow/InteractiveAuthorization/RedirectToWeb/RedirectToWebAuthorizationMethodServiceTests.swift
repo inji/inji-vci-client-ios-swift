@@ -44,7 +44,7 @@ final class RedirectToWebAuthorizationMethodServiceTests: XCTestCase {
         do {
             _ = try await service.authorizeUser(requestData: invalidRequest)
             XCTFail("Expected IllegalArgumentException to be thrown")
-        } catch is IllegalArgumentException {
+        } catch is InteractiveAuthorizationException {
             // expected
         } catch {
             XCTFail("Unexpected error type: \(error)")

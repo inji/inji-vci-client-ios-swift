@@ -8,4 +8,18 @@ class InteractiveAuthorizationException: VCIClientException {
             message: "Failed to authorize via interaction: \(message ?? "")"
         )
     }
+    init(
+        message: String?,
+        serverErrorCode: String? = nil,
+        serverErrorDescription: String? = nil,
+        cause: Error? = nil
+    ) {
+        super.init(
+            code: "VCI-011",
+            message: "Failed to authorize via interaction: \(message ?? "")",
+            serverErrorCode: serverErrorCode,
+            serverErrorDescription: serverErrorDescription,
+            cause: cause
+        )
+    }
 }

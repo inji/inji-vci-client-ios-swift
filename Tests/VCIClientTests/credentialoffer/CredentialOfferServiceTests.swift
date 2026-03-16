@@ -61,7 +61,7 @@ final class CredentialOfferServiceTests: XCTestCase {
             _ = try await service.fetchCredentialOffer(uri)
             XCTFail("Expected OfferFetchFailedException to be thrown")
         } catch let error as CredentialOfferFetchFailedException {
-            XCTAssertTrue(error.localizedDescription.contains("response was empty"))
+            XCTAssertTrue(error.localizedDescription.contains("Empty response"))
         } catch {
             XCTFail("Expected OfferFetchFailedException but got \(error)")
         }
@@ -75,6 +75,7 @@ final class CredentialOfferServiceTests: XCTestCase {
             _ = try await service.fetchCredentialOffer(noParams)
             XCTFail("Expected OfferFetchFailedException to be thrown")
         } catch let error as CredentialOfferFetchFailedException {
+            print(error.localizedDescription)
             XCTAssertTrue(error.localizedDescription.contains("Missing 'credential_offer' or 'credential_offer_uri'"))
         } catch {
             XCTFail("Expected OfferFetchFailedException but got \(error)")
