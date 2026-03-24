@@ -5,26 +5,29 @@ import Foundation
 // MARK: - Mock AuthServerResolver
 
 final class MockAuthServerResolver: AuthorizationServerResolver {
+    var mockIssuer: String = "mock-issuer"
     var mockTokenEndpoint: String? = "https://example.com/token"
     var mcokAuthorizationEndpoint: String? = "https://example.com/auth"
+    var mockInteractiveAuthorizationEndpoint: String?
+    var mockGrantTypesSupported: [String]? = nil
     override func resolveForPreAuth(issuerMetadata: IssuerMetadata, credentialOffer: CredentialOffer) async throws -> AuthorizationServerMetadata {
         return AuthorizationServerMetadata(
-            issuer: "mock-issuer",
-            grantTypesSupported: nil,
+            issuer: mockIssuer,
+            grantTypesSupported: mockGrantTypesSupported,
             tokenEndpoint: mockTokenEndpoint,
             authorizationEndpoint: nil,
-            interactiveAuthorizationEndpoint: nil
+            interactiveAuthorizationEndpoint: mockInteractiveAuthorizationEndpoint
         )
     }
 
     override func resolveForAuthCode(issuerMetadata: IssuerMetadata,
                                      credentialOffer: CredentialOffer? = nil) async throws -> AuthorizationServerMetadata {
         return AuthorizationServerMetadata(
-            issuer: "mock-issuer",
-            grantTypesSupported: nil,
+            issuer: mockIssuer,
+            grantTypesSupported: mockGrantTypesSupported,
             tokenEndpoint: mockTokenEndpoint,
             authorizationEndpoint: mcokAuthorizationEndpoint,
-            interactiveAuthorizationEndpoint: nil
+            interactiveAuthorizationEndpoint: mockInteractiveAuthorizationEndpoint
         )
     }
 }
@@ -32,6 +35,8 @@ final class MockAuthServerResolver: AuthorizationServerResolver {
 // MARK: - Mock TokenService
 
 final class MockTokenService: TokenService {
+    var authCodeErrorToThrow: Error?
+
     override func getAccessToken(getTokenResponse: @escaping TokenResponseCallback,
                                  tokenEndpoint: String,
                                  timeoutMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
@@ -53,6 +58,9 @@ final class MockTokenService: TokenService {
                                  clientId: String? = nil,
                                  redirectUri: String? = nil,
                                  codeVerifier: String? = nil) async throws -> TokenResponse {
+        if let authCodeErrorToThrow {
+            throw authCodeErrorToThrow
+        }
         return TokenResponse(
             accessToken: "mock-access-token",
             tokenType: "Bearer",
@@ -67,6 +75,7 @@ final class MockTokenService: TokenService {
 
 final class MockCredentialRequestExecutor: CredentialRequestExecutor {
     var shouldReturnNil = false
+    var errorToThrow: Error?
 
     init(shouldReturnNil: Bool = false) {
         self.shouldReturnNil = shouldReturnNil
@@ -81,6 +90,9 @@ final class MockCredentialRequestExecutor: CredentialRequestExecutor {
         session: NetworkManager = NetworkManager.shared
     ) async throws -> CredentialResponse? {
         if shouldReturnNil { return nil }
+        if let errorToThrow {
+            throw errorToThrow
+        }
 
         return CredentialResponse(credential: AnyCodable("mock-credential"), credentialIssuer: "mock-issuer", credentialConfigurationId: "mock-id")
     }
@@ -230,14 +242,26 @@ class MockValidCredentialRequest: CredentialRequestProtocol {
 }
 
 class MockInteractiveAuthorizationHandler: InteractiveAuthorizationHandler {
-    func handle(
+    var responseToReturn = AuthorizationResponse(
+        authorizationCode: "dummy",
+        status: "success",
+        error: nil,
+        errorDescription: nil,
+        authSession: "dummy"
+    )
+    var errorToThrow: Error?
+
+    override func handle(
         endpoint: String,
         clientMetadata: ClientMetadata,
         credentialConfigurationId: String,
         authorizationMethods: [AuthorizationMethod],
         pkceSession: PKCESessionManager.PKCESession
-    ) -> AuthorizationResponse {
-        return AuthorizationResponse(authorizationCode: "dummy", status: "success", error: nil, errorDescription: nil, authSession: "dummy")
+    ) async throws -> AuthorizationResponse {
+        if let errorToThrow {
+            throw errorToThrow
+        }
+        return responseToReturn
     }
 }
 
