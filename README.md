@@ -44,7 +44,7 @@ This library is officially supported and available in both Kotlin and Swift, ens
 Add VCIClient to your Swift Package Manager dependencies:
 
 ```swift
-.package(url: "https://github.com/inji/inji-vci-client-ios", from: "0.8.0")
+.package(url: "https://github.com/inji/inji-vci-client-ios-swift", from: "0.8.0")
 ```
 
 ## 🏗️ Construction of VCIClient instance
@@ -559,10 +559,10 @@ AuthorizationMethod.presentationDuringIssuance(
 
 
 ### 3.3 Request Credential
-- Method: `requestCredential` (deprecated use requestCredentialByCredentialOffer() or requestCredentialFromTrustedIssuer())
+- Method: `requestCredential`
 - Request for credential from the providers (credential issuer), and receive the credential back.
 
-> Note: This method is deprecated and will be removed in future releases. Please migrate to `requestCredentialByCredentialOffer()` or `requestCredentialFromTrustedIssuer()`.
+> Note: This method is deprecated and will be removed in future releases. Please migrate to [`fetchCredentialUsingCredentialOffer()`](#fetchcredentialusingcredentialoffer) or [`fetchCredentialFromTrustedIssuer()`](#fetchcredentialfromtrustedissuer).
 
 #### Parameters
 
