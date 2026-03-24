@@ -25,6 +25,7 @@ The implementation follows
   - `ldp_vc`
   - `mso_mdoc`
   - `vc+sd-jwt` / `dc+sd-jwt`
+  - `jwt_vc_json`
 
 [//]: # (The reference for PDI  is intentionally pointing to kotlin library master branch to be release agnostic, as the PDI support is available for both kotlin and swift libraries. The documentation for PDI support is also common for both libraries, hence it is placed in the common doc folder in the root of the repository.)
 - Presentation During Issuance (PDI) support for both download flows (For more details on PDI support, please refer to the [Presentation During Issuance documentation](https://github.com/inji/inji-vci-client/tree/master/doc/presentation-during-issuance-support.md))
@@ -43,7 +44,7 @@ This library is officially supported and available in both Kotlin and Swift, ens
 Add VCIClient to your Swift Package Manager dependencies:
 
 ```swift
-.package(url: "https://github.com/inji/inji-vci-client-ios-swift", from: "0.7.0")
+.package(url: "https://github.com/inji/inji-vci-client-ios", from: "0.8.0")
 ```
 
 ## 🏗️ Construction of VCIClient instance
@@ -126,6 +127,13 @@ let credentialConfigurationsSupported : [String: Any] = try await vciClient.getC
     "credentialConfigId-2": [
         "format": "mso_mdoc",
         "doctype": "org.iso.18013.5.1.mDL"
+    ],
+    "credentialConfigId-3": [
+        "format": "jwt_vc_json",
+        "credential_definition": [
+            "type": ["VerifiableCredential", "ExampleJwtCredential"],
+        ],
+        "scope": "ExampleJwtCredential"
     ]
 ]
 ```
@@ -551,7 +559,7 @@ AuthorizationMethod.presentationDuringIssuance(
 
 
 ### 3.3 Request Credential
-- Method: `requestCredential`
+- Method: `requestCredential` (deprecated use requestCredentialByCredentialOffer() or requestCredentialFromTrustedIssuer())
 - Request for credential from the providers (credential issuer), and receive the credential back.
 
 > Note: This method is deprecated and will be removed in future releases. Please migrate to `requestCredentialByCredentialOffer()` or `requestCredentialFromTrustedIssuer()`.
