@@ -3,6 +3,102 @@ import XCTest
 @testable import VCIClient
 
 final class VCIClientTests: XCTestCase {
+    func testFetchCredentialUsingCredentialOffer_success() async throws {
+        let mockHandler = MockCredentialOfferHandler()
+        let client = VCIClient(
+            traceabilityId: "test",
+            credentialOfferHandler: mockHandler
+        )
+
+        let result = try await client.fetchCredentialUsingCredentialOffer(
+            credentialOffer: "mock-offer",
+            clientMetadata: ClientMetadata(clientId: "", redirectUri: ""),
+            getTxCode: { _, _, _ in "mock-tx-code" },
+            authorizationMethods: [
+                .redirectToWeb(openWebPage: { _ in ["code": "auth-code"] })
+            ],
+            getTokenResponse: { _ in TokenResponse(accessToken: "mock", tokenType: "Bearer") },
+            getProofJwt: { _, _, _ in "mock-jwt" }
+        )
+
+        XCTAssertNotNil(result)
+        XCTAssertTrue(mockHandler.didCallDownload)
+    }
+
+    func testFetchCredentialUsingCredentialOffer_failure() async {
+        let mockHandler = MockCredentialOfferHandler()
+        mockHandler.shouldThrow = true
+        let client = VCIClient(
+            traceabilityId: "test",
+            credentialOfferHandler: mockHandler
+        )
+
+        await assertThrowsVCIErrorContainingMessage(
+            expectedType: VCIClientException.self,
+            expectedCode: "VCI-010",
+            messageContains: "Simulated failure"
+        ) {
+            try await client.fetchCredentialUsingCredentialOffer(
+                credentialOffer: "mock-offer",
+                clientMetadata: ClientMetadata(clientId: "", redirectUri: ""),
+                getTxCode: { _, _, _ in "mock-tx-code" },
+                authorizationMethods: [
+                    .redirectToWeb(openWebPage: { _ in ["code": "auth-code"] })
+                ],
+                getTokenResponse: { _ in TokenResponse(accessToken: "mock", tokenType: "Bearer") },
+                getProofJwt: { _, _, _ in "mock-jwt" }
+            )
+        }
+    }
+
+    func testFetchCredentialFromTrustedIssuer_success() async throws {
+        let mockHandler = MockTrustedIssuerHandler()
+        let client = VCIClient(
+            traceabilityId: "test",
+            trustedIssuerFlowHandler: mockHandler
+        )
+
+        let result = try await client.fetchCredentialFromTrustedIssuer(
+            credentialIssuer: "mock",
+            credentialConfigurationId: "mock-id",
+            clientMetadata: ClientMetadata(clientId: "", redirectUri: ""),
+            getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer") },
+            authorizationMethods: [
+                .redirectToWeb(openWebPage: { _ in ["code": "auth-code"] })
+            ],
+            getProofJwt: { _, _, _ in "mock-jwt" }
+        )
+
+        XCTAssertNotNil(result)
+        XCTAssertTrue(mockHandler.didCallDownload)
+    }
+
+    func testFetchCredentialFromTrustedIssuer_failure() async {
+        let mockHandler = MockTrustedIssuerHandler()
+        mockHandler.shouldThrow = true
+        let client = VCIClient(
+            traceabilityId: "test",
+            trustedIssuerFlowHandler: mockHandler
+        )
+
+        await assertThrowsVCIErrorContainingMessage(
+            expectedType: VCIClientException.self,
+            expectedCode: "VCI-010",
+            messageContains: "Simulated failure"
+        ) {
+            try await client.fetchCredentialFromTrustedIssuer(
+                credentialIssuer: "mock",
+                credentialConfigurationId: "mock-id",
+                clientMetadata: ClientMetadata(clientId: "", redirectUri: ""),
+                getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer") },
+                authorizationMethods: [
+                    .redirectToWeb(openWebPage: { _ in ["code": "auth-code"] })
+                ],
+                getProofJwt: { _, _, _ in "mock-jwt" }
+            )
+        }
+    }
+
     func testRequestCredentialByCredentialOffer_success() async throws {
         let mockHandler = MockCredentialOfferHandler()
         let client = VCIClient(
@@ -268,5 +364,64 @@ final class VCIClientTests: XCTestCase {
                     credentialIssuer: "https://issuer.example.com"
                 )
             }
+        }
     }
-}
+
+    func testDeprecatedRequestCredential_failure_timeout() async {
+        let mockNetwork = MockNetworkManager()
+        mockNetwork.shouldThrowTimeout = true
+
+        let client = VCIClient(
+            traceabilityId: "test",
+            networkSession: mockNetwork
+        )
+
+        let issuerMeta = IssuerMeta(
+            credentialAudience: "aud",
+            credentialEndpoint: "https://example.com",
+            downloadTimeoutInMilliseconds: 5000,
+            credentialType: ["test"],
+            credentialFormat: .ldp_vc,
+            docType: nil,
+            claims: [:]
+        )
+
+        await assertThrowsVCIErrorContainingMessage(
+            expectedType: NetworkRequestTimeoutException.self,
+            messageContains: "Simulated timeout"
+        ) {
+            try await client.requestCredential(
+                issuerMeta: issuerMeta,
+                proof: JWTProof(jwt: "mock-jwt"),
+                accessToken: "token"
+            )
+        }
+    }
+
+    func testDeprecatedRequestCredential_emptyBody_returnsNil() async throws {
+        let mockNetwork = MockNetworkManager()
+        mockNetwork.responseBody = ""
+
+        let client = VCIClient(
+            traceabilityId: "test",
+            networkSession: mockNetwork
+        )
+
+        let issuerMeta = IssuerMeta(
+            credentialAudience: "aud",
+            credentialEndpoint: "https://example.com",
+            downloadTimeoutInMilliseconds: 5000,
+            credentialType: ["test"],
+            credentialFormat: .ldp_vc,
+            docType: nil,
+            claims: [:]
+        )
+
+        let result = try await client.requestCredential(
+            issuerMeta: issuerMeta,
+            proof: JWTProof(jwt: "mock-jwt"),
+            accessToken: "token"
+        )
+
+        XCTAssertNil(result)
+    }
