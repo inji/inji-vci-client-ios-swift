@@ -25,6 +25,7 @@ The implementation follows
   - `ldp_vc`
   - `mso_mdoc`
   - `vc+sd-jwt` / `dc+sd-jwt`
+  - `jwt_vc_json`
 
 [//]: # (The reference for PDI  is intentionally pointing to kotlin library master branch to be release agnostic, as the PDI support is available for both kotlin and swift libraries. The documentation for PDI support is also common for both libraries, hence it is placed in the common doc folder in the root of the repository.)
 - Presentation During Issuance (PDI) support for both download flows (For more details on PDI support, please refer to the [Presentation During Issuance documentation](https://github.com/inji/inji-vci-client/tree/master/doc/presentation-during-issuance-support.md))
@@ -43,8 +44,15 @@ This library is officially supported and available in both Kotlin and Swift, ens
 Add VCIClient to your Swift Package Manager dependencies:
 
 ```swift
-.package(url: "https://github.com/inji/inji-vci-client-ios-swift", from: "0.7.0")
+.package(url: "https://github.com/inji/inji-vci-client-ios-swift", from: "0.8.0")
 ```
+
+## What's New in 0.8.0
+
+Version `0.8.0` introduces two notable improvements:
+
+- Support for the `jwt_vc_json` credential format across issuer metadata parsing and credential request.
+- Enhanced structured error handling so wallet applications can distinguish between library-level failures and issuer or authorization server error payloads.
 
 ## 🏗️ Construction of VCIClient instance
 
@@ -126,6 +134,13 @@ let credentialConfigurationsSupported : [String: Any] = try await vciClient.getC
     "credentialConfigId-2": [
         "format": "mso_mdoc",
         "doctype": "org.iso.18013.5.1.mDL"
+    ],
+    "credentialConfigId-3": [
+        "format": "jwt_vc_json",
+        "credential_definition": [
+            "type": ["VerifiableCredential", "ExampleJwtCredential"],
+        ],
+        "scope": "ExampleJwtCredential"
     ]
 ]
 ```
@@ -554,7 +569,7 @@ AuthorizationMethod.presentationDuringIssuance(
 - Method: `requestCredential`
 - Request for credential from the providers (credential issuer), and receive the credential back.
 
-> Note: This method is deprecated and will be removed in future releases. Please migrate to `requestCredentialByCredentialOffer()` or `requestCredentialFromTrustedIssuer()`.
+> Note: This method is deprecated and will be removed in future releases. Please migrate to [`fetchCredentialUsingCredentialOffer()`](#fetchcredentialusingcredentialoffer) or [`fetchCredentialFromTrustedIssuer()`](#fetchcredentialfromtrustedissuer).
 
 #### Parameters
 
@@ -609,6 +624,20 @@ let issuerMetadata = IssuerMeta(
     credentialFormat: .dc_sd_jwt
 )
 ```
+
+5. Format: `jwt_vc_json`
+```swift
+let issuerMetadata = IssuerMeta(
+    credentialAudience: CREDENTIAL_AUDIENCE,
+    credentialEndpoint: CREDENTIAL_ENDPOINT,
+    downloadTimeoutInMilliseconds: DOWNLOAD_TIMEOUT,
+    credentialType: CREDENTIAL_TYPE,
+    credentialFormat: .jwt_vc_json
+)
+```
+
+> Note: For `jwt_vc_json`, provide `credentialType` with the credential definition `type` values expected by the issuer. The low-level request API uses these values to build the `credential_definition` object in the credential request.
+
 #### Returns
 
 An instance of `CredentialResponse` containing:
@@ -664,20 +693,117 @@ The following methods are deprecated and will be removed in future releases. Ple
 ## 🛑 Error Handling
 
 All exceptions thrown by the library are subclasses of `VCIClientException`.  
-They carry structured error codes like `VCI-001`, `VCI-002` etc., to help consumers identify and recover from failures.
+They carry structured fields that help consumers identify whether the failure came from the library itself, a wrapped library exception, or an upstream server response.
+
+### `VCIClientException` fields
+
+| Field                    | Type      | Meaning |
+|--------------------------|-----------|---------|
+| `code`                   | `String`  | The library-defined error code for the exception being thrown to the consumer. |
+| `message`                | `String`  | Human-readable summary of the failure, ready for logging or diagnostics. |
+| `sourceErrorCode`        | `String?` | The root `VCI-*` code from the underlying cause when the library wraps another `VCIClientException`. |
+| `serverErrorCode`        | `String?` | The issuer or authorization server `error` value when the remote service returned a structured OAuth/OID4VCI-style error response. |
+| `serverErrorDescription` | `String?` | The upstream `error_description` value when available. If the response body is not parseable JSON, the raw response body may be propagated here for diagnostics. |
+
+### Old vs new error handling
+
+Before `0.8.0`, consumers could reliably use only:
+
+- `code` to identify the immediate library error category.
+- `message` for a human-readable summary.
+
+In `0.8.0`, the error model is more expressive:
+
+- `code` still identifies the current exception returned to the caller.
+- `sourceErrorCode` preserves the deeper `VCI-*` code when the current exception wraps another library exception.
+- `serverErrorCode` captures the upstream server `error` field when present.
+- `serverErrorDescription` captures the upstream `error_description`, or the raw error body when structured parsing is not possible.
+
+This means consumers can now distinguish between:
+
+- a library wrapper error exposed at the public API boundary,
+- the original underlying library failure,
+- and a server-originated error payload returned by the issuer or authorization server.
+
+#### Comparison
+
+| Aspect | Before `0.8.0` | From `0.8.0` |
+|--------|----------------|--------------|
+| Library error code | Available through `code` | Available through `code` |
+| Human-readable message | Available through `message` | Available through `message` |
+| Root cause library code after wrapping | Not preserved explicitly | Available through `sourceErrorCode` |
+| Upstream OAuth / issuer `error` value | Usually lost or only visible in message text | Available through `serverErrorCode` |
+| Upstream `error_description` | Usually lost or only visible in message text | Available through `serverErrorDescription` |
+| Consumer-side recovery decisions | Mostly based on `code` and message parsing | Can be based on `code`, `sourceErrorCode`, and upstream server fields |
+
+#### Impact on consumers
+
+- If your integration only switches on `code`, it will continue to work.
+- If you previously parsed `message` to infer server-side failures, you should move that logic to `serverErrorCode` and `serverErrorDescription`.
+- If you want better observability, log all four fields: `code`, `sourceErrorCode`, `serverErrorCode`, and `serverErrorDescription`.
+- If you want better retry and UX decisions, use `code` for the top-level category and `serverErrorCode` for server-specific remediation.
+
+### What each field means for consumers
+
+- Use `code` for primary client-side branching, telemetry dimensions, and product analytics.
+- Use `sourceErrorCode` when `code` represents a wrapper exception and you need the more specific underlying failure category.
+- Use `serverErrorCode` to decide whether a failure is recoverable through user action, such as re-authentication, retry, or correcting a request.
+- Use `serverErrorDescription` for logs, support tooling, and developer diagnostics. Avoid showing it directly to end users without sanitization because it may contain server-specific text.
+
+Some public API methods may wrap an internal `VCIClientException` into another `VCIClientException` before rethrowing it. This improves consistency at the API boundary without losing the root cause.
+
+Example:
+
+- `getIssuerMetadata()` may throw `VCI-010` at the API boundary.
+- `sourceErrorCode` may still contain `VCI-009` if the underlying failure was an issuer metadata fetch error.
+- `serverErrorCode` may contain a remote value such as `invalid_token` if the upstream endpoint returned it.
+
+### Recommended consumer handling
+
+```swift
+do {
+    let credentialResponse = try await vciClient.fetchCredentialUsingCredentialOffer(
+        credentialOffer: credentialOffer,
+        clientMetadata: clientMetadata,
+        getTxCode: getTxCode,
+        authorizationMethods: authorizationMethods,
+        getTokenResponse: getTokenResponse,
+        getProofJwt: getProofJwt
+    )
+} catch let error as VCIClientException {
+    logger.error(
+        "VCI request failed. code=\(error.code), source=\(error.sourceErrorCode ?? "nil"), " +
+        "serverCode=\(error.serverErrorCode ?? "nil"), serverDescription=\(error.serverErrorDescription ?? "nil"), " +
+        "message=\(error.message)"
+    )
+
+    switch error.code {
+    case "VCI-007":
+        showRetryMessage()
+    case "VCI-003":
+        triggerTokenRefresh()
+    case "VCI-011":
+        showAuthorizationFailure()
+    default:
+        showGenericFailure()
+    }
+}
+```
+
+### Error code reference
 
 | Code    | Exception Type                          | Description                                                                                              |
 |---------|-----------------------------------------|----------------------------------------------------------------------------------------------------------|
 | VCI-001 | `AuthorizationServerDiscoveryException` | Failed to discover authorization server                                                                  |
-| VCI-002 | `DownloadFailedException`               | Failed to download Credential issuer                                                                     |
+| VCI-002 | `DownloadFailedException`               | Failed to download credential                                                                            |
 | VCI-003 | `InvalidAccessTokenException`           | Access token is invalid                                                                                  |
 | VCI-004 | `InvalidDataProvidedException`          | Required details not provided                                                                            |
-| VCI-005 | `InvalidPublicKeyException`             | Invalid public key passed metadata                                                                       |
+| VCI-005 | `InvalidPublicKeyException`             | Invalid public key passed                                                                                |
 | VCI-006 | `NetworkRequestFailedException`         | Network request failed                                                                                   |
 | VCI-007 | `NetworkRequestTimeoutException`        | Network request timed-out                                                                                |
-| VCI-008 | `OfferFetchFailedException`             | Failed  to fetch credentialOffer                                                                         |
+| VCI-008 | `CredentialOfferFetchFailedException`   | Failed to fetch credential offer                                                                         |
 | VCI-009 | `IssuerMetadataFetchException`          | Failed to fetch issuerMetadata                                                                           |
-| VCI-010 | `VCIClientException`                    | Unexpected error during the VCI process                                                                  |
+| VCI-010 | `VCIClientException`                    | Generic API-boundary wrapper or unknown exception surfaced by `VCIClient` public methods                |
 | VCI-011 | `InteractiveAuthorizationException`     | Failed to perform Interactive authorization (Presentation During Issuance / Redirect to Web interaction) |
 
 ---
@@ -699,7 +825,7 @@ Mock-based tests are available covering:
 
 ## Documentation
 
-- Architecture decisions are documented in the [INJI VCI Client ADR directory](https://github.com/inji/inji-vci-client/tree/master/doc).
+- Architecture decisions are documented in the [INJI VCI Client ADR directory](https://github.com/inji/inji-vci-client/tree/master/doc/adr).
 - Documentation of the features are available in the [INJI VCI Client docs directory](https://github.com/inji/inji-vci-client/tree/master/doc).
 
 **Note: The Android library is available in the [INJI VCI Client repository](https://github.com/inji/inji-vci-client).**
