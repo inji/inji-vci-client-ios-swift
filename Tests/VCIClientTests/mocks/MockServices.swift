@@ -76,6 +76,7 @@ final class MockTokenService: TokenService {
 final class MockCredentialRequestExecutor: CredentialRequestExecutor {
     var shouldReturnNil = false
     var errorToThrow: Error?
+    var shouldThrow: Bool = false
 
     init(shouldReturnNil: Bool = false) {
         self.shouldReturnNil = shouldReturnNil
@@ -93,7 +94,7 @@ final class MockCredentialRequestExecutor: CredentialRequestExecutor {
         if let errorToThrow {
             throw errorToThrow
         }
-
+        if shouldThrow { throw DownloadFailedException("test-error: credential request failed") }
         return CredentialResponse(credential: AnyCodable("mock-credential"), credentialIssuer: "mock-issuer", credentialConfigurationId: "mock-id")
     }
 }
@@ -250,6 +251,7 @@ class MockInteractiveAuthorizationHandler: InteractiveAuthorizationHandler {
         authSession: "dummy"
     )
     var errorToThrow: Error?
+    var shouldThrowMissingInteractionType: Bool = false
 
     override func handle(
         endpoint: String,
@@ -260,6 +262,9 @@ class MockInteractiveAuthorizationHandler: InteractiveAuthorizationHandler {
     ) async throws -> AuthorizationResponse {
         if let errorToThrow {
             throw errorToThrow
+        }
+        if shouldThrowMissingInteractionType {
+            throw DownloadFailedException(message: "dummy", serverErrorCode: "missing_interaction_type")
         }
         return responseToReturn
     }
