@@ -827,6 +827,7 @@ Mock-based tests are available covering:
 
 - Architecture decisions are documented in the [INJI VCI Client ADR directory](https://github.com/inji/inji-vci-client/tree/master/doc/adr).
 - Documentation of the features are available in the [INJI VCI Client docs directory](https://github.com/inji/inji-vci-client/tree/master/doc).
+- The OpenID4VCI 1.0 migration and Draft-13 compatibility design for this Swift library is documented in [ADR-0001](docs/adr/0001-openid4vci-v1-migration.md).
 
 **Note: The Android library is available in the [INJI VCI Client repository](https://github.com/inji/inji-vci-client).**
 

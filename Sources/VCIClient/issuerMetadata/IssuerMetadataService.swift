@@ -137,6 +137,15 @@ class IssuerMetadataService {
         }
 
         let scope = credentialType["scope"] as? String ?? "openid"
+        let nonceEndpoint = rawIssuerMetadata["nonce_endpoint"] as? String
+        let encryptionMetadata = rawIssuerMetadata["credential_response_encryption"] as? [String: Any]
+        let encryptionAlgs = encryptionMetadata?["alg_values_supported"] as? [String]
+        let encryptionEncs = encryptionMetadata?["enc_values_supported"] as? [String]
+        let encryptionRequired = encryptionMetadata?["encryption_required"] as? Bool
+        let specVersion = detectSpecVersion(
+            rawIssuerMetadata: rawIssuerMetadata,
+            credentialConfiguration: credentialType
+        )
 
         switch format {
         case .mso_mdoc:
@@ -152,7 +161,9 @@ class IssuerMetadataService {
                 doctype: doctype,
                 claims: claims?.mapValues { AnyCodable($0) },
                 authorizationServers: rawIssuerMetadata["authorization_servers"] as? [String],
-                scope: scope
+                nonceEndpoint: nonceEndpoint,
+                scope: scope,
+                specVersion: specVersion,
             )
 
         case .ldp_vc:
@@ -166,7 +177,9 @@ class IssuerMetadataService {
                 context: context,
                 credentialFormat: .ldp_vc,
                 authorizationServers: rawIssuerMetadata["authorization_servers"] as? [String],
-                scope: scope
+                nonceEndpoint: nonceEndpoint,
+                scope: scope,
+                specVersion: specVersion,
             )
 
         case .vc_sd_jwt, .dc_sd_jwt:
@@ -179,8 +192,10 @@ class IssuerMetadataService {
                 credentialEndpoint: credentialEndpoint,
                 credentialFormat: format,
                 authorizationServers: rawIssuerMetadata["authorization_servers"] as? [String],
+                nonceEndpoint: nonceEndpoint,
                 vct: vct,
-                scope: scope
+                scope: scope,
+                specVersion: specVersion,
             )
 
         case .jwt_vc_json:
@@ -194,8 +209,30 @@ class IssuerMetadataService {
                 context: nil,
                 credentialFormat: format,
                 authorizationServers: rawIssuerMetadata["authorization_servers"] as? [String],
-                scope: scope
+                nonceEndpoint: nonceEndpoint,
+                scope: scope,
+                specVersion: specVersion,
             )
         }
+    }
+
+    private func detectSpecVersion(
+        rawIssuerMetadata: [String: Any],
+        credentialConfiguration: [String: Any]
+    ) -> OID4VCIVersion {
+        if let nonceEndpoint = rawIssuerMetadata["nonce_endpoint"] as? String,
+           !nonceEndpoint.isEmpty {
+            return .v1
+        }
+        
+        if credentialConfiguration["credential_metadata"] != nil {
+                return .v1
+            }
+        
+        if credentialConfiguration["display"] != nil {
+            return .draft13
+        }
+
+        return .v1
     }
 }

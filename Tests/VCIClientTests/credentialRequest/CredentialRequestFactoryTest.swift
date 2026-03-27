@@ -2,54 +2,60 @@
 import XCTest
 
 final class CredentialRequestFactoryTests: XCTestCase {
-
     private let validProof = JWTProof(jwt: "valid.jwt.string")
+    private let issuer = IssuerMetadata(
+        credentialIssuer: "https://issuer.example.com",
+        credentialEndpoint: "https://issuer.example.com/credential",
+        credentialType: ["VerifiableCredential"],
+        credentialFormat: .ldp_vc,
+        doctype: "org.iso.18013.5.1.mDL",
+        vct: "vc.type"
+    )
 
     func testCreateCredentialRequest_ldpvc_returnsValidRequest() throws {
-        let factory = TestableCredentialRequestFactory()
-        factory.credentialRequestToReturn = MockValidCredentialRequest(
-            accessToken: "token",
-            issuerMetaData: mockIssuerMetadata(),
-            proof: validProof
-        )
+        let factory = CredentialRequestFactory()
 
         let request = try factory.createCredentialRequest(
             credentialFormat: .ldp_vc,
             accessToken: "token",
-            issuer: mockIssuerMetadata(),
+            issuer: issuer,
             proofJwt: validProof
         )
 
-        XCTAssertEqual(request.url?.absoluteString, "https://example.com")
+        XCTAssertEqual(request.url?.absoluteString, "https://issuer.example.com/credential")
+        let json = try XCTUnwrap(
+            try JSONSerialization.jsonObject(with: XCTUnwrap(request.httpBody)) as? [String: Any]
+        )
+        XCTAssertNotNil(json["proof"])
+        XCTAssertNil(json["proofs"])
     }
 
     func testCreateCredentialRequest_msomdoc_returnsValidRequest() throws {
-        let factory = TestableCredentialRequestFactory()
-        factory.credentialRequestToReturn = MockValidCredentialRequest(
-            accessToken: "token",
-            issuerMetaData: mockIssuerMetadata(),
-            proof: validProof
-        )
+        let factory = CredentialRequestFactory()
 
         let request = try factory.createCredentialRequest(
             credentialFormat: .mso_mdoc,
             accessToken: "token",
-            issuer: mockIssuerMetadata(),
+            issuer: issuer,
             proofJwt: validProof
         )
 
-        XCTAssertEqual(request.url?.absoluteString, "https://example.com")
+        XCTAssertEqual(request.url?.absoluteString, "https://issuer.example.com/credential")
+        let json = try XCTUnwrap(
+            try JSONSerialization.jsonObject(with: XCTUnwrap(request.httpBody)) as? [String: Any]
+        )
+        XCTAssertEqual(json["doctype"] as? String, "org.iso.18013.5.1.mDL")
     }
 
     func testCreateCredentialRequest_emptyProof_throwsException() {
-        let factory = TestableCredentialRequestFactory()
+        let factory = CredentialRequestFactory()
         let emptyProof = JWTProof(jwt: "")
 
         XCTAssertThrowsError(
             try factory.createCredentialRequest(
                 credentialFormat: .ldp_vc,
                 accessToken: "token",
-                issuer: mockIssuerMetadata(),
+                issuer: issuer,
                 proofJwt: emptyProof
             )
         ) { error in
@@ -58,19 +64,20 @@ final class CredentialRequestFactoryTests: XCTestCase {
         }
     }
 
-    func testCreateCredentialRequest_invalidValidation_throwsException() {
-        let factory = TestableCredentialRequestFactory()
-        factory.credentialRequestToReturn = MockInvalidCredentialRequest(
-            accessToken: "token",
-            issuerMetaData: mockIssuerMetadata(),
-            proof: validProof
+    func testCreateCredentialRequest_missingCredentialType_throwsException() {
+        let factory = CredentialRequestFactory()
+        let invalidIssuer = IssuerMetadata(
+            credentialIssuer: "https://issuer.example.com",
+            credentialEndpoint: "https://issuer.example.com/credential",
+            credentialType: nil,
+            credentialFormat: .ldp_vc
         )
 
         XCTAssertThrowsError(
             try factory.createCredentialRequest(
                 credentialFormat: .ldp_vc,
                 accessToken: "token",
-                issuer: mockIssuerMetadata(),
+                issuer: invalidIssuer,
                 proofJwt: validProof
             )
         ) { error in

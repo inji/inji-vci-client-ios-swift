@@ -64,13 +64,39 @@ public class VCIClient {
     ) async throws -> CredentialResponse? {
 
         do {
-            return try await self.trustedIssuerFlowHandler.downloadCredentials(
+            return try await self.trustedIssuerFlowHandler.downloadCredentialsDraft13(
                 credentialIssuer: credentialIssuer,
                 credentialConfigurationId: credentialConfigurationId,
                 clientMetadata: clientMetadata,
                 authorizationMethods: authorizationMethods,
                 getTokenResponse: getTokenResponse,
                 getProofJwt: getProofJwt,
+                downloadTimeoutInMillis: downloadTimeoutInMillis
+            )
+        } catch {
+            print("Downloading credential failed due to \(error.localizedDescription)")
+            throw mapToVciClientException(error)
+        }
+    }
+
+    public func fetchCredentialFromTrustedIssuer(
+        credentialIssuer: String,
+        credentialConfigurationId: String,
+        clientMetadata: ClientMetadata,
+        getTokenResponse: @escaping TokenResponseCallback,
+        authorizationMethods: [AuthorizationMethod],
+        getProofs: @escaping ProofsCallbackV2,
+        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
+    ) async throws -> CredentialResponseV2? {
+
+        do {
+            return try await self.trustedIssuerFlowHandler.downloadCredentials(
+                credentialIssuer: credentialIssuer,
+                credentialConfigurationId: credentialConfigurationId,
+                clientMetadata: clientMetadata,
+                authorizationMethods: authorizationMethods,
+                getTokenResponse: getTokenResponse,
+                getProofs: getProofs,
                 downloadTimeoutInMillis: downloadTimeoutInMillis
             )
         } catch {
@@ -92,13 +118,42 @@ public class VCIClient {
     ) async throws -> CredentialResponse? {
 
         do {
-            return try await self.credentialOfferFlowHandler.downloadCredentials(
+            return try await self.credentialOfferFlowHandler.downloadCredentialsDraft13(
                 credentialOffer: credentialOffer,
                 clientMetadata: clientMetadata,
                 getTxCode: getTxCode,
                 authorizationMethods: authorizationMethods,
                 getTokenResponse: getTokenResponse,
                 getProofJwt: getProofJwt,
+                onCheckIssuerTrust: onCheckIssuerTrust,
+                networkSession: networkSession,
+                downloadTimeoutInMillis: downloadTimeoutInMillis
+            )
+        } catch {
+            print("Downloading credential failed due to \(error.localizedDescription)")
+            throw mapToVciClientException(error)
+        }
+    }
+
+    public func fetchCredentialUsingCredentialOffer(
+        credentialOffer: String,
+        clientMetadata: ClientMetadata,
+        getTxCode: TxCodeCallback,
+        authorizationMethods: [AuthorizationMethod],
+        getTokenResponse: @escaping TokenResponseCallback,
+        getProofs: @escaping ProofsCallbackV2,
+        onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
+        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
+    ) async throws -> CredentialResponseV2? {
+
+        do {
+            return try await self.credentialOfferFlowHandler.downloadCredentials(
+                credentialOffer: credentialOffer,
+                clientMetadata: clientMetadata,
+                getTxCode: getTxCode,
+                authorizationMethods: authorizationMethods,
+                getTokenResponse: getTokenResponse,
+                getProofs: getProofs,
                 onCheckIssuerTrust: onCheckIssuerTrust,
                 networkSession: networkSession,
                 downloadTimeoutInMillis: downloadTimeoutInMillis
@@ -120,7 +175,7 @@ public class VCIClient {
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
     ) async throws -> CredentialResponse? {
         do {
-            return try await trustedIssuerFlowHandler.downloadCredentials(
+            return try await trustedIssuerFlowHandler.downloadCredentialsDraft13(
                 credentialIssuer: credentialIssuer,
                 credentialConfigurationId: credentialConfigurationId,
                 clientMetadata: clientMetadata,
@@ -147,7 +202,7 @@ public class VCIClient {
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
     ) async throws -> CredentialResponse? {
         do {
-            return try await credentialOfferFlowHandler.downloadCredentials(
+            return try await credentialOfferFlowHandler.downloadCredentialsDraft13(
                 credentialOffer: credentialOffer,
                 clientMetadata: clientMetadata,
                 getTxCode: getTxCode,
@@ -231,4 +286,3 @@ public class VCIClient {
         return [redirectToWebMethod]
     }
 }
-

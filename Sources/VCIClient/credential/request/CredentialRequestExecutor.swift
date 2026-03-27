@@ -2,9 +2,14 @@ import Foundation
 
 class CredentialRequestExecutor {
     private let factory: CredentialRequestFactoryProtocol
+    private let factoryV2: CredentialRequestFactoryV2
 
-    init(factory: CredentialRequestFactoryProtocol = CredentialRequestFactory()) {
+    init(
+        factory: CredentialRequestFactoryProtocol = CredentialRequestFactory(),
+        factoryV2: CredentialRequestFactoryV2 = CredentialRequestFactoryV2()
+    ) {
         self.factory = factory
+        self.factoryV2 = factoryV2
     }
 
     private var logTag: String {
@@ -12,6 +17,106 @@ class CredentialRequestExecutor {
     }
 
     func requestCredential(
+        issuerMetadata: IssuerMetadata,
+        credentialConfigurationId: String,
+        proofs: CredentialRequestProofs,
+        accessToken: String,
+        timeoutInMillis: Int64 = 10000,
+        session: NetworkManager = NetworkManager.shared
+    ) async throws -> CredentialResponseV2? {
+        let timeoutSeconds = timeoutInMillis / 1000
+
+        do {
+            var request = try factoryV2.createCredentialRequest(
+                credentialFormat: issuerMetadata.credentialFormat,
+                accessToken: accessToken,
+                issuer: issuerMetadata,
+                proofs: proofs
+            )
+
+            request.timeoutInterval = TimeInterval(timeoutInMillis) / 1000
+
+            let networkResponse = try await session.sendRequest(request: request)
+            let responseBody = networkResponse.body
+
+            print("\(logTag) Credential downloaded successfully.")
+
+            if !responseBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+
+                guard var result = try JsonUtils.deserialize(
+                    responseBody,
+                    as: CredentialResponseV2.self
+                ) else {
+                    throw DownloadFailedException(
+                        "Failed to parse credential response."
+                    )
+                }
+
+                result.credentialConfigurationId = credentialConfigurationId
+                result.credentialIssuer = issuerMetadata.credentialIssuer
+
+                return result
+            }
+
+            Util.logWarning(
+                message: "Credential endpoint returned empty body",
+                className: String(describing: type(of: self))
+            )
+
+            return nil
+
+        } catch let e as NetworkRequestTimeoutException {
+
+            Util.logWarning(
+                message: "Credential download timed out after \(timeoutSeconds)s",
+                className: String(describing: type(of: self))
+            )
+
+            throw DownloadFailedException(
+                message: "Credential download timed out after \(timeoutSeconds)s",
+                cause: e
+            )
+
+        } catch let e as NetworkRequestFailedException {
+
+            Util.logWarning(
+                message: "Credential download failed: \(e.message)",
+                className: String(describing: type(of: self))
+            )
+
+            throw DownloadFailedException(
+                message: e.message,
+                serverErrorCode: e.serverErrorCode,
+                serverErrorDescription: e.serverErrorDescription,
+                cause: e
+            )
+
+        } catch let e as InvalidPublicKeyException {
+
+            throw DownloadFailedException(
+                message: e.message,
+                cause: e
+            )
+
+        } catch let e as DownloadFailedException {
+
+            throw e
+
+        } catch {
+
+            Util.logWarning(
+                message: "Unexpected error during credential download: \(error.localizedDescription)",
+                className: String(describing: type(of: self))
+            )
+
+            throw DownloadFailedException(
+                message: error.localizedDescription,
+                cause: error
+            )
+        }
+    }
+
+    func requestCredentialDraft13(
         issuerMetadata: IssuerMetadata,
         credentialConfigurationId: String,
         proof: Proof,
@@ -110,5 +215,23 @@ class CredentialRequestExecutor {
                 cause: error
             )
         }
+    }
+
+    func requestCredential(
+        issuerMetadata: IssuerMetadata,
+        credentialConfigurationId: String,
+        proof: Proof,
+        accessToken: String,
+        timeoutInMillis: Int64 = 10000,
+        session: NetworkManager = NetworkManager.shared
+    ) async throws -> CredentialResponse? {
+        try await requestCredentialDraft13(
+            issuerMetadata: issuerMetadata,
+            credentialConfigurationId: credentialConfigurationId,
+            proof: proof,
+            accessToken: accessToken,
+            timeoutInMillis: timeoutInMillis,
+            session: session
+        )
     }
 }

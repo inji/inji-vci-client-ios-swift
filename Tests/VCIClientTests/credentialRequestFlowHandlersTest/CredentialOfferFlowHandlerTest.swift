@@ -7,7 +7,20 @@ final class CredentialOfferFlowHandlerTests: XCTestCase {
             issuerMetadata: IssuerMetadata(
                 credentialIssuer: "aud",
                 credentialEndpoint: "https://example.com",
-                credentialFormat: .ldp_vc
+                credentialFormat: .ldp_vc,
+                specVersion: .draft13
+            ),
+            raw: [:]
+        )
+    }
+
+    private func makeV1IssuerMetadataResult() -> IssuerMetadataResult {
+        return IssuerMetadataResult(
+            issuerMetadata: IssuerMetadata(
+                credentialIssuer: "aud",
+                credentialEndpoint: "https://example.com",
+                credentialFormat: .ldp_vc,
+                nonceEndpoint: "https://example.com/nonce"
             ),
             raw: [:]
         )
@@ -15,6 +28,77 @@ final class CredentialOfferFlowHandlerTests: XCTestCase {
 
     private func makeMinimalCredentialResponse() -> CredentialResponse {
         return CredentialResponse(credential: .init("mock-credential"), credentialIssuer: "mock",credentialConfigurationId: "mcok-id")
+    }
+
+    func testPreAuthorizedFlow_withNonceEndpoint_routesToV1() async throws {
+        let offerService = MockCredentialOfferService()
+        offerService.offerToReturn = CredentialOffer(
+            credentialIssuer: "https://issuer.com",
+            credentialConfigurationIds: ["config"],
+            grants: CredentialOfferGrants(preAuthorizedGrant: PreAuthCodeGrant(preAuthCode: "test", txCode: nil, authorizationServer: nil, interval: nil), authorizationCodeGrant: nil)
+        )
+
+        let issuerService = MockIssuerMetadataService()
+        issuerService.resultToReturn = makeV1IssuerMetadataResult()
+
+        let preAuthFlowService = MockPreAuthFlowService()
+
+        let handler = CredentialOfferFlowHandler(
+            credentialOfferService: offerService,
+            issuerMetadataService: issuerService,
+            preAuthFlowService: preAuthFlowService,
+            authorizationCodeFlowService: MockAuthorizationCodeFlowService()
+        )
+
+        let result = try await handler.downloadCredentials(
+            credentialOffer: "offer",
+            clientMetadata: ClientMetadata(clientId: "id", redirectUri: "uri"),
+            getTxCode: { _, _, _ in "tx-code" },
+            authorizationMethods: [],
+            getTokenResponse: { _ in TokenResponse(accessToken: "mock", tokenType: "Bearer") },
+            getProofs: { _, _, _ in CredentialRequestProofs(jwt: ["mock-jwt"]) }
+        )
+
+        XCTAssertTrue(preAuthFlowService.didCallRequest)
+        XCTAssertNotNil(result.credentials) // V1 mock returns credentials array
+    }
+
+    func testPreAuthorizedFlow_withoutNonceEndpoint_routesToDraft13() async throws {
+        let offerService = MockCredentialOfferService()
+        offerService.offerToReturn = CredentialOffer(
+            credentialIssuer: "https://issuer.com",
+            credentialConfigurationIds: ["config"],
+            grants: CredentialOfferGrants(preAuthorizedGrant: PreAuthCodeGrant(preAuthCode: "test", txCode: nil, authorizationServer: nil, interval: nil), authorizationCodeGrant: nil)
+        )
+
+        let issuerService = MockIssuerMetadataService()
+        issuerService.resultToReturn = makeMinimalIssuerMetadataResult() // no nonceEndpoint → draft13
+
+        let preAuthFlowService = MockPreAuthFlowService()
+        preAuthFlowService.responseToReturn = CredentialResponse(
+            credential: .init("draft13-credential"),
+            credentialIssuer: "mock-issuer",
+            credentialConfigurationId: "mock"
+        )
+
+        let handler = CredentialOfferFlowHandler(
+            credentialOfferService: offerService,
+            issuerMetadataService: issuerService,
+            preAuthFlowService: preAuthFlowService,
+            authorizationCodeFlowService: MockAuthorizationCodeFlowService()
+        )
+
+        let result = try await handler.downloadCredentials(
+            credentialOffer: "offer",
+            clientMetadata: ClientMetadata(clientId: "id", redirectUri: "uri"),
+            getTxCode: { _, _, _ in "tx-code" },
+            authorizationMethods: [],
+            getTokenResponse: { _ in TokenResponse(accessToken: "mock", tokenType: "Bearer") },
+            getProofs: { _, _, _ in CredentialRequestProofs(jwt: ["mock-jwt"]) }
+        )
+
+        XCTAssertTrue(preAuthFlowService.didCallRequest)
+        XCTAssertEqual(result.credentials?.count, 1)
     }
 
     func testPreAuthorizedFlow_callsPreAuthFlowService() async throws {
@@ -38,7 +122,7 @@ final class CredentialOfferFlowHandlerTests: XCTestCase {
             authorizationCodeFlowService: MockAuthorizationCodeFlowService()
         )
 
-        let result = try await handler.downloadCredentials(
+        let result = try await handler.downloadCredentialsDraft13(
             
             credentialOffer: "offer",
             clientMetadata: ClientMetadata(clientId: "id", redirectUri: "uri"),
@@ -74,7 +158,7 @@ final class CredentialOfferFlowHandlerTests: XCTestCase {
             authorizationCodeFlowService: authCodeFlowService
         )
 
-        let result = try await handler.downloadCredentials(
+        let result = try await handler.downloadCredentialsDraft13(
             
             credentialOffer: "offer",
             clientMetadata: ClientMetadata(clientId: "id", redirectUri: "uri"),
@@ -110,7 +194,7 @@ final class CredentialOfferFlowHandlerTests: XCTestCase {
         )
 
         do {
-            _ = try await handler.downloadCredentials(
+            _ = try await handler.downloadCredentialsDraft13(
                 
                 credentialOffer: "offer",
                 clientMetadata: ClientMetadata(clientId: "id", redirectUri: "uri"),
@@ -147,7 +231,7 @@ final class CredentialOfferFlowHandlerTests: XCTestCase {
         )
 
         do {
-            _ = try await handler.downloadCredentials(
+            _ = try await handler.downloadCredentialsDraft13(
                 
                 credentialOffer: "offer",
                 clientMetadata: ClientMetadata(clientId: "id", redirectUri: "uri"),
@@ -194,7 +278,7 @@ final class CredentialOfferFlowHandlerTests: XCTestCase {
         )
 
         do {
-            _ = try await handler.downloadCredentials(
+            _ = try await handler.downloadCredentialsDraft13(
                 credentialOffer: "offer",
                 clientMetadata: ClientMetadata(clientId: "id", redirectUri: "uri"),
                 getTxCode: { _, _, _ in "tx-code" },

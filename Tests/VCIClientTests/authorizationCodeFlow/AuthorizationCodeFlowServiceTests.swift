@@ -21,7 +21,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
     func test_requestCredentials_success() async throws {
         let service = makeService()
 
-        let result = try await service.requestCredentials(
+        let result = try await service.requestCredentialsDraft13(
             issuerMetadata: IssuerMetadata.mock(),
             clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
             authorizationMethods: [
@@ -45,7 +45,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         let service = makeService(resolver: resolver)
 
         do {
-            _ = try await service.requestCredentials(
+            _ = try await service.requestCredentialsDraft13(
                 issuerMetadata: IssuerMetadata.mock(),
                 clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
                 getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer") },
@@ -66,7 +66,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         let service = makeService(resolver: resolver)
 
         do {
-            _ = try await service.requestCredentials(
+            _ = try await service.requestCredentialsDraft13(
                 issuerMetadata: IssuerMetadata.mock(),
                 clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
                 getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer") },
@@ -121,7 +121,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
             )
         )
 
-        let result = try await service.requestCredentials(
+        let result = try await service.requestCredentialsDraft13(
             issuerMetadata: metadata,
             clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
             authorizationMethods: [],
@@ -198,7 +198,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         )
 
         do {
-            _ = try await service.requestCredentials(
+            _ = try await service.requestCredentialsDraft13(
                 issuerMetadata: metadata,
                 clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
                 authorizationMethods: [],
@@ -221,7 +221,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         let service = makeService()
 
         do {
-            _ = try await service.requestCredentials(
+            _ = try await service.requestCredentialsDraft13(
                 issuerMetadata: IssuerMetadata.mock(),
                 clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
                 authorizationMethods: [],
@@ -240,7 +240,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         let service = makeService()
 
         do {
-            _ = try await service.requestCredentials(
+            _ = try await service.requestCredentialsDraft13(
                 issuerMetadata: IssuerMetadata.mock(),
                 clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
                 authorizationMethods: [
@@ -264,7 +264,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         let service = makeService(executor: executor)
 
         do {
-            _ = try await service.requestCredentials(
+            _ = try await service.requestCredentialsDraft13(
                 issuerMetadata: IssuerMetadata.mock(),
                 clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
                 authorizationMethods: [
@@ -311,7 +311,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         let service = makeService(tokenService: tokenService)
 
         do {
-            _ = try await service.requestCredentials(
+            _ = try await service.requestCredentialsDraft13(
                 issuerMetadata: IssuerMetadata.mock(),
                 clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
                 authorizationMethods: [
@@ -333,7 +333,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         let service = makeService(executor: executor)
 
         do {
-            _ = try await service.requestCredentials(
+            _ = try await service.requestCredentialsDraft13(
                 issuerMetadata: IssuerMetadata.mock(),
                 clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
                 authorizationMethods: [

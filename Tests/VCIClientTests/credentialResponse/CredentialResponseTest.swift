@@ -2,6 +2,22 @@ import XCTest
 @testable import VCIClient
 
 class CredentialResponseTest: XCTestCase {
+    func testCredentialResponseV2WithCredentialsArray() throws {
+        let responseBodyJsonData = """
+        {
+            "credentials": [
+                { "id": "credential-1" },
+                { "id": "credential-2" }
+            ]
+        }
+        """.data(using: .utf8)!
+
+        let credentialResponse = try JSONDecoder().decode(CredentialResponseV2.self, from: responseBodyJsonData)
+
+        XCTAssertEqual(credentialResponse.credentials?.count, 2)
+        XCTAssertEqual((credentialResponse.credentials?.first?.value as? [String: Any])?["id"] as? String, "credential-1")
+    }
+
     func testLdpVcCredentialResponse() {
         do {
             let responseBodyJsonData = """

@@ -51,6 +51,28 @@ final class VCIClientTests: XCTestCase {
         }
     }
 
+    func testFetchCredentialUsingCredentialOfferV2_success() async throws {
+        let mockHandler = MockCredentialOfferHandler()
+        let client = VCIClient(
+            traceabilityId: "test",
+            credentialOfferHandler: mockHandler
+        )
+
+        let result = try await client.fetchCredentialUsingCredentialOffer(
+            credentialOffer: "mock-offer",
+            clientMetadata: ClientMetadata(clientId: "", redirectUri: ""),
+            getTxCode: { _, _, _ in "mock-tx-code" },
+            authorizationMethods: [
+                .redirectToWeb(openWebPage: { _ in ["code": "auth-code"] })
+            ],
+            getTokenResponse: { _ in TokenResponse(accessToken: "mock", tokenType: "Bearer") },
+            getProofs: { _, _, _ in CredentialRequestProofs(jwt: ["mock-jwt"]) }
+        )
+
+        XCTAssertEqual(result?.credentials?.count, 1)
+        XCTAssertTrue(mockHandler.didCallDownload)
+    }
+
     func testFetchCredentialFromTrustedIssuer_success() async throws {
         let mockHandler = MockTrustedIssuerHandler()
         let client = VCIClient(
@@ -97,6 +119,28 @@ final class VCIClientTests: XCTestCase {
                 getProofJwt: { _, _, _ in "mock-jwt" }
             )
         }
+    }
+
+    func testFetchCredentialFromTrustedIssuerV2_success() async throws {
+        let mockHandler = MockTrustedIssuerHandler()
+        let client = VCIClient(
+            traceabilityId: "test",
+            trustedIssuerFlowHandler: mockHandler
+        )
+
+        let result = try await client.fetchCredentialFromTrustedIssuer(
+            credentialIssuer: "mock",
+            credentialConfigurationId: "mock-id",
+            clientMetadata: ClientMetadata(clientId: "", redirectUri: ""),
+            getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer") },
+            authorizationMethods: [
+                .redirectToWeb(openWebPage: { _ in ["code": "auth-code"] })
+            ],
+            getProofs: { _, _, _ in CredentialRequestProofs(jwt: ["mock-jwt"]) }
+        )
+
+        XCTAssertEqual(result?.credentials?.count, 1)
+        XCTAssertTrue(mockHandler.didCallDownload)
     }
 
     func testRequestCredentialByCredentialOffer_success() async throws {

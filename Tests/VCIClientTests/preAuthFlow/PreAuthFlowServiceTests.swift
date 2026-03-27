@@ -19,7 +19,7 @@ final class PreAuthFlowServiceTests: XCTestCase {
 
         let offer = CredentialOffer.mockWithTxCodeRequired()
         
-        let result = try await service.requestCredentials(
+        let result = try await service.requestCredentialsDraft13(
             issuerMetadata: IssuerMetadata.mock(),
             credentialOffer: offer,
             getTokenResponse:{_ in TokenResponse(accessToken: "mock", tokenType: "Bearer")},
@@ -39,7 +39,7 @@ final class PreAuthFlowServiceTests: XCTestCase {
         let service = makeService(resolver: resolver)
 
         do {
-            _ = try await service.requestCredentials(
+            _ = try await service.requestCredentialsDraft13(
                 issuerMetadata: IssuerMetadata.mock(),
                 credentialOffer: CredentialOffer(credentialIssuer: "mock", credentialConfigurationIds: ["mock-id"], grants: nil),
                 getTokenResponse:{_ in TokenResponse(accessToken: "mock", tokenType: "Bearer")},
@@ -58,7 +58,7 @@ final class PreAuthFlowServiceTests: XCTestCase {
         let service = makeService()
 
         do {
-            _ = try await service.requestCredentials(
+            _ = try await service.requestCredentialsDraft13(
                 issuerMetadata: IssuerMetadata.mock(),
                 credentialOffer: CredentialOffer(credentialIssuer: "mock", credentialConfigurationIds: ["mock-id"], grants: CredentialOfferGrants(preAuthorizedGrant: PreAuthCodeGrant(preAuthCode: "mock-pre-auth", txCode: TxCode(inputMode: nil, length: 2, description: nil), authorizationServer: nil, interval: nil), authorizationCodeGrant: nil)),
                 getTokenResponse:{_ in TokenResponse(accessToken: "mock", tokenType: "Bearer")},
@@ -79,7 +79,7 @@ final class PreAuthFlowServiceTests: XCTestCase {
 
         do {
             _ =
-                try await service.requestCredentials(
+                try await service.requestCredentialsDraft13(
                     issuerMetadata: IssuerMetadata.mock(),
                     credentialOffer: CredentialOffer(credentialIssuer: "mock", credentialConfigurationIds: ["mock-id"], grants: nil),
                     getTokenResponse:{_ in TokenResponse(accessToken: "mock", tokenType: "Bearer")},
@@ -100,7 +100,7 @@ final class PreAuthFlowServiceTests: XCTestCase {
         let service = makeService(executor: failingExecutor)
 
         do {
-            _ = try await service.requestCredentials(
+            _ = try await service.requestCredentialsDraft13(
                 issuerMetadata: IssuerMetadata.mock(),
                 credentialOffer: CredentialOffer(credentialIssuer: "mock", credentialConfigurationIds: ["mock-id"], grants:CredentialOfferGrants(preAuthorizedGrant: PreAuthCodeGrant(preAuthCode: "mock", txCode: nil, authorizationServer: nil, interval: nil), authorizationCodeGrant: nil)),
                 getTokenResponse:{_ in TokenResponse(accessToken: "mock", tokenType: "Bearer")},
