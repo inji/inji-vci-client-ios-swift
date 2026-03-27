@@ -156,14 +156,23 @@ class AuthorizationCodeFlowService {
         let interactiveEndpoint = authorizationServerMetadata.interactiveAuthorizationEndpoint
 
         if let interactiveEndpoint {
-            return try await obtainAuthorizationCodeViaInteractiveAuthorizationEndpoint(
-                endpoint: interactiveEndpoint,
-                issuerMetadata: issuerMetadata,
-                clientMetadata: clientMetadata,
-                pkceSession: pkceSession,
-                credentialConfigurationId: credentialConfigurationId,
-                authorizationMethods: authorizationMethods
-            )
+            do {
+                return try await obtainAuthorizationCodeViaInteractiveAuthorizationEndpoint(
+                    endpoint: interactiveEndpoint,
+                    issuerMetadata: issuerMetadata,
+                    clientMetadata: clientMetadata,
+                    pkceSession: pkceSession,
+                    credentialConfigurationId: credentialConfigurationId,
+                    authorizationMethods: authorizationMethods
+                )
+            } catch let error as VCIClientException {
+                if error.serverErrorCode == Constants.MISSING_INTERACTION_TYPE_ERROR {
+                    return try await obtainAuthorizationCodeViaAuthorizationEndpoint(authorizationServerMetadata: authorizationServerMetadata, issuerMetadata: issuerMetadata, clientMetadata: clientMetadata, pkceSession: pkceSession, authorizationMethods: authorizationMethods)
+                } else {
+                    throw error
+                }
+            }
+
         } else {
             return try await obtainAuthorizationCodeViaAuthorizationEndpoint(
                 authorizationServerMetadata: authorizationServerMetadata,

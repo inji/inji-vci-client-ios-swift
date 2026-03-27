@@ -1,4 +1,3 @@
-
 @testable import VCIClient
 import XCTest
 
@@ -30,7 +29,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
                     _ in ["code": "mock-auth-code"]
                 })
             ],
-            getTokenResponse: {_ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer")},
+            getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer") },
             getProofJwt: { _, _, _ in "mock-jwt" },
             credentialConfigurationId: "vc1",
             proofSigningAlgorithmsSupportedSupported: ["rs256"]
@@ -49,7 +48,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
             _ = try await service.requestCredentials(
                 issuerMetadata: IssuerMetadata.mock(),
                 clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
-                getTokenResponse: {_ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer")},
+                getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer") },
                 getProofJwt: { _, _, _ in "mock-jwt" },
                 credentialConfigurationId: "vc1",
                 proofSigningAlgorithmsSupportedSupported: ["rs256"]
@@ -70,7 +69,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
             _ = try await service.requestCredentials(
                 issuerMetadata: IssuerMetadata.mock(),
                 clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
-                getTokenResponse: {_ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer")},
+                getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer") },
                 getProofJwt: { _, _, _ in "mock-jwt" },
                 credentialConfigurationId: "vc1",
                 proofSigningAlgorithmsSupportedSupported: ["rs256"]
@@ -131,6 +130,33 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
             credentialConfigurationId: "vc1",
             proofSigningAlgorithmsSupportedSupported: ["rs256"],
             credentialOffer: offer
+        )
+
+        XCTAssertEqual(result.credential.value as? String, "mock-credential")
+    }
+
+    func test_interactiveAuth_missingInteractionType_shouldFallbackToAuthorizationEndpoint() async throws {
+        let resolver = MockAuthServerResolver()
+        resolver.mockInteractiveAuthorizationEndpoint = "https://auth.example.com/interactive"
+
+        let interactiveHandler = MockInteractiveAuthorizationHandler()
+        interactiveHandler.shouldThrowMissingInteractionType = true
+
+        let service = makeService(
+            resolver: resolver,
+            interactiveAuthHandler: interactiveHandler
+        )
+
+        let result = try await service.requestCredentials(
+            issuerMetadata: IssuerMetadata.mock(),
+            clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
+            authorizationMethods: [
+                .redirectToWeb(openWebPage: { _ in ["code": "fallback-auth-code"] })
+            ],
+            getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer") },
+            getProofJwt: { _, _, _ in "mock-jwt" },
+            credentialConfigurationId: "vc1",
+            proofSigningAlgorithmsSupportedSupported: ["rs256"]
         )
 
         XCTAssertEqual(result.credential.value as? String, "mock-credential")
@@ -234,6 +260,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
     func test_requestCredentials_whenCredentialExecutorThrows_wrapsFailure() async {
         let executor = MockCredentialRequestExecutor()
         executor.errorToThrow = DownloadFailedException("credential failure")
+
         let service = makeService(executor: executor)
 
         do {
@@ -251,6 +278,30 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
             XCTFail("Expected credential executor failure")
         } catch {
             XCTAssertTrue(error.localizedDescription.contains("credential failure"))
+        }
+    }
+
+    func test_credentialRequest_failure_shouldThrow() async {
+        let executor = MockCredentialRequestExecutor()
+        executor.shouldThrow = true
+
+        let service = makeService(executor: executor)
+
+        do {
+            _ = try await service.requestCredentials(
+                issuerMetadata: IssuerMetadata.mock(),
+                clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
+                authorizationMethods: [
+                    .redirectToWeb(openWebPage: { _ in ["code": "mock-auth-code"] })
+                ],
+                getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer") },
+                getProofJwt: { _, _, _ in "mock-jwt" },
+                credentialConfigurationId: "vc1",
+                proofSigningAlgorithmsSupportedSupported: ["rs256"]
+            )
+            XCTFail("Expected credential request failure")
+        } catch {
+            XCTAssertTrue(error.localizedDescription.contains("credential"))
         }
     }
 
