@@ -1,6 +1,6 @@
 import Foundation
 
-class MsoMdocVcCredentialRequest: CredentialRequestProtocol {
+class MsoMdocCredentialRequestDraft13: CredentialRequestProtocol {
     let accessToken: String
     let issuerMetaData: IssuerMetadata
     let proof: JWTProof
@@ -40,7 +40,7 @@ class MsoMdocVcCredentialRequest: CredentialRequestProtocol {
             throw DownloadFailedException("Missing doctype in issuer metadata")
         }
 
-        let credentialRequestBody = MsoMdocCredentialRequestBody(
+        let credentialRequestBody = MsoMdocCredentialRequestBodyDraft13(
             format: issuerMetaData.credentialFormat,
             doctype: doctype,
             proof: proof as JWTProof
@@ -56,7 +56,7 @@ class MsoMdocVcCredentialRequest: CredentialRequestProtocol {
         }
     }
 }
-struct MsoMdocCredentialRequestBody: Encodable {
+struct MsoMdocCredentialRequestBodyDraft13: Encodable {
     let format: CredentialFormat
     let proof: JWTProof
     let doctype: String

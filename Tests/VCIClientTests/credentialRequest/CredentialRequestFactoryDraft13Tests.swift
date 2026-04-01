@@ -1,7 +1,7 @@
 @testable import VCIClient
 import XCTest
 
-final class CredentialRequestFactoryTests: XCTestCase {
+final class CredentialRequestFactoryDraft13Tests: XCTestCase {
     private let validProof = JWTProof(jwt: "valid.jwt.string")
     private let issuer = IssuerMetadata(
         credentialIssuer: "https://issuer.example.com",
@@ -13,7 +13,7 @@ final class CredentialRequestFactoryTests: XCTestCase {
     )
 
     func testCreateCredentialRequest_ldpvc_returnsValidRequest() throws {
-        let factory = CredentialRequestFactory()
+        let factory = CredentialRequestFactoryDraft13()
 
         let request = try factory.createCredentialRequest(
             credentialFormat: .ldp_vc,
@@ -31,7 +31,7 @@ final class CredentialRequestFactoryTests: XCTestCase {
     }
 
     func testCreateCredentialRequest_msomdoc_returnsValidRequest() throws {
-        let factory = CredentialRequestFactory()
+        let factory = CredentialRequestFactoryDraft13()
 
         let request = try factory.createCredentialRequest(
             credentialFormat: .mso_mdoc,
@@ -48,7 +48,7 @@ final class CredentialRequestFactoryTests: XCTestCase {
     }
 
     func testCreateCredentialRequest_emptyProof_throwsException() {
-        let factory = CredentialRequestFactory()
+        let factory = CredentialRequestFactoryDraft13()
         let emptyProof = JWTProof(jwt: "")
 
         XCTAssertThrowsError(
@@ -65,7 +65,7 @@ final class CredentialRequestFactoryTests: XCTestCase {
     }
 
     func testCreateCredentialRequest_missingCredentialType_throwsException() {
-        let factory = CredentialRequestFactory()
+        let factory = CredentialRequestFactoryDraft13()
         let invalidIssuer = IssuerMetadata(
             credentialIssuer: "https://issuer.example.com",
             credentialEndpoint: "https://issuer.example.com/credential",

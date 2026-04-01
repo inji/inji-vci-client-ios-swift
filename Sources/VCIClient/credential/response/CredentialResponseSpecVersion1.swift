@@ -1,6 +1,6 @@
 import Foundation
 
-public struct CredentialResponseV2: Codable {
+public struct CredentialResponseSpecVersion1: Codable {
     public let credentials: [AnyCodable]?
     public var credentialIssuer: String?
     public var credentialConfigurationId: String?

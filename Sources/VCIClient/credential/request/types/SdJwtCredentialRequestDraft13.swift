@@ -1,6 +1,6 @@
 import Foundation
 
-class SdJwtCredentialRequest: CredentialRequestProtocol {
+class SdJwtCredentialRequestDraft13: CredentialRequestProtocol {
     let accessToken: String
     let issuerMetaData: IssuerMetadata
     let proof: JWTProof
@@ -40,7 +40,7 @@ class SdJwtCredentialRequest: CredentialRequestProtocol {
             throw DownloadFailedException("Missing 'vct' in issuer metadata")
         }
 
-        let requestBody = SdJwtVcCredentialRequestBody(
+        let requestBody = SdJwtVcCredentialRequestBodyDraft13(
             format: issuer.credentialFormat,
             vct: vct,
             proof: proofJWT
@@ -54,7 +54,7 @@ class SdJwtCredentialRequest: CredentialRequestProtocol {
     }
 }
 
-struct SdJwtVcCredentialRequestBody: Encodable {
+struct SdJwtVcCredentialRequestBodyDraft13: Encodable {
     let format: CredentialFormat
     let vct: String
     let proof: JWTProof

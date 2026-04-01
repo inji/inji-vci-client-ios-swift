@@ -1,15 +1,15 @@
 import Foundation
 
 class CredentialRequestExecutor {
-    private let factory: CredentialRequestFactoryProtocol
-    private let factoryV2: CredentialRequestFactoryV2
+    private let draft13Factory: CredentialRequestFactoryProtocol
+    private let factory: CredentialRequestFactory
 
     init(
-        factory: CredentialRequestFactoryProtocol = CredentialRequestFactory(),
-        factoryV2: CredentialRequestFactoryV2 = CredentialRequestFactoryV2()
+        factory: CredentialRequestFactoryProtocol = CredentialRequestFactoryDraft13(),
+        factorySpecVersion1: CredentialRequestFactory = CredentialRequestFactory()
     ) {
-        self.factory = factory
-        self.factoryV2 = factoryV2
+        self.draft13Factory = factory
+        self.factory = factorySpecVersion1
     }
 
     private var logTag: String {
@@ -23,14 +23,14 @@ class CredentialRequestExecutor {
         accessToken: String,
         timeoutInMillis: Int64 = 10000,
         session: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponseV2? {
+    ) async throws -> CredentialResponseSpecVersion1? {
         let timeoutSeconds = timeoutInMillis / 1000
 
         do {
-            var request = try factoryV2.createCredentialRequest(
-                credentialFormat: issuerMetadata.credentialFormat,
+            var request = try factory.createCredentialRequest(
                 accessToken: accessToken,
                 issuer: issuerMetadata,
+                credentialConfigurationId: credentialConfigurationId,
                 proofs: proofs
             )
 
@@ -45,7 +45,7 @@ class CredentialRequestExecutor {
 
                 guard var result = try JsonUtils.deserialize(
                     responseBody,
-                    as: CredentialResponseV2.self
+                    as: CredentialResponseSpecVersion1.self
                 ) else {
                     throw DownloadFailedException(
                         "Failed to parse credential response."
@@ -128,7 +128,7 @@ class CredentialRequestExecutor {
         let timeoutSeconds = timeoutInMillis / 1000
 
         do {
-            var request = try factory.createCredentialRequest(
+            var request = try draft13Factory.createCredentialRequest(
                 credentialFormat: issuerMetadata.credentialFormat,
                 accessToken: accessToken,
                 issuer: issuerMetadata,

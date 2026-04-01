@@ -30,7 +30,11 @@ class NonceService {
             throw DownloadFailedException("Failed to parse nonce response.")
         }
 
-        return nonceResponse.cNonce
+        guard let cNonce = nonceResponse.cNonce, !cNonce.isEmpty else {
+            throw DownloadFailedException("Failed to parse nonce response.")
+        }
+
+        return cNonce
     }
 }
 

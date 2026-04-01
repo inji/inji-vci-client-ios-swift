@@ -1,8 +1,8 @@
 @testable import VCIClient
 import XCTest
 
-final class MsoMdocCredentialRequestTest: XCTestCase {
-    var credentialRequest: MsoMdocVcCredentialRequest!
+final class MsoMdocCredentialRequestDraft13Test: XCTestCase {
+    var credentialRequest: MsoMdocCredentialRequestDraft13!
     let url = URL(string: "https://domain.net/credential")!
     let accessToken = "AccessToken"
     let issuer = IssuerMetadata(credentialIssuer: "https://domain.net",
@@ -14,7 +14,7 @@ final class MsoMdocCredentialRequestTest: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        credentialRequest = MsoMdocVcCredentialRequest(accessToken: accessToken, issuerMetaData: issuer, proof: proofJWT)
+        credentialRequest = MsoMdocCredentialRequestDraft13(accessToken: accessToken, issuerMetaData: issuer, proof: proofJWT)
     }
 
     override func tearDown() {
@@ -36,7 +36,7 @@ final class MsoMdocCredentialRequestTest: XCTestCase {
     }
 
     func testshouldReturnValidatorResultWithIsValidAsTrueWhenRequiredIssuerMetadataDetailsOfMsoMdocVcAreAvailable() {
-        credentialRequest = MsoMdocVcCredentialRequest(accessToken: accessToken, issuerMetaData: issuer, proof: proofJWT)
+        credentialRequest = MsoMdocCredentialRequestDraft13(accessToken: accessToken, issuerMetaData: issuer, proof: proofJWT)
 
         let validationResult = credentialRequest.validateIssuerMetadata()
 
@@ -48,7 +48,7 @@ final class MsoMdocCredentialRequestTest: XCTestCase {
         let issuerMetadataWithoutDocType = IssuerMetadata(credentialIssuer: "https://domain.net",
                                                           credentialEndpoint: "https://domain.net/credential",
                                                           credentialFormat: .mso_mdoc)
-        credentialRequest = MsoMdocVcCredentialRequest(accessToken: accessToken, issuerMetaData: issuerMetadataWithoutDocType, proof: proofJWT)
+        credentialRequest = MsoMdocCredentialRequestDraft13(accessToken: accessToken, issuerMetaData: issuerMetadataWithoutDocType, proof: proofJWT)
 
         let validationResult = credentialRequest.validateIssuerMetadata()
 

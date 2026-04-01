@@ -1,6 +1,6 @@
 import Foundation
 
-class JwtVcCredentialRequest: CredentialRequestProtocol {
+class JwtVcCredentialRequestDraft13: CredentialRequestProtocol {
     let accessToken: String
     let issuerMetaData: IssuerMetadata
     let proof: JWTProof
@@ -43,7 +43,7 @@ class JwtVcCredentialRequest: CredentialRequestProtocol {
         }
 
         let definition = JwtCredentialDefinition(type: credentialTypes)
-        let requestBody = JwtVcCredentialRequestBody(
+        let requestBody = JwtVcCredentialRequestBodyDraft13(
             format: issuer.credentialFormat,
             credential_definition: definition,
             proof: proofJWT
@@ -61,7 +61,7 @@ struct JwtCredentialDefinition: Encodable {
     let type: [String]
 }
 
-struct JwtVcCredentialRequestBody: Encodable {
+struct JwtVcCredentialRequestBodyDraft13: Encodable {
     let format: CredentialFormat
     let credential_definition: JwtCredentialDefinition
     let proof: JWTProof

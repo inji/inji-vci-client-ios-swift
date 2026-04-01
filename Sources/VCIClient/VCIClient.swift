@@ -15,7 +15,7 @@ public class VCIClient {
         trustedIssuerFlowHandler = TrustedIssuerFlowHandler()
         issuerMetadataService = IssuerMetadataService()
         networkSession = NetworkManager.shared
-        credentialRequestFactory = CredentialRequestFactory()
+        credentialRequestFactory = CredentialRequestFactoryDraft13()
     }
 
     init(traceabilityId: String?,
@@ -30,7 +30,7 @@ public class VCIClient {
         credentialOfferFlowHandler = credentialOfferHandler ?? CredentialOfferFlowHandler()
         self.trustedIssuerFlowHandler = trustedIssuerFlowHandler ?? TrustedIssuerFlowHandler()
         self.issuerMetadataService = issuerMetadataService ?? IssuerMetadataService()
-        self.credentialRequestFactory = credentialRequestFactory ?? CredentialRequestFactory()
+        self.credentialRequestFactory = credentialRequestFactory ?? CredentialRequestFactoryDraft13()
     }
 
     private var logTag: String {
@@ -85,9 +85,9 @@ public class VCIClient {
         clientMetadata: ClientMetadata,
         getTokenResponse: @escaping TokenResponseCallback,
         authorizationMethods: [AuthorizationMethod],
-        getProofs: @escaping ProofsCallbackV2,
+        getProofs: @escaping ProofsCallbackSpecVersion1,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
-    ) async throws -> CredentialResponseV2? {
+    ) async throws -> CredentialResponseSpecVersion1? {
 
         do {
             return try await self.trustedIssuerFlowHandler.downloadCredentials(
@@ -141,10 +141,10 @@ public class VCIClient {
         getTxCode: TxCodeCallback,
         authorizationMethods: [AuthorizationMethod],
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofs: @escaping ProofsCallbackV2,
+        getProofs: @escaping ProofsCallbackSpecVersion1,
         onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
-    ) async throws -> CredentialResponseV2? {
+    ) async throws -> CredentialResponseSpecVersion1? {
 
         do {
             return try await self.credentialOfferFlowHandler.downloadCredentials(

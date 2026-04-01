@@ -29,13 +29,13 @@ class AuthorizationCodeFlowService {
         clientMetadata: ClientMetadata,
         authorizationMethods: [AuthorizationMethod] = [],
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofs: @escaping ProofsCallbackV2,
+        getProofs: @escaping ProofsCallbackSpecVersion1,
         credentialConfigurationId: String,
         proofSigningAlgorithmsSupportedSupported: [String],
         credentialOffer: CredentialOffer? = nil,
         downloadTimeOutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
         session: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponseV2 {
+    ) async throws -> CredentialResponseSpecVersion1 {
         try await executeRequestCredentials(
             issuerMetadata: issuerMetadata,
             clientMetadata: clientMetadata,

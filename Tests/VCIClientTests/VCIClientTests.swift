@@ -51,7 +51,7 @@ final class VCIClientTests: XCTestCase {
         }
     }
 
-    func testFetchCredentialUsingCredentialOfferV2_success() async throws {
+    func testFetchCredentialUsingCredentialOfferSpecVersion1_success() async throws {
         let mockHandler = MockCredentialOfferHandler()
         let client = VCIClient(
             traceabilityId: "test",
@@ -121,7 +121,7 @@ final class VCIClientTests: XCTestCase {
         }
     }
 
-    func testFetchCredentialFromTrustedIssuerV2_success() async throws {
+    func testFetchCredentialFromTrustedIssuerSpecVersion1_success() async throws {
         let mockHandler = MockTrustedIssuerHandler()
         let client = VCIClient(
             traceabilityId: "test",

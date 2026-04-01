@@ -7,14 +7,16 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         tokenService: TokenService = MockTokenService(),
         executor: CredentialRequestExecutor = MockCredentialRequestExecutor(),
         pkceManager: PKCESessionManager = MockPKCESessionManager(),
-        interactiveAuthHandler: InteractiveAuthorizationHandler = MockInteractiveAuthorizationHandler()
+        interactiveAuthHandler: InteractiveAuthorizationHandler = MockInteractiveAuthorizationHandler(),
+        nonceService: NonceService = MockNonceService()
     ) -> AuthorizationCodeFlowService {
         return AuthorizationCodeFlowService(
             authServerResolver: resolver,
             tokenService: tokenService,
             credentialExecutor: executor,
             pkceSessionManager: pkceManager,
-            interactiveAuthorizationHandler: interactiveAuthHandler
+            interactiveAuthorizationHandler: interactiveAuthHandler,
+            nonceService: nonceService
         )
     }
 
@@ -36,6 +38,65 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         )
 
         XCTAssertEqual(result.credential.value as? String, "mock-credential")
+    }
+
+    func test_requestCredentials_v1_success_usesNonceService() async throws {
+        let nonceService = MockNonceService()
+        nonceService.nonceToReturn = "nonce-v1"
+        let service = makeService(nonceService: nonceService)
+        var capturedNonce: String?
+
+        let result = try await service.requestCredentials(
+            issuerMetadata: IssuerMetadata(
+                credentialIssuer: "https://issuer.example.com",
+                credentialEndpoint: "https://issuer.example.com/credential",
+                credentialFormat: .ldp_vc,
+                nonceEndpoint: "https://issuer.example.com/nonce"
+            ),
+            clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
+            authorizationMethods: [
+                .redirectToWeb(openWebPage: { _ in ["code": "mock-auth-code"] })
+            ],
+            getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer") },
+            getProofs: { _, nonce, _ in
+                capturedNonce = nonce
+                return CredentialRequestProofs(jwt: ["mock-jwt"])
+            },
+            credentialConfigurationId: "vc1",
+            proofSigningAlgorithmsSupportedSupported: ["rs256"]
+        )
+
+        XCTAssertEqual(capturedNonce, "nonce-v1")
+        XCTAssertEqual(result.credentials?.count, 1)
+    }
+
+    func test_requestCredentialsDraft13_withoutCNonce_shouldThrow() async {
+        let tokenService = MockTokenService()
+        tokenService.authCodeTokenResponse = TokenResponse(
+            accessToken: "mock-access-token",
+            tokenType: "Bearer",
+            expiresIn: 3600,
+            cNonce: "",
+            cNonceExpiresIn: 0
+        )
+        let service = makeService(tokenService: tokenService)
+
+        await assertThrowsVCIErrorContainingMessage(
+            expectedType: DownloadFailedException.self,
+            messageContains: "No c_nonce in token response"
+        ) {
+            try await service.requestCredentialsDraft13(
+                issuerMetadata: IssuerMetadata.mock(),
+                clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
+                authorizationMethods: [
+                    .redirectToWeb(openWebPage: { _ in ["code": "mock-auth-code"] })
+                ],
+                getTokenResponse: { _ in TokenResponse.mock() },
+                getProofJwt: { _, _, _ in "mock-jwt" },
+                credentialConfigurationId: "vc1",
+                proofSigningAlgorithmsSupportedSupported: ["rs256"]
+            )
+        }
     }
 
     func test_missingAuthorizationEndpoint_shouldThrow() async {

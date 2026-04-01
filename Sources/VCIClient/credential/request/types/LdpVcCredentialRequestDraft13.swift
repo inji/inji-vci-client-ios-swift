@@ -1,6 +1,6 @@
 import Foundation
 
-class LdpVcCredentialRequest: CredentialRequestProtocol {
+class LdpVcCredentialRequestDraft13: CredentialRequestProtocol {
     let accessToken: String
     let issuerMetaData: IssuerMetadata
     let proof: JWTProof
@@ -36,7 +36,7 @@ class LdpVcCredentialRequest: CredentialRequestProtocol {
     func generateRequestBody(proofJWT: JWTProof, issuer: IssuerMetadata) throws -> Data? {
         let credentialDefinition = CredentialDefinition(context: getIssuerContext(issuer: issuer), type: issuer.credentialType!)
 
-        let credentialRequestBody = LdpCredentialRequestBody(
+        let credentialRequestBody = LdpCredentialRequestBodyDraft13(
             format: issuer.credentialFormat,
             credential_definition: credentialDefinition,
             proof: proofJWT
@@ -58,7 +58,7 @@ class LdpVcCredentialRequest: CredentialRequestProtocol {
     }
 }
 
-struct LdpCredentialRequestBody: Encodable {
+struct LdpCredentialRequestBodyDraft13: Encodable {
     let format: CredentialFormat
     let credential_definition: CredentialDefinition
     let proof: JWTProof

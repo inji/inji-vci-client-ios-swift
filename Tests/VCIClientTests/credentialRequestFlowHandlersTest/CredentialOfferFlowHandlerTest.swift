@@ -101,6 +101,83 @@ final class CredentialOfferFlowHandlerTests: XCTestCase {
         XCTAssertEqual(result.credentials?.count, 1)
     }
 
+    func testAuthorizationCodeFlow_withNonceEndpoint_routesToV1() async throws {
+        let offerService = MockCredentialOfferService()
+        offerService.offerToReturn = CredentialOffer(
+            credentialIssuer: "https://issuer.com",
+            credentialConfigurationIds: ["config"],
+            grants: CredentialOfferGrants(
+                preAuthorizedGrant: nil,
+                authorizationCodeGrant: AuthorizationCodeGrant(issuerState: nil, authorizationServer: nil)
+            )
+        )
+
+        let issuerService = MockIssuerMetadataService()
+        issuerService.resultToReturn = makeV1IssuerMetadataResult()
+
+        let authCodeFlowService = MockAuthorizationCodeFlowService()
+
+        let handler = CredentialOfferFlowHandler(
+            credentialOfferService: offerService,
+            issuerMetadataService: issuerService,
+            preAuthFlowService: MockPreAuthFlowService(),
+            authorizationCodeFlowService: authCodeFlowService
+        )
+
+        let result = try await handler.downloadCredentials(
+            credentialOffer: "offer",
+            clientMetadata: ClientMetadata(clientId: "id", redirectUri: "uri"),
+            getTxCode: { _, _, _ in "tx-code" },
+            authorizationMethods: [.redirectToWeb(openWebPage: { _ in ["code": "auth_code"] })],
+            getTokenResponse: { _ in TokenResponse(accessToken: "mock", tokenType: "Bearer") },
+            getProofs: { _, _, _ in CredentialRequestProofs(jwt: ["mock-jwt"]) }
+        )
+
+        XCTAssertTrue(authCodeFlowService.didCallRequestCredentials)
+        XCTAssertEqual(result.credentials?.count, 1)
+    }
+
+    func testDraft13Flow_withMissingJwtProof_throwsError() async {
+        let offerService = MockCredentialOfferService()
+        offerService.offerToReturn = CredentialOffer(
+            credentialIssuer: "https://issuer.com",
+            credentialConfigurationIds: ["config"],
+            grants: CredentialOfferGrants(
+                preAuthorizedGrant: PreAuthCodeGrant(preAuthCode: "test", txCode: nil, authorizationServer: nil, interval: nil),
+                authorizationCodeGrant: nil
+            )
+        )
+
+        let issuerService = MockIssuerMetadataService()
+        issuerService.resultToReturn = makeMinimalIssuerMetadataResult()
+
+        let handler = CredentialOfferFlowHandler(
+            credentialOfferService: offerService,
+            issuerMetadataService: issuerService,
+            preAuthFlowService: PreAuthCodeFlowService(
+                authServerResolver: MockAuthServerResolver(),
+                tokenService: MockTokenService(),
+                credentialExecutor: MockCredentialRequestExecutor(),
+                nonceService: MockNonceService()
+            ),
+            authorizationCodeFlowService: MockAuthorizationCodeFlowService()
+        )
+
+        await assertThrowsVCIErrorContainingMessage(
+            expectedType: DownloadFailedException.self,
+            messageContains: "Draft13 issuer requires a single JWT proof"
+        ) {
+            try await handler.downloadCredentials(
+                credentialOffer: "offer",
+                clientMetadata: ClientMetadata(clientId: "id", redirectUri: "uri"),
+                getTxCode: { _, _, _ in "tx-code" },
+                authorizationMethods: [],
+                getTokenResponse: { _ in TokenResponse(accessToken: "mock", tokenType: "Bearer") },
+                getProofs: { _, _, _ in CredentialRequestProofs(jwt: []) }
+            ) as Any
+        }
+    }
+
     func testPreAuthorizedFlow_callsPreAuthFlowService() async throws {
         let offerService = MockCredentialOfferService()
         offerService.offerToReturn = CredentialOffer(

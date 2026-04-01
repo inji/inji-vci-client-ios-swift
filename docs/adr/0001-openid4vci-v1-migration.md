@@ -1,6 +1,6 @@
 # ADR-0001: OpenID4VCI 1.0 Migration with Draft-13 Compatibility
 
-- Status: Accepted
+- Status: In review
 - Date: 2026-03-30
 
 ## Context
@@ -35,8 +35,8 @@ Legacy APIs remain Draft-13 APIs:
 
 New APIs are OpenID4VCI 1.0-facing APIs:
 
-- plural proof callback: `ProofsCallbackV2`
-- plural credential response: `CredentialResponseV2`
+- plural proof callback: `ProofsCallbackSpecVersion1`
+- plural credential response: `CredentialResponseSpecVersion1`
 - prefer the 1.0 route
 - may internally downgrade to Draft-13 when the issuer is detected as Draft-13
 
@@ -67,13 +67,13 @@ These methods must not switch to the 1.0 path, even if issuer metadata suggests 
 
 New public APIs expose 1.0-facing contracts:
 
-- `fetchCredentialUsingCredentialOffer(... getProofs: ProofsCallbackV2 ...) -> CredentialResponseV2?`
-- `fetchCredentialFromTrustedIssuer(... getProofs: ProofsCallbackV2 ...) -> CredentialResponseV2?`
+- `fetchCredentialUsingCredentialOffer(... getProofs: ProofsCallbackSpecVersion1 ...) -> CredentialResponseSpecVersion1?`
+- `fetchCredentialFromTrustedIssuer(... getProofs: ProofsCallbackSpecVersion1 ...) -> CredentialResponseSpecVersion1?`
 
 Supporting public types:
 
 - `CredentialRequestProofs`
-- `CredentialResponseV2`
+- `CredentialResponseSpecVersion1`
 - `OID4VCIVersion`
 
 ### Callback contracts
@@ -91,7 +91,7 @@ public typealias ProofJwtCallback = (
 1.0 callback:
 
 ```swift
-public typealias ProofsCallbackV2 = (
+public typealias ProofsCallbackSpecVersion1 = (
     _ credentialIssuer: String,
     _ nonce: String?,
     _ proofSigningAlgorithmsSupported: [String]
@@ -113,14 +113,14 @@ Draft-13 response:
 
 1.0 response:
 
-- `CredentialResponseV2`
+- `CredentialResponseSpecVersion1`
 - exposes plural `credentials`
 - does not expose synthetic `credential`
 
 When the new API talks to a Draft-13 issuer, the internal Draft-13 response is normalized into:
 
 ```swift
-CredentialResponseV2(credentials: [draft13Credential], ...)
+CredentialResponseSpecVersion1(credentials: [draft13Credential], ...)
 ```
 
 This keeps the new API contract stable while avoiding a fake hybrid response model.
@@ -151,8 +151,8 @@ flowchart TD
     F --> I
     F --> J
 
-    I --> K[CredentialRequestFactoryV2]
-    I --> L[CredentialRequestFactory]
+    I --> K[CredentialRequestFactory]
+    I --> L[CredentialRequestFactoryDraft13]
 ```
 
 ### Internal path ownership
@@ -171,7 +171,7 @@ flowchart LR
     H --> I[Draft-13 response]
     G --> J[1.0 response]
 
-    I --> K[Normalize to CredentialResponseV2 only for new APIs]
+    I --> K[Normalize to CredentialResponseSpecVersion1 only for new APIs]
 ```
 
 ## Detailed routing
@@ -200,7 +200,7 @@ Flow:
 2. resolve `specVersion`
 3. if `v1`, use the primary 1.0 path
 4. if `draft13`, use the Draft-13 path internally
-5. return `CredentialResponseV2` to the caller in either case
+5. return `CredentialResponseSpecVersion1` to the caller in either case
 
 ### Version detection policy
 
@@ -234,28 +234,45 @@ Draft-13 requests use singular proof:
 
 ### 1.0 request shape
 
-1.0 requests use plural proofs:
+1.0 requests use plural proofs and identify the credential by configuration id:
 
 ```json
 {
-  "format": "jwt_vc_json",
-  "credential_definition": { "...": "..." },
+  "credential_configuration_id": "UniversityDegreeCredential",
   "proofs": {
     "jwt": ["eyJ..."]
   }
 }
 ```
 
+### Format handling
+
+The request-structure split is now explicit:
+
+- the 1.0 path is format-agnostic at the request body level
+- all supported formats use the same `credential_configuration_id` + `proofs` request shape
+- Draft-13 remains format-specific and continues to use per-format request builders
+- this avoids reusing the 1.0 request model inside the Draft-13 path and preserves Draft-13 builder validation
+
 ### Factory design
 
-The request factories are separated by wire format:
+The request factories are separated by protocol version and request model:
 
-- `CredentialRequestFactoryV2`
 - `CredentialRequestFactory`
+- `CredentialRequestFactoryDraft13`
 
-Shared payload construction lives in the 1.0 factory path, and the Draft-13 factory reuses that normalized payload before applying Draft-13 proof encoding.
+The 1.0 factory is now isolated to the 1.0 request model:
 
-This keeps duplication limited to the final proof serialization step.
+- validates that the proof collection is not empty
+- builds the request body using `credential_configuration_id` and `proofs`
+
+The Draft-13 factory is also isolated to the legacy request model:
+
+- validates that the proof is a non-empty JWT proof
+- dispatches to existing per-format Draft-13 builders
+- keeps Draft-13-specific request validation inside those builders
+
+This preserves the pre-migration Draft-13 validation behavior while keeping the 1.0 request path aligned with the current `credential_configuration_id`-based contract.
 
 ## Response model changes
 
@@ -279,9 +296,7 @@ This keeps duplication limited to the final proof serialization step.
 
 ### Normalization policy
 
-Policy:
-
-- do not synthesize `credential` inside `CredentialResponseV2`
+- do not synthesize `credential` inside `CredentialResponseSpecVersion1`
 - do not expose a hybrid response model
 - if the new API talks to a Draft-13 issuer, wrap the Draft-13 credential into a one-item `credentials` array
 - if the old API is used, keep the response as `CredentialResponse`
@@ -351,10 +366,10 @@ sequenceDiagram
     Service->>App: getProofs(issuer, nonce, algs)
     App-->>Service: CredentialRequestProofs
     Service->>Exec: requestCredential(...)
-    Exec-->>Service: CredentialResponseV2
-    Service-->>Handler: CredentialResponseV2
-    Handler-->>Client: CredentialResponseV2
-    Client-->>App: CredentialResponseV2
+    Exec-->>Service: CredentialResponseSpecVersion1
+    Service-->>Handler: CredentialResponseSpecVersion1
+    Handler-->>Client: CredentialResponseSpecVersion1
+    Client-->>App: CredentialResponseSpecVersion1
 ```
 
 ### Sequence: new API on Draft-13 issuer
@@ -379,9 +394,9 @@ sequenceDiagram
     Service->>Exec: requestCredentialDraft13(...)
     Exec-->>Service: CredentialResponse
     Service-->>Handler: CredentialResponse
-    Handler->>Handler: wrap into CredentialResponseV2(credentials: [credential])
-    Handler-->>Client: CredentialResponseV2
-    Client-->>App: CredentialResponseV2
+    Handler->>Handler: wrap into CredentialResponseSpecVersion1(credentials: [credential])
+    Handler-->>Client: CredentialResponseSpecVersion1
+    Client-->>App: CredentialResponseSpecVersion1
 ```
 
 ## Consequences
@@ -446,10 +461,13 @@ Primary files involved:
 - `Sources/VCIClient/trustedIssuer/TrustedIssuerFlowHandler.swift`
 - `Sources/VCIClient/authorizationCodeFlow/AuthorizationCodeFlowService.swift`
 - `Sources/VCIClient/preAuthCodeFlow/PreAuthCodeFlowService.swift`
-- `Sources/VCIClient/credential/request/CredentialRequestFactoryV2.swift`
 - `Sources/VCIClient/credential/request/CredentialRequestFactory.swift`
-- `Sources/VCIClient/credential/response/CredentialResponseV2.swift`
+- `Sources/VCIClient/credential/request/CredentialRequestFactoryDraft13.swift`
+- `Sources/VCIClient/credential/request/types/LdpVcCredentialRequestDraft13.swift`
+- `Sources/VCIClient/credential/request/types/JwtVcCredentialRequestDraft13.swift`
+- `Sources/VCIClient/credential/request/types/MsoMdocCredentialRequestDraft13.swift`
+- `Sources/VCIClient/credential/request/types/SdJwtCredentialRequestDraft13.swift`
+- `Sources/VCIClient/credential/response/CredentialResponseSpecVersion1.swift`
 - `Sources/VCIClient/proof/CredentialRequestProofs.swift`
 - `Sources/VCIClient/issuerMetadata/IssuerMetadataService.swift`
 - `Sources/VCIClient/constants/OID4VCIVersion.swift`
-

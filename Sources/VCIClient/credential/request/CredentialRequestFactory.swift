@@ -1,124 +1,58 @@
 import Foundation
 
-public protocol CredentialRequestFactoryProtocol {
+class CredentialRequestFactory {
     func createCredentialRequest(
-        credentialFormat: CredentialFormat,
         accessToken: String,
         issuer: IssuerMetadata,
-        proofJwt: Proof
-    ) throws -> URLRequest
-}
-
-class CredentialRequestFactory: CredentialRequestFactoryProtocol {
-    static let shared = CredentialRequestFactory()
-
-    private let factoryV2: CredentialRequestFactoryV2
-
-    init(factoryV2: CredentialRequestFactoryV2 = CredentialRequestFactoryV2()) {
-        self.factoryV2 = factoryV2
-    }
-
-    func createCredentialRequest(
-        credentialFormat: CredentialFormat,
-        accessToken: String,
-        issuer: IssuerMetadata,
-        proofJwt: Proof
+        credentialConfigurationId: String,
+        proofs: CredentialRequestProofs
     ) throws -> URLRequest {
-        guard let proof = proofJwt as? JWTProof, !proof.jwt.isEmpty else {
-            throw InvalidDataProvidedException("Proof object cannot be empty or invalid")
+        guard !proofs.isEmpty else {
+            throw InvalidDataProvidedException("Proof collection cannot be empty")
         }
 
-        var request = try factoryV2.makeBaseRequest(
+        var request = try makeBaseRequest(
             accessToken: accessToken,
             issuer: issuer
         )
-        request.httpBody = try makeDraft13RequestBody(
-            credentialFormat: credentialFormat,
-            issuer: issuer,
-            proof: proof
+        request.httpBody = try makeRequestBody(
+            credentialConfigurationId: credentialConfigurationId,
+            proofs: proofs
         )
         return request
     }
 
-    func makeDraft13RequestBody(
-        credentialFormat: CredentialFormat,
-        issuer: IssuerMetadata,
-        proof: JWTProof
+    func makeBaseRequest(
+        accessToken: String,
+        issuer: IssuerMetadata
+    ) throws -> URLRequest {
+        guard let url = URL(string: issuer.credentialEndpoint) else {
+            throw DownloadFailedException("Invalid credential endpoint URL")
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        return request
+    }
+
+    func makeRequestBody(
+        credentialConfigurationId: String,
+        proofs: CredentialRequestProofs
     ) throws -> Data {
-        let payload = try factoryV2.makeNormalizedPayload(
-            credentialFormat: credentialFormat,
-            issuer: issuer
-        )
         let encoder = JSONEncoder()
-
-        switch payload {
-        case let .ldpVc(format, credentialDefinition):
-            return try encoder.encode(
-                LdpCredentialRequestBodyDraft13(
-                    format: format,
-                    credential_definition: credentialDefinition,
-                    proof: proof
-                )
+        return try encoder.encode(
+            CredentialRequestBody(
+                credential_configuration_id: credentialConfigurationId,
+                proofs: proofs
             )
-
-        case let .jwtVcJson(format, credentialDefinition):
-            return try encoder.encode(
-                JwtVcCredentialRequestBodyDraft13(
-                    format: format,
-                    credential_definition: credentialDefinition,
-                    proof: proof
-                )
-            )
-
-        case let .msoMdoc(format, doctype):
-            return try encoder.encode(
-                MsoMdocCredentialRequestBodyDraft13(
-                    format: format,
-                    doctype: doctype,
-                    proof: proof
-                )
-            )
-
-        case let .sdJwt(format, vct):
-            return try encoder.encode(
-                SdJwtVcCredentialRequestBodyDraft13(
-                    format: format,
-                    vct: vct,
-                    proof: proof
-                )
-            )
-        }
-    }
-
-    func validateAndConstructCredentialRequest(credentialRequest: CredentialRequestProtocol) throws -> URLRequest {
-        let issuerMetadataValidatorResult = credentialRequest.validateIssuerMetadata()
-        if issuerMetadataValidatorResult.isValid {
-            return try credentialRequest.constructRequest()
-        }
-        throw InvalidDataProvidedException("invalid fields: \(issuerMetadataValidatorResult.invalidFields.joined())")
+        )
     }
 }
 
-private struct JwtVcCredentialRequestBodyDraft13: Encodable {
-    let format: CredentialFormat
-    let credential_definition: JwtCredentialDefinition
-    let proof: JWTProof
-}
 
-private struct LdpCredentialRequestBodyDraft13: Encodable {
-    let format: CredentialFormat
-    let credential_definition: CredentialDefinition
-    let proof: JWTProof
-}
-
-private struct MsoMdocCredentialRequestBodyDraft13: Encodable {
-    let format: CredentialFormat
-    let doctype: String
-    let proof: JWTProof
-}
-
-private struct SdJwtVcCredentialRequestBodyDraft13: Encodable {
-    let format: CredentialFormat
-    let vct: String
-    let proof: JWTProof
+private struct CredentialRequestBody: Encodable {
+    let credential_configuration_id: String
+    let proofs: CredentialRequestProofs
 }

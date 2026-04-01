@@ -22,11 +22,11 @@ class CredentialOfferFlowHandler {
         getTxCode: TxCodeCallback,
         authorizationMethods: [AuthorizationMethod],
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofs: @escaping ProofsCallbackV2,
+        getProofs: @escaping ProofsCallbackSpecVersion1,
         onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
         networkSession: NetworkManager = NetworkManager.shared,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
-    ) async throws -> CredentialResponseV2 {
+    ) async throws -> CredentialResponseSpecVersion1 {
         try await executeDownloadCredentials(
             credentialOffer: credentialOffer,
             clientMetadata: clientMetadata,
@@ -99,7 +99,7 @@ class CredentialOfferFlowHandler {
                 } else {
                     throw CredentialOfferFetchFailedException("Credential offer does not contain a supported grant type")
                 }
-                return CredentialResponseV2(
+                return CredentialResponseSpecVersion1(
                     credentials: [draft13Response.credential],
                     credentialIssuer: draft13Response.credentialIssuer,
                     credentialConfigurationId: draft13Response.credentialConfigurationId

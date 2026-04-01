@@ -8,7 +8,7 @@ public typealias ProofJwtCallback = (
     _ cNonce: String?,
     _ proofSigningAlgorithmsSupported: [String]
 ) async throws -> String
-public typealias ProofsCallbackV2 = (
+public typealias ProofsCallbackSpecVersion1 = (
     _ credentialIssuer: String,
     _ nonce: String?,
     _ proofSigningAlgorithmsSupported: [String]

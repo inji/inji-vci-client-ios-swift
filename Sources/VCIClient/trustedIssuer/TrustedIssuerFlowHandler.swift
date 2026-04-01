@@ -13,10 +13,10 @@ class TrustedIssuerFlowHandler {
         clientMetadata: ClientMetadata,
         authorizationMethods: [AuthorizationMethod],
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofs: @escaping ProofsCallbackV2,
+        getProofs: @escaping ProofsCallbackSpecVersion1,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
         networkSession: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponseV2? {
+    ) async throws -> CredentialResponseSpecVersion1? {
         let issuerMetadata = try await loadIssuerMetadata(
             credentialIssuer: credentialIssuer,
             credentialConfigurationId: credentialConfigurationId
@@ -58,7 +58,7 @@ class TrustedIssuerFlowHandler {
                 downloadTimeOutInMillis: downloadTimeoutInMillis,
                 session: networkSession
             )
-            return CredentialResponseV2(
+            return CredentialResponseSpecVersion1(
                 credentials: [draft13Response.credential],
                 credentialIssuer: draft13Response.credentialIssuer,
                 credentialConfigurationId: draft13Response.credentialConfigurationId

@@ -1,9 +1,9 @@
 import XCTest
 @testable import VCIClient
 
-class LdpVcCredentialRequestTests: XCTestCase {
+class LdpVcCredentialRequestDraft13Tests: XCTestCase {
     
-    var credentialRequest: LdpVcCredentialRequest!
+    var credentialRequest: LdpVcCredentialRequestDraft13!
     let url = URL(string: "https://domain.net/credential")!
     let accessToken = "AccessToken"
     let issuer = IssuerMetadata(credentialIssuer: "https://domain.net",
@@ -14,7 +14,7 @@ class LdpVcCredentialRequestTests: XCTestCase {
     
     override func setUp() {
         super.setUp()
-        credentialRequest = LdpVcCredentialRequest(accessToken: accessToken, issuerMetaData: issuer, proof: proofJWT)
+        credentialRequest = LdpVcCredentialRequestDraft13(accessToken: accessToken, issuerMetaData: issuer, proof: proofJWT)
     }
     
     override func tearDown() {
@@ -71,7 +71,7 @@ class LdpVcCredentialRequestTests: XCTestCase {
                                 credentialEndpoint: "https://domain.net/credential",
                                 
                                 credentialFormat: .mso_mdoc)
-        credentialRequest = LdpVcCredentialRequest(accessToken: accessToken, issuerMetaData: issuerMetadataWithoutCredentialType, proof: proofJWT)
+        credentialRequest = LdpVcCredentialRequestDraft13(accessToken: accessToken, issuerMetaData: issuerMetadataWithoutCredentialType, proof: proofJWT)
         
         let validationResult = credentialRequest.validateIssuerMetadata()
         

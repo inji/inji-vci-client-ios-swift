@@ -22,12 +22,12 @@ class PreAuthCodeFlowService {
         issuerMetadata: IssuerMetadata,
         credentialOffer: CredentialOffer,
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofs: @escaping ProofsCallbackV2,
+        getProofs: @escaping ProofsCallbackSpecVersion1,
         credentialConfigurationId: String,
         proofSigningAlgorithmsSupportedSupported: [String],
         getTxCode: TxCodeCallback = nil,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
-    ) async throws -> CredentialResponseV2 {
+    ) async throws -> CredentialResponseSpecVersion1 {
         try await executeRequestCredentials(
             issuerMetadata: issuerMetadata,
             credentialOffer: credentialOffer,

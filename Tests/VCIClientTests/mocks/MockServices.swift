@@ -36,19 +36,27 @@ final class MockAuthServerResolver: AuthorizationServerResolver {
 
 final class MockTokenService: TokenService {
     var authCodeErrorToThrow: Error?
+    var preAuthTokenResponse = TokenResponse(
+        accessToken: "mock-access-token",
+        tokenType: "Bearer",
+        expiresIn: 3600,
+        cNonce: "mock-cnonce",
+        cNonceExpiresIn: 600
+    )
+    var authCodeTokenResponse = TokenResponse(
+        accessToken: "mock-access-token",
+        tokenType: "Bearer",
+        expiresIn: 3600,
+        cNonce: "mock-cnonce",
+        cNonceExpiresIn: 600
+    )
 
     override func getAccessToken(getTokenResponse: @escaping TokenResponseCallback,
                                  tokenEndpoint: String,
                                  timeoutMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
                                  preAuthCode: String,
                                  txCode: String? = nil) async throws -> TokenResponse {
-        return TokenResponse(
-            accessToken: "mock-access-token",
-            tokenType: "Bearer",
-            expiresIn: 3600,
-            cNonce: "mock-cnonce",
-            cNonceExpiresIn: 600
-        )
+        return preAuthTokenResponse
     }
 
     override func getAccessToken(getTokenResponse: @escaping TokenResponseCallback,
@@ -61,13 +69,22 @@ final class MockTokenService: TokenService {
         if let authCodeErrorToThrow {
             throw authCodeErrorToThrow
         }
-        return TokenResponse(
-            accessToken: "mock-access-token",
-            tokenType: "Bearer",
-            expiresIn: 3600,
-            cNonce: "mock-cnonce",
-            cNonceExpiresIn: 600
-        )
+        return authCodeTokenResponse
+    }
+}
+
+final class MockNonceService: NonceService {
+    var nonceToReturn: String? = "mock-nonce"
+    var errorToThrow: Error?
+
+    override func fetchNonce(
+        issuerMetadata: IssuerMetadata,
+        timeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
+    ) async throws -> String? {
+        if let errorToThrow {
+            throw errorToThrow
+        }
+        return nonceToReturn
     }
 }
 
@@ -89,13 +106,13 @@ final class MockCredentialRequestExecutor: CredentialRequestExecutor {
         accessToken: String,
         timeoutInMillis: Int64 = 10000,
         session: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponseV2? {
+    ) async throws -> CredentialResponseSpecVersion1? {
         if shouldReturnNil { return nil }
         if let errorToThrow {
             throw errorToThrow
         }
 
-        return CredentialResponseV2(
+        return CredentialResponseSpecVersion1(
             credentials: [AnyCodable("mock-credential")],
             credentialIssuer: "mock-issuer",
             credentialConfigurationId: "mock-id"
@@ -129,16 +146,16 @@ final class MockCredentialOfferHandler: CredentialOfferFlowHandler {
         getTxCode: TxCodeCallback,
         authorizationMethods: [AuthorizationMethod],
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofs: @escaping ProofsCallbackV2,
+        getProofs: @escaping ProofsCallbackSpecVersion1,
         onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
         networkSession: NetworkManager = NetworkManager.shared,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
-    ) async throws -> CredentialResponseV2 {
+    ) async throws -> CredentialResponseSpecVersion1 {
         didCallDownload = true
         if shouldThrow {
             throw DownloadFailedException("Simulated failure")
         }
-        return CredentialResponseV2(
+        return CredentialResponseSpecVersion1(
             credentials: [AnyCodable("mock-credential")],
             credentialIssuer: "mock-issuer",
             credentialConfigurationId: "mock-id"
@@ -174,15 +191,15 @@ class MockTrustedIssuerHandler: TrustedIssuerFlowHandler {
         clientMetadata: ClientMetadata,
         authorizationMethods: [AuthorizationMethod],
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofs: @escaping ProofsCallbackV2,
+        getProofs: @escaping ProofsCallbackSpecVersion1,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
         networkSession: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponseV2? {
+    ) async throws -> CredentialResponseSpecVersion1? {
         didCallDownload = true
         if shouldThrow {
             throw DownloadFailedException("Simulated failure")
         }
-        return CredentialResponseV2(
+        return CredentialResponseSpecVersion1(
             credentials: [AnyCodable("mock-credential")],
             credentialIssuer: "mock-issuer",
             credentialConfigurationId: "mock-id"
@@ -371,7 +388,7 @@ func mockProof() -> Proof {
 
 // MARK: - Subclassed Factory to Inject Mocks
 
-class TestableCredentialRequestFactory: CredentialRequestFactory {
+class TestableCredentialRequestFactory: CredentialRequestFactoryDraft13 {
     var credentialRequestToReturn: CredentialRequestProtocol!
 
     override func validateAndConstructCredentialRequest(credentialRequest: CredentialRequestProtocol) throws -> URLRequest {
@@ -394,18 +411,18 @@ final class MockAuthorizationCodeFlowService: AuthorizationCodeFlowService {
         clientMetadata: ClientMetadata,
         authorizationMethods: [AuthorizationMethod],
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofs: @escaping ProofsCallbackV2,
+        getProofs: @escaping ProofsCallbackSpecVersion1,
         credentialConfigurationId: String,
         proofSigningAlgorithmsSupportedSupported: [String],
         credentialOffer: CredentialOffer? = nil,
         downloadTimeOutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
         session: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponseV2 {
+    ) async throws -> CredentialResponseSpecVersion1 {
         didCallRequestCredentials = true
         if shouldThrow {
             throw VCIClientException(code: "VCI-009", message: "Simulated error")
         }
-        return CredentialResponseV2(
+        return CredentialResponseSpecVersion1(
             credentials: [AnyCodable("mock-credential")],
             credentialIssuer: "mock-issuer",
             credentialConfigurationId: "mock-id"
@@ -476,14 +493,14 @@ final class MockPreAuthFlowService: PreAuthCodeFlowService {
         issuerMetadata: IssuerMetadata,
         credentialOffer: CredentialOffer,
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofs: @escaping ProofsCallbackV2,
+        getProofs: @escaping ProofsCallbackSpecVersion1,
         credentialConfigurationId: String,
         proofSigningAlgorithmsSupportedSupported: [String],
         getTxCode: TxCodeCallback = nil,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
-    ) async throws -> CredentialResponseV2 {
+    ) async throws -> CredentialResponseSpecVersion1 {
         didCallRequest = true
-        return CredentialResponseV2(
+        return CredentialResponseSpecVersion1(
             credentials: [AnyCodable("mock-credential")],
             credentialIssuer: "mock-issuer",
             credentialConfigurationId: "mock-id"
