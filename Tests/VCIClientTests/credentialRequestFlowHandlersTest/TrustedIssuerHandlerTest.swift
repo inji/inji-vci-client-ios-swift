@@ -29,7 +29,7 @@ final class TrustedIssuerHandlerTests: XCTestCase {
         )
 
         XCTAssertTrue(mockService.didCallRequestCredentials)
-        let actualData = try result?.toJsonString().data(using: .utf8)
+        let actualData = try result.toJsonString().data(using: .utf8)
         let actualJson = try JSONSerialization.jsonObject(with: actualData!, options: []) as? [String: Any]
 
         let expectedJson: [String: Any] = [
@@ -67,7 +67,7 @@ final class TrustedIssuerHandlerTests: XCTestCase {
         )
 
         XCTAssertTrue(mockService.didCallRequestCredentials)
-        XCTAssertNotNil(result?.credentials) // V1 mock returns credentials array
+        XCTAssertNotNil(result.credentials) // V1 mock returns credentials array
     }
 
     func testDownloadCredentials_withoutNonceEndpoint_routesToDraft13() async throws {
@@ -100,7 +100,7 @@ final class TrustedIssuerHandlerTests: XCTestCase {
         )
 
         XCTAssertTrue(mockService.didCallRequestCredentials)
-        XCTAssertEqual(result?.credentials?.count, 1)
+        XCTAssertEqual(result.credentials?.count, 1)
     }
 
     func testDeprecatedDraft13Overload_routesThroughDownloadCredentialsDraft13() async throws {

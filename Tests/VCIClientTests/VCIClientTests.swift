@@ -58,7 +58,7 @@ final class VCIClientTests: XCTestCase {
             credentialOfferHandler: mockHandler
         )
 
-        let result = try await client.fetchCredentialUsingCredentialOffer(
+        let result = try await client.fetchCredentialsUsingCredentialOffer(
             credentialOffer: "mock-offer",
             clientMetadata: ClientMetadata(clientId: "", redirectUri: ""),
             getTxCode: { _, _, _ in "mock-tx-code" },
@@ -69,7 +69,7 @@ final class VCIClientTests: XCTestCase {
             getProofs: { _, _, _ in CredentialRequestProofs(jwt: ["mock-jwt"]) }
         )
 
-        XCTAssertEqual(result?.credentials?.count, 1)
+        XCTAssertEqual(result.credentials?.count, 1)
         XCTAssertTrue(mockHandler.didCallDownload)
     }
 
@@ -128,7 +128,7 @@ final class VCIClientTests: XCTestCase {
             trustedIssuerFlowHandler: mockHandler
         )
 
-        let result = try await client.fetchCredentialFromTrustedIssuer(
+        let result = try await client.fetchCredentialsFromTrustedIssuer(
             credentialIssuer: "mock",
             credentialConfigurationId: "mock-id",
             clientMetadata: ClientMetadata(clientId: "", redirectUri: ""),
@@ -139,7 +139,7 @@ final class VCIClientTests: XCTestCase {
             getProofs: { _, _, _ in CredentialRequestProofs(jwt: ["mock-jwt"]) }
         )
 
-        XCTAssertEqual(result?.credentials?.count, 1)
+        XCTAssertEqual(result.credentials?.count, 1)
         XCTAssertTrue(mockHandler.didCallDownload)
     }
 

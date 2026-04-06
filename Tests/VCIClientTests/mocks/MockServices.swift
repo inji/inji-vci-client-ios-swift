@@ -194,7 +194,7 @@ class MockTrustedIssuerHandler: TrustedIssuerFlowHandler {
         getProofs: @escaping ProofsCallbackSpecVersion1,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
         networkSession: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponseSpecVersion1? {
+    ) async throws -> CredentialResponseSpecVersion1 {
         didCallDownload = true
         if shouldThrow {
             throw DownloadFailedException("Simulated failure")
@@ -215,7 +215,7 @@ class MockTrustedIssuerHandler: TrustedIssuerFlowHandler {
         getProofJwt: @escaping ProofJwtCallback,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
         networkSession: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponse? {
+    ) async throws -> CredentialResponse {
         didCallDownload = true
         if shouldThrow {
             throw DownloadFailedException("Simulated failure")

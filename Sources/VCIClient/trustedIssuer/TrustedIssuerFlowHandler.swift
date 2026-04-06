@@ -16,7 +16,7 @@ class TrustedIssuerFlowHandler {
         getProofs: @escaping ProofsCallbackSpecVersion1,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
         networkSession: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponseSpecVersion1? {
+    ) async throws -> CredentialResponseSpecVersion1 {
         let issuerMetadata = try await loadIssuerMetadata(
             credentialIssuer: credentialIssuer,
             credentialConfigurationId: credentialConfigurationId
@@ -75,7 +75,7 @@ class TrustedIssuerFlowHandler {
         getProofJwt: @escaping ProofJwtCallback,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
         networkSession: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponse? {
+    ) async throws -> CredentialResponse {
         let issuerMetadata = try await loadIssuerMetadata(
             credentialIssuer: credentialIssuer,
             credentialConfigurationId: credentialConfigurationId

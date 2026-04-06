@@ -61,7 +61,7 @@ public class VCIClient {
         authorizationMethods: [AuthorizationMethod],
         getProofJwt: @escaping ProofJwtCallback,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
-    ) async throws -> CredentialResponse? {
+    ) async throws -> CredentialResponse {
 
         do {
             return try await self.trustedIssuerFlowHandler.downloadCredentialsDraft13(
@@ -79,7 +79,7 @@ public class VCIClient {
         }
     }
 
-    public func fetchCredentialFromTrustedIssuer(
+    public func fetchCredentialsFromTrustedIssuer(
         credentialIssuer: String,
         credentialConfigurationId: String,
         clientMetadata: ClientMetadata,
@@ -87,7 +87,7 @@ public class VCIClient {
         authorizationMethods: [AuthorizationMethod],
         getProofs: @escaping ProofsCallbackSpecVersion1,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
-    ) async throws -> CredentialResponseSpecVersion1? {
+    ) async throws -> CredentialResponseSpecVersion1 {
 
         do {
             return try await self.trustedIssuerFlowHandler.downloadCredentials(
@@ -103,6 +103,27 @@ public class VCIClient {
             print("Downloading credential failed due to \(error.localizedDescription)")
             throw mapToVciClientException(error)
         }
+    }
+
+    @available(*, deprecated, renamed: "fetchCredentialsFromTrustedIssuer", message: "Use fetchCredentialsFromTrustedIssuer() for Spec Version 1 proofs-based downloads.")
+    public func fetchCredentialFromTrustedIssuer(
+        credentialIssuer: String,
+        credentialConfigurationId: String,
+        clientMetadata: ClientMetadata,
+        getTokenResponse: @escaping TokenResponseCallback,
+        authorizationMethods: [AuthorizationMethod],
+        getProofs: @escaping ProofsCallbackSpecVersion1,
+        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
+    ) async throws -> CredentialResponseSpecVersion1 {
+        try await fetchCredentialsFromTrustedIssuer(
+            credentialIssuer: credentialIssuer,
+            credentialConfigurationId: credentialConfigurationId,
+            clientMetadata: clientMetadata,
+            getTokenResponse: getTokenResponse,
+            authorizationMethods: authorizationMethods,
+            getProofs: getProofs,
+            downloadTimeoutInMillis: downloadTimeoutInMillis
+        )
     }
 
     
@@ -135,7 +156,7 @@ public class VCIClient {
         }
     }
 
-    public func fetchCredentialUsingCredentialOffer(
+    public func fetchCredentialsUsingCredentialOffer(
         credentialOffer: String,
         clientMetadata: ClientMetadata,
         getTxCode: TxCodeCallback,
@@ -144,7 +165,7 @@ public class VCIClient {
         getProofs: @escaping ProofsCallbackSpecVersion1,
         onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
-    ) async throws -> CredentialResponseSpecVersion1? {
+    ) async throws -> CredentialResponseSpecVersion1 {
 
         do {
             return try await self.credentialOfferFlowHandler.downloadCredentials(
@@ -162,6 +183,29 @@ public class VCIClient {
             print("Downloading credential failed due to \(error.localizedDescription)")
             throw mapToVciClientException(error)
         }
+    }
+
+    @available(*, deprecated, renamed: "fetchCredentialsUsingCredentialOffer", message: "Use fetchCredentialsUsingCredentialOffer() for Spec Version 1 proofs-based downloads.")
+    public func fetchCredentialUsingCredentialOffer(
+        credentialOffer: String,
+        clientMetadata: ClientMetadata,
+        getTxCode: TxCodeCallback,
+        authorizationMethods: [AuthorizationMethod],
+        getTokenResponse: @escaping TokenResponseCallback,
+        getProofs: @escaping ProofsCallbackSpecVersion1,
+        onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
+        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
+    ) async throws -> CredentialResponseSpecVersion1 {
+        try await fetchCredentialsUsingCredentialOffer(
+            credentialOffer: credentialOffer,
+            clientMetadata: clientMetadata,
+            getTxCode: getTxCode,
+            authorizationMethods: authorizationMethods,
+            getTokenResponse: getTokenResponse,
+            getProofs: getProofs,
+            onCheckIssuerTrust: onCheckIssuerTrust,
+            downloadTimeoutInMillis: downloadTimeoutInMillis
+        )
     }
     
     @available(*, deprecated, renamed: "fetchCredentialFromTrustedIssuer", message: "This method is deprecated as per the new VCI Client library contract. Use fetchCredentialFromTrustedIssuer()")
