@@ -163,7 +163,7 @@ class IssuerMetadataService {
                 authorizationServers: rawIssuerMetadata["authorization_servers"] as? [String],
                 nonceEndpoint: nonceEndpoint,
                 scope: scope,
-                specVersion: specVersion,
+                specVersion: specVersion
             )
 
         case .ldp_vc:
@@ -179,7 +179,7 @@ class IssuerMetadataService {
                 authorizationServers: rawIssuerMetadata["authorization_servers"] as? [String],
                 nonceEndpoint: nonceEndpoint,
                 scope: scope,
-                specVersion: specVersion,
+                specVersion: specVersion
             )
 
         case .vc_sd_jwt, .dc_sd_jwt:
@@ -195,7 +195,7 @@ class IssuerMetadataService {
                 nonceEndpoint: nonceEndpoint,
                 vct: vct,
                 scope: scope,
-                specVersion: specVersion,
+                specVersion: specVersion
             )
 
         case .jwt_vc_json:
@@ -211,7 +211,7 @@ class IssuerMetadataService {
                 authorizationServers: rawIssuerMetadata["authorization_servers"] as? [String],
                 nonceEndpoint: nonceEndpoint,
                 scope: scope,
-                specVersion: specVersion,
+                specVersion: specVersion
             )
         }
     }
