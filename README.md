@@ -361,7 +361,7 @@ An instance of `CredentialResponse` containing:
 #### Example usage
 
 ```swift
-let credentialResponse: CredentialResponse? = try await vciClient.fetchCredentialFromTrustedIssuer(
+let credentialResponse: CredentialResponse = try await vciClient.fetchCredentialFromTrustedIssuer(
     credentialIssuer: "https://sample-issuer.com",
     credentialConfigurationId: "DriversLicense",
     clientMetadata: ClientMetadata(
@@ -399,7 +399,7 @@ let credentialResponse: CredentialResponse? = try await vciClient.fetchCredentia
 )
 
 // Consider the credential is a Driver's license credential (credential format `mso_mdoc`)
-let credentialResponse: CredentialResponse? = try await vciClient.fetchCredentialFromTrustedIssuer(
+let credentialResponse: CredentialResponse = try await vciClient.fetchCredentialFromTrustedIssuer(
     credentialIssuer: credentialIssuer,
     credentialConfigurationId: credentialConfigurationId,
     clientMetadata: clientMetadata,
@@ -408,9 +408,9 @@ let credentialResponse: CredentialResponse? = try await vciClient.fetchCredentia
     getProofJwt: getProofJwt,
     downloadTimeoutInMillis: downloadTimeoutInMillis
 )
-credentialResponse?.credential // This will contain the credential data
-credentialResponse?.credentialConfigurationId // eg - "DriversLicense"
-credentialResponse?.credentialIssuer // eg - "https://sample-issuer.com"
+credentialResponse.credential // This will contain the credential data
+credentialResponse.credentialConfigurationId // eg - "DriversLicense"
+credentialResponse.credentialIssuer // eg - "https://sample-issuer.com"
 ```
 
 #### requestCredentialFromTrustedIssuer (deprecated - use `fetchCredentialFromTrustedIssuer` instead)

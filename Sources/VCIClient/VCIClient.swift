@@ -74,7 +74,10 @@ public class VCIClient {
                 downloadTimeoutInMillis: downloadTimeoutInMillis
             )
         } catch {
-            print("Downloading credential failed due to \(error.localizedDescription)")
+            Util.logError(
+                message: "Downloading credential failed due to \(error.localizedDescription)",
+                className: "VCIClient"
+            )
             throw mapToVciClientException(error)
         }
     }
@@ -100,7 +103,10 @@ public class VCIClient {
                 downloadTimeoutInMillis: downloadTimeoutInMillis
             )
         } catch {
-            print("Downloading credential failed due to \(error.localizedDescription)")
+            Util.logError(
+                message: "Downloading credential failed due to \(error.localizedDescription)",
+                className: "VCIClient"
+            )
             throw mapToVciClientException(error)
         }
     }
@@ -151,7 +157,10 @@ public class VCIClient {
                 downloadTimeoutInMillis: downloadTimeoutInMillis
             )
         } catch {
-            print("Downloading credential failed due to \(error.localizedDescription)")
+            Util.logError(
+                message: "Downloading credential failed due to \(error.localizedDescription)",
+                className: "VCIClient"
+            )
             throw mapToVciClientException(error)
         }
     }
@@ -180,7 +189,10 @@ public class VCIClient {
                 downloadTimeoutInMillis: downloadTimeoutInMillis
             )
         } catch {
-            print("Downloading credential failed due to \(error.localizedDescription)")
+            Util.logError(
+                message: "Downloading credential failed due to \(error.localizedDescription)",
+                className: "VCIClient"
+            )
             throw mapToVciClientException(error)
         }
     }

@@ -138,10 +138,6 @@ class IssuerMetadataService {
 
         let scope = credentialType["scope"] as? String ?? "openid"
         let nonceEndpoint = rawIssuerMetadata["nonce_endpoint"] as? String
-        let encryptionMetadata = rawIssuerMetadata["credential_response_encryption"] as? [String: Any]
-        let encryptionAlgs = encryptionMetadata?["alg_values_supported"] as? [String]
-        let encryptionEncs = encryptionMetadata?["enc_values_supported"] as? [String]
-        let encryptionRequired = encryptionMetadata?["encryption_required"] as? Bool
         let specVersion = detectSpecVersion(
             rawIssuerMetadata: rawIssuerMetadata,
             credentialConfiguration: credentialType

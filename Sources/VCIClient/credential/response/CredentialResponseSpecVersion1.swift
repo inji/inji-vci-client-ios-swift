@@ -7,8 +7,8 @@ public struct CredentialResponseSpecVersion1: Codable {
 
     enum CodingKeys: String, CodingKey {
         case credentials
-        case credentialIssuer
-        case credentialConfigurationId
+        case credentialIssuer = "credential_issuer"
+        case credentialConfigurationId = "credential_configuration_id"
     }
 
     public init(
@@ -26,7 +26,7 @@ public struct CredentialResponseSpecVersion1: Codable {
         encoder.outputFormatting = .prettyPrinted
         let data = try encoder.encode(self)
         guard let jsonString = String(data: data, encoding: .utf8) else {
-            throw DownloadFailedException("")
+            throw DownloadFailedException("Failed to convert encoded response to UTF-8 string")
         }
         return jsonString
     }

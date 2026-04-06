@@ -58,7 +58,7 @@ This keeps the long-term design centered on 1.0 while isolating Draft-13 behavio
 Legacy public APIs continue to return Draft-13-shaped types:
 
 - `fetchCredentialUsingCredentialOffer(... getProofJwt: ProofJwtCallback ...) -> CredentialResponse?`
-- `fetchCredentialFromTrustedIssuer(... getProofJwt: ProofJwtCallback ...) -> CredentialResponse?`
+- `fetchCredentialFromTrustedIssuer(... getProofJwt: ProofJwtCallback ...) -> CredentialResponse`
 - deprecated legacy wrappers also stay on Draft-13
 
 These methods must not switch to the 1.0 path, even if issuer metadata suggests `v1`.
@@ -67,8 +67,8 @@ These methods must not switch to the 1.0 path, even if issuer metadata suggests 
 
 New public APIs expose 1.0-facing contracts:
 
-- `fetchCredentialUsingCredentialOffer(... getProofs: ProofsCallbackSpecVersion1 ...) -> CredentialResponseSpecVersion1?`
-- `fetchCredentialFromTrustedIssuer(... getProofs: ProofsCallbackSpecVersion1 ...) -> CredentialResponseSpecVersion1?`
+- `fetchCredentialUsingCredentialOffer(... getProofs: ProofsCallbackSpecVersion1 ...) -> CredentialResponseSpecVersion1`
+- `fetchCredentialFromTrustedIssuer(... getProofs: ProofsCallbackSpecVersion1 ...) -> CredentialResponseSpecVersion1`
 
 Supporting public types:
 
@@ -470,4 +470,5 @@ Primary files involved:
 - `Sources/VCIClient/credential/response/CredentialResponseSpecVersion1.swift`
 - `Sources/VCIClient/proof/CredentialRequestProofs.swift`
 - `Sources/VCIClient/issuerMetadata/IssuerMetadataService.swift`
+- `Sources/VCIClient/nonce/NonceService.swift`
 - `Sources/VCIClient/constants/OID4VCIVersion.swift`

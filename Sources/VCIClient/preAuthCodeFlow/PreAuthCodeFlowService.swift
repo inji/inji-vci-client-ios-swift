@@ -211,6 +211,9 @@ class PreAuthCodeFlowService {
         issuerMetadata: IssuerMetadata,
         timeoutInMillis: Int64
     ) async throws -> String? {
-        return try await nonceService.fetchNonce(issuerMetadata: issuerMetadata)
+        return try await nonceService.fetchNonce(
+            issuerMetadata: issuerMetadata,
+            timeoutInMillis: timeoutInMillis
+        )
     }
 }

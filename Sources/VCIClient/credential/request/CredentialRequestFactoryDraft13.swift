@@ -59,6 +59,6 @@ class CredentialRequestFactoryDraft13: CredentialRequestFactoryProtocol {
         if issuerMetadataValidatorResult.isValid {
             return try credentialRequest.constructRequest()
         }
-        throw InvalidDataProvidedException("invalid fields: \(issuerMetadataValidatorResult.invalidFields.joined())")
+        throw InvalidDataProvidedException("invalid fields: \(issuerMetadataValidatorResult.invalidFields.joined(separator: ", "))")
     }
 }

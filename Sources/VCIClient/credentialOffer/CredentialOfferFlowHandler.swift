@@ -58,7 +58,8 @@ class CredentialOfferFlowHandler {
                         credentialConfigurationId: credentialConfigurationId,
                         proofSigningAlgorithmsSupportedSupported: proofSigningAlgorithmsSupportedSupported,
                         credentialOffer: offer,
-                        downloadTimeOutInMillis: downloadTimeoutInMillis
+                        downloadTimeOutInMillis: downloadTimeoutInMillis,
+                        session: networkSession
                     )
                 } else {
                     throw CredentialOfferFetchFailedException("Credential offer does not contain a supported grant type")
@@ -94,7 +95,8 @@ class CredentialOfferFlowHandler {
                         credentialConfigurationId: credentialConfigurationId,
                         proofSigningAlgorithmsSupportedSupported: proofSigningAlgorithmsSupportedSupported,
                         credentialOffer: offer,
-                        downloadTimeOutInMillis: downloadTimeoutInMillis
+                        downloadTimeOutInMillis: downloadTimeoutInMillis,
+                        session: networkSession
                     )
                 } else {
                     throw CredentialOfferFetchFailedException("Credential offer does not contain a supported grant type")
@@ -148,7 +150,8 @@ class CredentialOfferFlowHandler {
                     credentialConfigurationId: credentialConfigurationId,
                     proofSigningAlgorithmsSupportedSupported: proofSigningAlgorithmsSupportedSupported,
                     credentialOffer: offer,
-                    downloadTimeOutInMillis: downloadTimeoutInMillis
+                    downloadTimeOutInMillis: downloadTimeoutInMillis,
+                    session: networkSession
                 )
             } else {
                 throw CredentialOfferFetchFailedException("Credential offer does not contain a supported grant type")
