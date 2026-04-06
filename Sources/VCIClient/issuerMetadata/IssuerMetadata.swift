@@ -31,7 +31,7 @@ public struct IssuerMetadata : Codable{
         nonceEndpoint: String? = nil,
         vct: String? = nil,
         scope: String = "openId",
-        specVersion: OID4VCIVersion = .v1,
+        specVersion: OID4VCIVersion = .v1
     ) {
         self.credentialIssuer = credentialIssuer
         self.credentialEndpoint = credentialEndpoint
