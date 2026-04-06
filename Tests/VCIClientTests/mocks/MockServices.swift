@@ -131,9 +131,17 @@ final class MockCredentialRequestExecutor: CredentialRequestExecutor {
         if let errorToThrow {
             throw errorToThrow
         }
-        if shouldThrow { throw DownloadFailedException("test-error: credential request failed") }
-        return CredentialResponse(credential: AnyCodable("mock-credential"), credentialIssuer: "mock-issuer", credentialConfigurationId: "mock-id")
+        if shouldThrow {
+            throw DownloadFailedException("test-error: credential request failed")
+        }
+
+        return CredentialResponse(
+            credential: AnyCodable("mock-credential"),
+            credentialIssuer: "mock-issuer",
+            credentialConfigurationId: "mock-id"
+        )
     }
+
 }
 
 final class MockCredentialOfferHandler: CredentialOfferFlowHandler {
@@ -162,23 +170,6 @@ final class MockCredentialOfferHandler: CredentialOfferFlowHandler {
         )
     }
 
-    override func downloadCredentialsDraft13(
-        credentialOffer: String,
-        clientMetadata: ClientMetadata,
-        getTxCode: TxCodeCallback,
-        authorizationMethods: [AuthorizationMethod],
-        getTokenResponse: @escaping TokenResponseCallback,
-        getProofJwt: @escaping ProofJwtCallback,
-        onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
-        networkSession: NetworkManager = NetworkManager.shared,
-        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
-    ) async throws -> CredentialResponse {
-        didCallDownload = true
-        if shouldThrow {
-            throw DownloadFailedException("Simulated failure")
-        }
-        return CredentialResponse.mock()
-    }
 }
 
 class MockTrustedIssuerHandler: TrustedIssuerFlowHandler {
@@ -206,22 +197,6 @@ class MockTrustedIssuerHandler: TrustedIssuerFlowHandler {
         )
     }
 
-    override func downloadCredentialsDraft13(
-        credentialIssuer: String,
-        credentialConfigurationId: String,
-        clientMetadata: ClientMetadata,
-        authorizationMethods: [AuthorizationMethod],
-        getTokenResponse: @escaping TokenResponseCallback,
-        getProofJwt: @escaping ProofJwtCallback,
-        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
-        networkSession: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponse {
-        didCallDownload = true
-        if shouldThrow {
-            throw DownloadFailedException("Simulated failure")
-        }
-        return CredentialResponse.mock()
-    }
 }
 
 final class MockNetworkManager: NetworkManager {
