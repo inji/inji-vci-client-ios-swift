@@ -75,6 +75,7 @@ let vciClient = VCIClient(traceabilityId: traceabilityId)
 ## API Overview
 
 ### 1. Obtain Issuer Metadata
+#### getIssuerMetadata
 
 Retrieve the issuer metadata from the credential issuer's well-known endpoint.
 
@@ -103,6 +104,7 @@ let issuerMetadata: [String: Any] = try await vciClient.getIssuerMetadata(creden
 ```
 
 ### 2. Obtain Credential Configurations Supported
+#### getCredentialConfigurationsSupported
 
 Retrieve credential configurations supported for given issuer from its well-known endpoint.
 

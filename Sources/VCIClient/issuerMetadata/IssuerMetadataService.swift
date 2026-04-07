@@ -18,6 +18,8 @@ class IssuerMetadataService {
             let rawIssuerMetadata: [String: Any] =
                 try await getOrFetchRawIssuerMetadata(for: credentialIssuer)
 
+            try validateCredentialIssuerMatch(expected: credentialIssuer, rawMetadata: rawIssuerMetadata)
+
             let resolvedIssuerMetadata = try resolveMetadata(
                 credentialConfigurationId: credentialConfigurationId,
                 rawIssuerMetadata: rawIssuerMetadata
@@ -85,8 +87,19 @@ class IssuerMetadataService {
         }
     }
 
+    private func validateCredentialIssuerMatch(expected: String, rawMetadata: [String: Any]) throws {
+        guard let actual = rawMetadata["credential_issuer"] as? String else {
+            throw IssuerMetadataFetchException("Missing credential_issuer in issuer metadata")
+        }
+        if expected != actual {
+            throw IssuerMetadataFetchException("credential_issuer mismatch: expected '\(expected)', got '\(actual)'")
+        }
+    }
+
     func fetchCredentialConfigurationsSupported(from credentialIssuer: String) async throws -> [String: Any] {
         let rawIssuerMetadata: [String: Any] = try await fetchAndParseIssuerMetadata(from: credentialIssuer)
+
+        try validateCredentialIssuerMatch(expected: credentialIssuer, rawMetadata: rawIssuerMetadata)
 
         guard let configurations = rawIssuerMetadata["credential_configurations_supported"] as? [String: Any] else {
             throw IssuerMetadataFetchException("Missing or invalid 'credential_configurations_supported' in issuer metadata.")

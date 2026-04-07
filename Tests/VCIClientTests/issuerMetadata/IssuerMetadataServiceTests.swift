@@ -423,6 +423,7 @@ final class IssuerMetadataServiceTests: XCTestCase {
     func test_fetchCredentialConfigurationsSupported_success() async throws {
         let json = """
         {
+          "credential_issuer": "https://issuer.com",
           "credential_configurations_supported": {
             "vc1": {
               "format": "ldp_vc"
@@ -461,6 +462,7 @@ final class IssuerMetadataServiceTests: XCTestCase {
     func test_fetchCredentialConfigurationsSupported_emptyBlock_shouldThrow() async {
         let json = """
         {
+          "credential_issuer": "https://issuer.com",
           "credential_configurations_supported": {}
         }
         """
@@ -477,6 +479,7 @@ final class IssuerMetadataServiceTests: XCTestCase {
     func test_fetchCredentialConfigurationsSupported_invalidConfigStructure_shouldThrow() async {
         let json = """
         {
+          "credential_issuer": "https://issuer.com",
           "credential_configurations_supported": {
             "vc1": "not a dictionary"
           }
@@ -495,6 +498,7 @@ final class IssuerMetadataServiceTests: XCTestCase {
     func test_fetchCredentialConfigurationsSupported_missingFormat_shouldThrow() async {
         let json = """
         {
+          "credential_issuer": "https://issuer.com",
           "credential_configurations_supported": {
             "vc1": {
               "scope": "identity"
