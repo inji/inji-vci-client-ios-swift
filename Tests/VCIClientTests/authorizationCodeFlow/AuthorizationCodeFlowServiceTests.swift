@@ -34,7 +34,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
             getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer") },
             getProofJwt: { _, _, _ in "mock-jwt" },
             credentialConfigurationId: "vc1",
-            proofSigningAlgorithmsSupportedSupported: ["rs256"]
+            proofSigningAlgorithmsSupported: ["rs256"]
         )
 
         XCTAssertEqual(result.credential.value as? String, "mock-credential")
@@ -60,10 +60,10 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
             getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer") },
             getProofs: { _, nonce, _ in
                 capturedNonce = nonce
-                return CredentialRequestProofs(jwt: ["mock-jwt"])
+                return CredentialRequestProofs(proofs: ["mock-jwt"])
             },
             credentialConfigurationId: "vc1",
-            proofSigningAlgorithmsSupportedSupported: ["rs256"]
+            proofSigningAlgorithmsSupported: ["rs256"]
         )
 
         XCTAssertEqual(capturedNonce, "nonce-v1")
@@ -94,7 +94,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
                 getTokenResponse: { _ in TokenResponse.mock() },
                 getProofJwt: { _, _, _ in "mock-jwt" },
                 credentialConfigurationId: "vc1",
-                proofSigningAlgorithmsSupportedSupported: ["rs256"]
+                proofSigningAlgorithmsSupported: ["rs256"]
             )
         }
     }
@@ -112,7 +112,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
                 getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer") },
                 getProofJwt: { _, _, _ in "mock-jwt" },
                 credentialConfigurationId: "vc1",
-                proofSigningAlgorithmsSupportedSupported: ["rs256"]
+                proofSigningAlgorithmsSupported: ["rs256"]
             )
             XCTFail("Expected to throw due to missing authorization endpoint")
         } catch {
@@ -133,7 +133,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
                 getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer") },
                 getProofJwt: { _, _, _ in "mock-jwt" },
                 credentialConfigurationId: "vc1",
-                proofSigningAlgorithmsSupportedSupported: ["rs256"]
+                proofSigningAlgorithmsSupported: ["rs256"]
             )
             XCTFail("Expected to throw due to missing token endpoint")
         } catch {
@@ -189,7 +189,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
             getTokenResponse: { _ in TokenResponse.mock() },
             getProofJwt: { _, _, _ in "mock-jwt" },
             credentialConfigurationId: "vc1",
-            proofSigningAlgorithmsSupportedSupported: ["rs256"],
+            proofSigningAlgorithmsSupported: ["rs256"],
             credentialOffer: offer
         )
 
@@ -208,7 +208,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
             interactiveAuthHandler: interactiveHandler
         )
 
-        let result = try await service.requestCredentials(
+        let result = try await service.requestCredentialsDraft13(
             issuerMetadata: IssuerMetadata.mock(),
             clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
             authorizationMethods: [
@@ -217,7 +217,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
             getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer") },
             getProofJwt: { _, _, _ in "mock-jwt" },
             credentialConfigurationId: "vc1",
-            proofSigningAlgorithmsSupportedSupported: ["rs256"]
+            proofSigningAlgorithmsSupported: ["rs256"]
         )
 
         XCTAssertEqual(result.credential.value as? String, "mock-credential")
@@ -266,7 +266,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
                 getTokenResponse: { _ in TokenResponse.mock() },
                 getProofJwt: { _, _, _ in "mock-jwt" },
                 credentialConfigurationId: "vc1",
-                proofSigningAlgorithmsSupportedSupported: ["rs256"],
+                proofSigningAlgorithmsSupported: ["rs256"],
                 credentialOffer: offer
             )
             XCTFail("Expected interactive authorization failure")
@@ -289,7 +289,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
                 getTokenResponse: { _ in TokenResponse.mock() },
                 getProofJwt: { _, _, _ in "mock-jwt" },
                 credentialConfigurationId: "vc1",
-                proofSigningAlgorithmsSupportedSupported: ["rs256"]
+                proofSigningAlgorithmsSupported: ["rs256"]
             )
             XCTFail("Expected missing authorization method failure")
         } catch {
@@ -310,7 +310,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
                 getTokenResponse: { _ in TokenResponse.mock() },
                 getProofJwt: { _, _, _ in throw NSError(domain: "proof", code: 1) },
                 credentialConfigurationId: "vc1",
-                proofSigningAlgorithmsSupportedSupported: ["rs256"]
+                proofSigningAlgorithmsSupported: ["rs256"]
             )
             XCTFail("Expected proof callback failure")
         } catch {
@@ -334,7 +334,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
                 getTokenResponse: { _ in TokenResponse.mock() },
                 getProofJwt: { _, _, _ in "mock-jwt" },
                 credentialConfigurationId: "vc1",
-                proofSigningAlgorithmsSupportedSupported: ["rs256"]
+                proofSigningAlgorithmsSupported: ["rs256"]
             )
             XCTFail("Expected credential executor failure")
         } catch {
@@ -349,7 +349,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         let service = makeService(executor: executor)
 
         do {
-            _ = try await service.requestCredentials(
+            _ = try await service.requestCredentialsDraft13(
                 issuerMetadata: IssuerMetadata.mock(),
                 clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
                 authorizationMethods: [
@@ -358,7 +358,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
                 getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer") },
                 getProofJwt: { _, _, _ in "mock-jwt" },
                 credentialConfigurationId: "vc1",
-                proofSigningAlgorithmsSupportedSupported: ["rs256"]
+                proofSigningAlgorithmsSupported: ["rs256"]
             )
             XCTFail("Expected credential request failure")
         } catch {
@@ -381,7 +381,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
                 getTokenResponse: { _ in TokenResponse.mock() },
                 getProofJwt: { _, _, _ in "mock-jwt" },
                 credentialConfigurationId: "vc1",
-                proofSigningAlgorithmsSupportedSupported: ["rs256"]
+                proofSigningAlgorithmsSupported: ["rs256"]
             )
             XCTFail("Expected token service failure")
         } catch {
@@ -403,7 +403,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
                 getTokenResponse: { _ in TokenResponse.mock() },
                 getProofJwt: { _, _, _ in "mock-jwt" },
                 credentialConfigurationId: "vc1",
-                proofSigningAlgorithmsSupportedSupported: ["rs256"]
+                proofSigningAlgorithmsSupported: ["rs256"]
             )
             XCTFail("Expected nil credential failure")
         } catch {

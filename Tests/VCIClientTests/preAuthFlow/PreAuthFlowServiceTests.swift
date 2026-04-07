@@ -27,7 +27,7 @@ final class PreAuthFlowServiceTests: XCTestCase {
             getTokenResponse:{_ in TokenResponse(accessToken: "mock", tokenType: "Bearer")},
             getProofJwt: { _, _, _ in "jwt-mock" },
             credentialConfigurationId: "mock-id",
-            proofSigningAlgorithmsSupportedSupported: [],
+            proofSigningAlgorithmsSupported: [],
             getTxCode: { _, _, _ in "tx123" }
         )
 
@@ -52,10 +52,10 @@ final class PreAuthFlowServiceTests: XCTestCase {
             getTokenResponse: { _ in TokenResponse(accessToken: "mock", tokenType: "Bearer") },
             getProofs: { _, nonce, _ in
                 capturedNonce = nonce
-                return CredentialRequestProofs(jwt: ["jwt-mock"])
+                return CredentialRequestProofs(proofs: ["jwt-mock"])
             },
             credentialConfigurationId: "mock-id",
-            proofSigningAlgorithmsSupportedSupported: [],
+            proofSigningAlgorithmsSupported: [],
             getTxCode: { _, _, _ in "tx123" }
         )
 
@@ -84,7 +84,7 @@ final class PreAuthFlowServiceTests: XCTestCase {
                 getTokenResponse: { _ in TokenResponse(accessToken: "mock", tokenType: "Bearer") },
                 getProofJwt: { _, _, _ in "jwt-mock" },
                 credentialConfigurationId: "mock-id",
-                proofSigningAlgorithmsSupportedSupported: [],
+                proofSigningAlgorithmsSupported: [],
                 getTxCode: { _, _, _ in "tx123" }
             )
         }
@@ -103,7 +103,7 @@ final class PreAuthFlowServiceTests: XCTestCase {
                 getTokenResponse:{_ in TokenResponse(accessToken: "mock", tokenType: "Bearer")},
                 getProofJwt: { _, _, _ in "jwt-mock" },
                 credentialConfigurationId: "mock-id",
-                proofSigningAlgorithmsSupportedSupported: [],
+                proofSigningAlgorithmsSupported: [],
                 getTxCode: { _, _, _ in "tx123" }
             )
             XCTFail("Expected failure due to missing token endpoint")
@@ -122,7 +122,7 @@ final class PreAuthFlowServiceTests: XCTestCase {
                 getTokenResponse:{_ in TokenResponse(accessToken: "mock", tokenType: "Bearer")},
                 getProofJwt: { _, _, _ in "jwt-mock" },
                 credentialConfigurationId: "mock-id",
-                proofSigningAlgorithmsSupportedSupported: []
+                proofSigningAlgorithmsSupported: []
             )
             XCTFail("Expected failure due to missing tx_code provider")
         } catch {
@@ -143,7 +143,7 @@ final class PreAuthFlowServiceTests: XCTestCase {
                     getTokenResponse:{_ in TokenResponse(accessToken: "mock", tokenType: "Bearer")},
                     getProofJwt: { _, _, _ in "jwt-mock" },
                     credentialConfigurationId: "mock-id",
-                    proofSigningAlgorithmsSupportedSupported: [],
+                    proofSigningAlgorithmsSupported: [],
                     getTxCode: { _, _, _ in "tx123" }
                 )
             
@@ -164,7 +164,7 @@ final class PreAuthFlowServiceTests: XCTestCase {
                 getTokenResponse:{_ in TokenResponse(accessToken: "mock", tokenType: "Bearer")},
                 getProofJwt: { _, _, _ in "jwt-mock" },
                 credentialConfigurationId: "mock-id",
-                proofSigningAlgorithmsSupportedSupported: [],
+                proofSigningAlgorithmsSupported: [],
                 getTxCode: { _, _, _ in "tx123" }
             )
             XCTFail("Expected failure due to credential download returning nil")

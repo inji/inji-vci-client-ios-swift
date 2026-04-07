@@ -7,16 +7,16 @@ class TrustedIssuerFlowHandler {
         self.issuerMetadataService = issuerMetadataService
     }
 
-    public func downloadCredentials(
+    func downloadCredentials(
         credentialIssuer: String,
         credentialConfigurationId: String,
         clientMetadata: ClientMetadata,
         authorizationMethods: [AuthorizationMethod],
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofs: @escaping ProofsCallbackSpecVersion1,
+        getProofs: @escaping ProofsCallback,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
         networkSession: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponseSpecVersion1 {
+    ) async throws -> CredentialResponse {
         let issuerMetadata = try await loadIssuerMetadata(
             credentialIssuer: credentialIssuer,
             credentialConfigurationId: credentialConfigurationId
@@ -34,7 +34,7 @@ class TrustedIssuerFlowHandler {
                 getTokenResponse: getTokenResponse,
                 getProofs: getProofs,
                 credentialConfigurationId: credentialConfigurationId,
-                proofSigningAlgorithmsSupportedSupported: proofSigningAlgorithms,
+                proofSigningAlgorithmsSupported: proofSigningAlgorithms,
                 downloadTimeOutInMillis: downloadTimeoutInMillis,
                 session: networkSession
             )
@@ -42,7 +42,7 @@ class TrustedIssuerFlowHandler {
         case .draft13:
             let proofJwtCallback: ProofJwtCallback = { issuer, nonce, algs in
                 let proofs = try await getProofs(issuer, nonce, algs)
-                guard let jwt = proofs.jwt?.first else {
+                guard let jwt = proofs.firstProof else {
                     throw DownloadFailedException("Draft13 issuer requires a single JWT proof")
                 }
                 return jwt
@@ -54,11 +54,11 @@ class TrustedIssuerFlowHandler {
                 getTokenResponse: getTokenResponse,
                 getProofJwt: proofJwtCallback,
                 credentialConfigurationId: credentialConfigurationId,
-                proofSigningAlgorithmsSupportedSupported: proofSigningAlgorithms,
+                proofSigningAlgorithmsSupported: proofSigningAlgorithms,
                 downloadTimeOutInMillis: downloadTimeoutInMillis,
                 session: networkSession
             )
-            return CredentialResponseSpecVersion1(
+            return CredentialResponse(
                 credentials: [draft13Response.credential],
                 credentialIssuer: draft13Response.credentialIssuer,
                 credentialConfigurationId: draft13Response.credentialConfigurationId
@@ -66,7 +66,7 @@ class TrustedIssuerFlowHandler {
         }
     }
 
-    public func downloadCredentialsDraft13(
+    func downloadCredentialsDraft13(
         credentialIssuer: String,
         credentialConfigurationId: String,
         clientMetadata: ClientMetadata,
@@ -75,7 +75,7 @@ class TrustedIssuerFlowHandler {
         getProofJwt: @escaping ProofJwtCallback,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
         networkSession: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponse {
+    ) async throws -> CredentialResponseDraft13 {
         let issuerMetadata = try await loadIssuerMetadata(
             credentialIssuer: credentialIssuer,
             credentialConfigurationId: credentialConfigurationId
@@ -88,33 +88,11 @@ class TrustedIssuerFlowHandler {
             getTokenResponse: getTokenResponse,
             getProofJwt: getProofJwt,
             credentialConfigurationId: credentialConfigurationId,
-            proofSigningAlgorithmsSupportedSupported: issuerMetadata.extractJwtProofSigningAlgorithms(
+            proofSigningAlgorithmsSupported: issuerMetadata.extractJwtProofSigningAlgorithms(
                 credentialConfigurationId: credentialConfigurationId
             ),
             downloadTimeOutInMillis: downloadTimeoutInMillis,
             session: networkSession
-        )
-    }
-
-    public func downloadCredentials(
-        credentialIssuer: String,
-        credentialConfigurationId: String,
-        clientMetadata: ClientMetadata,
-        authorizationMethods: [AuthorizationMethod],
-        getTokenResponse: @escaping TokenResponseCallback,
-        getProofJwt: @escaping ProofJwtCallback,
-        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
-        networkSession: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponse? {
-        try await downloadCredentialsDraft13(
-            credentialIssuer: credentialIssuer,
-            credentialConfigurationId: credentialConfigurationId,
-            clientMetadata: clientMetadata,
-            authorizationMethods: authorizationMethods,
-            getTokenResponse: getTokenResponse,
-            getProofJwt: getProofJwt,
-            downloadTimeoutInMillis: downloadTimeoutInMillis,
-            networkSession: networkSession
         )
     }
 

@@ -1,6 +1,6 @@
 import Foundation
 
-public struct CredentialOffer: Codable {
+struct CredentialOffer: Codable {
     let credentialIssuer: String
     let credentialConfigurationIds: [String]
     let grants: CredentialOfferGrants?

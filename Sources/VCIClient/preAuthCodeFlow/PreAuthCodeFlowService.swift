@@ -22,28 +22,28 @@ class PreAuthCodeFlowService {
         issuerMetadata: IssuerMetadata,
         credentialOffer: CredentialOffer,
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofs: @escaping ProofsCallbackSpecVersion1,
+        getProofs: @escaping ProofsCallback,
         credentialConfigurationId: String,
-        proofSigningAlgorithmsSupportedSupported: [String],
+        proofSigningAlgorithmsSupported: [String],
         getTxCode: TxCodeCallback = nil,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
-    ) async throws -> CredentialResponseSpecVersion1 {
+    ) async throws -> CredentialResponse {
         try await executeRequestCredentials(
             issuerMetadata: issuerMetadata,
             credentialOffer: credentialOffer,
             getTokenResponse: getTokenResponse,
             credentialConfigurationId: credentialConfigurationId,
-            proofSigningAlgorithmsSupportedSupported: proofSigningAlgorithmsSupportedSupported,
+            proofSigningAlgorithmsSupported: proofSigningAlgorithmsSupported,
             getTxCode: getTxCode,
             downloadTimeoutInMillis: downloadTimeoutInMillis
         ) { token in
             let proofs: CredentialRequestProofs
-            let nonce = try await resolveNonce(issuerMetadata: issuerMetadata, timeoutInMillis: downloadTimeoutInMillis)
+            let nonce = try await nonceService.fetchNonce(issuerMetadata: issuerMetadata, timeoutInMillis: downloadTimeoutInMillis)
             do {
                 proofs = try await getProofs(
                     issuerMetadata.credentialIssuer,
                     nonce,
-                    proofSigningAlgorithmsSupportedSupported
+                    proofSigningAlgorithmsSupported
                 )
             } catch {
                 throw DownloadFailedException("Failed to obtain proofs from callback: \(error.localizedDescription)")
@@ -65,26 +65,26 @@ class PreAuthCodeFlowService {
         getTokenResponse: @escaping TokenResponseCallback,
         getProofJwt: @escaping ProofJwtCallback,
         credentialConfigurationId: String,
-        proofSigningAlgorithmsSupportedSupported: [String],
+        proofSigningAlgorithmsSupported: [String],
         getTxCode: TxCodeCallback = nil,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
-    ) async throws -> CredentialResponse {
+    ) async throws -> CredentialResponseDraft13 {
         let response = try await executeRequestCredentials(
             issuerMetadata: issuerMetadata,
             credentialOffer: credentialOffer,
             getTokenResponse: getTokenResponse,
             credentialConfigurationId: credentialConfigurationId,
-            proofSigningAlgorithmsSupportedSupported: proofSigningAlgorithmsSupportedSupported,
+            proofSigningAlgorithmsSupported: proofSigningAlgorithmsSupported,
             getTxCode: getTxCode,
             downloadTimeoutInMillis: downloadTimeoutInMillis
         ) { token in
-            let nonce = try resolveNonceDraft13(tokenResponse: token, timeoutInMillis: downloadTimeoutInMillis)
+            let nonce = try NonceService.extractNonceFromTokenResponse(token)
             let jwt: String
             do {
                 jwt = try await getProofJwt(
                     issuerMetadata.credentialIssuer,
                     nonce,
-                    proofSigningAlgorithmsSupportedSupported
+                    proofSigningAlgorithmsSupported
                 )
             } catch {
                 throw DownloadFailedException("Failed to obtain proof JWT from callback: \(error.localizedDescription)")
@@ -107,7 +107,7 @@ class PreAuthCodeFlowService {
         credentialOffer: CredentialOffer,
         getTokenResponse: @escaping TokenResponseCallback,
         credentialConfigurationId: String,
-        proofSigningAlgorithmsSupportedSupported: [String],
+        proofSigningAlgorithmsSupported: [String],
         getTxCode: TxCodeCallback,
         downloadTimeoutInMillis: Int64,
         requestCredential: (TokenResponse) async throws -> Response?
@@ -175,45 +175,4 @@ class PreAuthCodeFlowService {
         }
     }
 
-    func requestCredentials(
-        issuerMetadata: IssuerMetadata,
-        credentialOffer: CredentialOffer,
-        getTokenResponse: @escaping TokenResponseCallback,
-        getProofJwt: @escaping ProofJwtCallback,
-        credentialConfigurationId: String,
-        proofSigningAlgorithmsSupportedSupported: [String],
-        getTxCode: TxCodeCallback = nil,
-        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
-    ) async throws -> CredentialResponse {
-        try await requestCredentialsDraft13(
-            issuerMetadata: issuerMetadata,
-            credentialOffer: credentialOffer,
-            getTokenResponse: getTokenResponse,
-            getProofJwt: getProofJwt,
-            credentialConfigurationId: credentialConfigurationId,
-            proofSigningAlgorithmsSupportedSupported: proofSigningAlgorithmsSupportedSupported,
-            getTxCode: getTxCode,
-            downloadTimeoutInMillis: downloadTimeoutInMillis
-        )
-    }
-
-    private func resolveNonceDraft13(
-        tokenResponse: TokenResponse,
-        timeoutInMillis: Int64
-    ) throws -> String? {
-        if let cNonce = tokenResponse.cNonce, !cNonce.isEmpty {
-            return cNonce
-        }
-        throw DownloadFailedException("No c_nonce in token response")
-    }
-
-    private func resolveNonce(
-        issuerMetadata: IssuerMetadata,
-        timeoutInMillis: Int64
-    ) async throws -> String? {
-        return try await nonceService.fetchNonce(
-            issuerMetadata: issuerMetadata,
-            timeoutInMillis: timeoutInMillis
-        )
-    }
 }

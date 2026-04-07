@@ -19,13 +19,16 @@ class LdpVcCredentialRequestDraft13: CredentialRequestProtocol {
     }
 
     func constructRequest() throws -> URLRequest {
-        var request = URLRequest(url: URL(string: issuerMetaData.credentialEndpoint)!)
+        guard let url = URL(string: issuerMetaData.credentialEndpoint) else {
+            throw DownloadFailedException("Invalid credential endpoint URL: \(issuerMetaData.credentialEndpoint)")
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
 
         guard let requestBody = try generateRequestBody(proofJWT: proof, issuer: issuerMetaData) else {
-            throw DownloadFailedException("")
+            throw DownloadFailedException("Failed to generate ldp_vc credential request body")
         }
 
         request.httpBody = requestBody
@@ -46,7 +49,7 @@ class LdpVcCredentialRequestDraft13: CredentialRequestProtocol {
             let jsonData = try JSONEncoder().encode(credentialRequestBody)
             return jsonData
         } catch {
-            throw DownloadFailedException("")
+            throw DownloadFailedException("Failed to encode ldp_vc credential request body")
         }
     }
 

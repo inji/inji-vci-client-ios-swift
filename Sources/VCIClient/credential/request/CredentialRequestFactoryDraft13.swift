@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol CredentialRequestFactoryProtocol {
+protocol CredentialRequestFactoryProtocol {
     func createCredentialRequest(
         credentialFormat: CredentialFormat,
         accessToken: String,

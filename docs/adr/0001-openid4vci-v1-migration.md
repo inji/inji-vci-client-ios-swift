@@ -1,23 +1,23 @@
 # ADR-0001: OpenID4VCI 1.0 Migration with Draft-13 Compatibility
 
-- Status: In review
+- Status: Accepted
 - Date: 2026-03-30
 
 ## Context
 
-`VCIClient` originally implemented an OpenID4VCI Draft-13-style flow:
+`VCIClient` originally implemented the OpenID4VCI specification Draft-13:
 
 - single proof callback
 - single credential response
 - no issuer nonce endpoint handling
-- request/response models shaped around Draft-13 assumptions
+- request/response models shaped around Draft-13
 
-The library now needs to release a stable `1.0.0` API aligned with OpenID4VCI 1.0 while still interoperating with Draft-13 issuers internally.
+With the release of the OpenID4VCI specification version 1.0, this library needs to be updated to support it, while maintaining interoperability with issuers that are compliant with Draft-13.
 
 The main constraints are:
 
 - Draft-13 issuers must continue to work
-- the public API should be smaller and easier to document
+- the public API should be smaller and easier to integrate
 - 1.0 support should not require a heavy rewrite
 - internal design should remain close to the existing flow/service/handler architecture
 
@@ -29,20 +29,21 @@ The library exposes only the OpenID4VCI 1.0-shaped public APIs in `1.0.0` and ke
 
 The public credential download surface is:
 
-- `fetchCredentialsUsingCredentialOffer(... getProofs: ProofsCallbackSpecVersion1 ...) -> CredentialResponseSpecVersion1`
-- `fetchCredentialsFromTrustedIssuer(... getProofs: ProofsCallbackSpecVersion1 ...) -> CredentialResponseSpecVersion1`
+- `fetchCredentialsUsingCredentialOffer(... getProofs: ProofsCallback ...) -> CredentialResponse`
+- `fetchCredentialsFromTrustedIssuer(... getProofs: ProofsCallback ...) -> CredentialResponse`
 
 Supporting public types:
 
 - `CredentialRequestProofs`
-- `CredentialResponseSpecVersion1`
+- `CredentialResponse`
+- `CredentialResponseDraft13`
 - `OID4VCIVersion`
 
-Removed from the public surface:
+Removed from the public surface (1.0.0):
 
-- Draft-13-shaped `ProofJwtCallback` download APIs
-- deprecated wrapper methods
-- low-level request APIs and their `IssuerMeta` DTO
+- All Draft-13-shaped `ProofJwtCallback` download APIs
+- All deprecated wrapper methods (e.g. `requestCredentials(getProofJwt:)`)
+- Low-level request APIs and their `IssuerMeta` DTO
 
 ### Internal routing rule
 
@@ -62,9 +63,9 @@ This keeps the public contract centered on 1.0 while isolating Draft-13 behavior
 Public callback:
 
 ```swift
-public typealias ProofsCallbackSpecVersion1 = (
-    _ credentialIssuer: String,
-    _ nonce: String?,
+public typealias ProofsCallback = (
+    _ issuerUrl: String,
+    _ cNonce: String?,
     _ proofSigningAlgorithmsSupported: [String]
 ) async throws -> CredentialRequestProofs
 ```
@@ -79,14 +80,14 @@ This is intentionally plural at the wire boundary even though the current Draft-
 
 Public response:
 
-- `CredentialResponseSpecVersion1`
+- `CredentialResponse`
 - exposes plural `credentials`
 - does not expose a synthetic singular `credential`
 
 When the new API talks to a Draft-13 issuer, the internal Draft-13 response is normalized into:
 
 ```swift
-CredentialResponseSpecVersion1(credentials: [draft13Credential], ...)
+CredentialResponse(credentials: [draft13Credential], ...)
 ```
 
 This keeps the public contract stable while avoiding a hybrid response model.
@@ -135,7 +136,7 @@ flowchart LR
     D --> F[1.0 response]
     E --> G[Draft-13 response]
 
-    G --> H[Normalize to CredentialResponseSpecVersion1]
+    G --> H[Normalize to CredentialResponse]
 ```
 
 ## Detailed routing
@@ -150,7 +151,7 @@ Flow:
 2. resolve `specVersion`
 3. if `v1`, use the primary 1.0 path
 4. if `draft13`, use the Draft-13 path internally
-5. return `CredentialResponseSpecVersion1` to the caller in either case
+5. return `CredentialResponse` to the caller in either case
 
 ### Version detection policy
 
@@ -246,7 +247,7 @@ This preserves the pre-migration Draft-13 validation behavior while keeping the 
 
 ### Normalization policy
 
-- do not synthesize `credential` inside `CredentialResponseSpecVersion1`
+- do not synthesize `credential` inside `CredentialResponse`
 - do not expose a hybrid response model
 - if the public API talks to a Draft-13 issuer, wrap the Draft-13 credential into a one-item `credentials` array
 
@@ -257,11 +258,10 @@ OpenID4VCI 1.0 introduces explicit nonce endpoint support.
 Nonce resolution is now:
 
 1. for Draft-13 route:
-   - use `c_nonce` from the token response
+   - use `NonceService.extractNonceFromTokenResponse()` to extract `c_nonce` from the token response
    - fail if the Draft-13 flow requires a nonce and it is missing
 2. for 1.0 route:
-   - fetch nonce using `NonceService`
-   - nonce source is issuer metadata `nonce_endpoint`
+   - fetch nonce using `NonceService.fetchNonce()` from issuer metadata `nonce_endpoint`
 
 This keeps the old route behavior intact while enabling 1.0 proof generation.
 
@@ -289,10 +289,10 @@ sequenceDiagram
     Service->>App: getProofs(issuer, nonce, algs)
     App-->>Service: CredentialRequestProofs
     Service->>Exec: requestCredential(...)
-    Exec-->>Service: CredentialResponseSpecVersion1
-    Service-->>Handler: CredentialResponseSpecVersion1
-    Handler-->>Client: CredentialResponseSpecVersion1
-    Client-->>App: CredentialResponseSpecVersion1
+    Exec-->>Service: CredentialResponse
+    Service-->>Handler: CredentialResponse
+    Handler-->>Client: CredentialResponse
+    Client-->>App: CredentialResponse
 ```
 
 ### Sequence: new API on Draft-13 issuer
@@ -317,9 +317,9 @@ sequenceDiagram
     Service->>Exec: requestCredentialDraft13(...)
     Exec-->>Service: CredentialResponse
     Service-->>Handler: CredentialResponse
-    Handler->>Handler: wrap into CredentialResponseSpecVersion1(credentials: [credential])
-    Handler-->>Client: CredentialResponseSpecVersion1
-    Client-->>App: CredentialResponseSpecVersion1
+    Handler->>Handler: wrap into CredentialResponse(credentials: [credential])
+    Handler-->>Client: CredentialResponse
+    Client-->>App: CredentialResponse
 ```
 
 ## Consequences
@@ -334,8 +334,7 @@ sequenceDiagram
 
 ### Negative
 
-- two public API families must be maintained for now
-- new API may still run on Draft-13 internally, which adds normalization logic
+- the public API may still run on Draft-13 internally, which adds normalization logic
 - metadata detection is heuristic-based, not negotiated through an explicit issuer version field
 
 ## Rejected alternatives
@@ -389,8 +388,10 @@ Primary files involved:
 - `Sources/VCIClient/credential/request/types/JwtVcCredentialRequestDraft13.swift`
 - `Sources/VCIClient/credential/request/types/MsoMdocCredentialRequestDraft13.swift`
 - `Sources/VCIClient/credential/request/types/SdJwtCredentialRequestDraft13.swift`
-- `Sources/VCIClient/credential/response/CredentialResponseSpecVersion1.swift`
+- `Sources/VCIClient/credential/response/CredentialResponse.swift`
+- `Sources/VCIClient/credential/response/CredentialResponseDraft13.swift`
 - `Sources/VCIClient/proof/CredentialRequestProofs.swift`
+- `Sources/VCIClient/constants/CallbackTypes.swift`
 - `Sources/VCIClient/issuerMetadata/IssuerMetadataService.swift`
 - `Sources/VCIClient/nonce/NonceService.swift`
 - `Sources/VCIClient/constants/OID4VCIVersion.swift`

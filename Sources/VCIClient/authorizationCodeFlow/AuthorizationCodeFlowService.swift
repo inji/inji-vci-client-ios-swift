@@ -29,32 +29,32 @@ class AuthorizationCodeFlowService {
         clientMetadata: ClientMetadata,
         authorizationMethods: [AuthorizationMethod] = [],
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofs: @escaping ProofsCallbackSpecVersion1,
+        getProofs: @escaping ProofsCallback,
         credentialConfigurationId: String,
-        proofSigningAlgorithmsSupportedSupported: [String],
+        proofSigningAlgorithmsSupported: [String],
         credentialOffer: CredentialOffer? = nil,
         downloadTimeOutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
         session: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponseSpecVersion1 {
+    ) async throws -> CredentialResponse {
         try await executeRequestCredentials(
             issuerMetadata: issuerMetadata,
             clientMetadata: clientMetadata,
             authorizationMethods: authorizationMethods,
             getTokenResponse: getTokenResponse,
             credentialConfigurationId: credentialConfigurationId,
-            proofSigningAlgorithmsSupportedSupported: proofSigningAlgorithmsSupportedSupported,
+            proofSigningAlgorithmsSupported: proofSigningAlgorithmsSupported,
             credentialOffer: credentialOffer,
             downloadTimeOutInMillis: downloadTimeOutInMillis,
             session: session
         ) { token in
             let proofs: CredentialRequestProofs
-            let nonce = try await resolveNonce(issuerMetadata: issuerMetadata, timeoutInMillis: downloadTimeOutInMillis)
+            let nonce = try await nonceService.fetchNonce(issuerMetadata: issuerMetadata, timeoutInMillis: downloadTimeOutInMillis)
             
             do {
                 proofs = try await getProofs(
                     issuerMetadata.credentialIssuer,
                     nonce,
-                    proofSigningAlgorithmsSupportedSupported
+                    proofSigningAlgorithmsSupported
                 )
             } catch {
                 throw DownloadFailedException("Failed to obtain proofs from callback: \(error.localizedDescription)")
@@ -70,7 +70,7 @@ class AuthorizationCodeFlowService {
             )
         }
     }
-
+    
     func requestCredentialsDraft13(
         issuerMetadata: IssuerMetadata,
         clientMetadata: ClientMetadata,
@@ -78,30 +78,30 @@ class AuthorizationCodeFlowService {
         getTokenResponse: @escaping TokenResponseCallback,
         getProofJwt: @escaping ProofJwtCallback,
         credentialConfigurationId: String,
-        proofSigningAlgorithmsSupportedSupported: [String],
+        proofSigningAlgorithmsSupported: [String],
         credentialOffer: CredentialOffer? = nil,
         downloadTimeOutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
         session: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponse {
+    ) async throws -> CredentialResponseDraft13 {
         try await executeRequestCredentials(
             issuerMetadata: issuerMetadata,
             clientMetadata: clientMetadata,
             authorizationMethods: authorizationMethods,
             getTokenResponse: getTokenResponse,
             credentialConfigurationId: credentialConfigurationId,
-            proofSigningAlgorithmsSupportedSupported: proofSigningAlgorithmsSupportedSupported,
+            proofSigningAlgorithmsSupported: proofSigningAlgorithmsSupported,
             credentialOffer: credentialOffer,
             downloadTimeOutInMillis: downloadTimeOutInMillis,
             session: session
         ) { token in
             
-            let nonce = try resolveNonceDraft13(tokenResponse: token, timeoutInMillis: downloadTimeOutInMillis)
+            let nonce = try NonceService.extractNonceFromTokenResponse(token)
             let jwt: String
             do {
                 jwt = try await getProofJwt(
                     issuerMetadata.credentialIssuer,
                     nonce,
-                    proofSigningAlgorithmsSupportedSupported
+                    proofSigningAlgorithmsSupported
                 )
             } catch {
                 throw DownloadFailedException("Failed to obtain proof JWT from callback: \(error.localizedDescription)")
@@ -124,7 +124,7 @@ class AuthorizationCodeFlowService {
         authorizationMethods: [AuthorizationMethod],
         getTokenResponse: @escaping TokenResponseCallback,
         credentialConfigurationId: String,
-        proofSigningAlgorithmsSupportedSupported: [String],
+        proofSigningAlgorithmsSupported: [String],
         credentialOffer: CredentialOffer?,
         downloadTimeOutInMillis: Int64,
         session: NetworkManager,
@@ -193,32 +193,6 @@ class AuthorizationCodeFlowService {
                 cause: error
             )
         }
-    }
-
-    func requestCredentials(
-        issuerMetadata: IssuerMetadata,
-        clientMetadata: ClientMetadata,
-        authorizationMethods: [AuthorizationMethod] = [],
-        getTokenResponse: @escaping TokenResponseCallback,
-        getProofJwt: @escaping ProofJwtCallback,
-        credentialConfigurationId: String,
-        proofSigningAlgorithmsSupportedSupported: [String],
-        credentialOffer: CredentialOffer? = nil,
-        downloadTimeOutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
-        session: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponse {
-        try await requestCredentialsDraft13(
-            issuerMetadata: issuerMetadata,
-            clientMetadata: clientMetadata,
-            authorizationMethods: authorizationMethods,
-            getTokenResponse: getTokenResponse,
-            getProofJwt: getProofJwt,
-            credentialConfigurationId: credentialConfigurationId,
-            proofSigningAlgorithmsSupportedSupported: proofSigningAlgorithmsSupportedSupported,
-            credentialOffer: credentialOffer,
-            downloadTimeOutInMillis: downloadTimeOutInMillis,
-            session: session
-        )
     }
 
     private func performAuthorizationAndGetToken(
@@ -293,8 +267,6 @@ class AuthorizationCodeFlowService {
         credentialConfigurationId: String,
         authorizationMethods: [AuthorizationMethod]
     ) async throws -> String {
-        print("Using Interactive Authorization Endpoint: \(endpoint) for issuer=\(issuerMetadata.credentialIssuer)")
-
         let response: AuthorizationResponse
         do {
             response = try await interactiveAuthorizationHandler.handle(
@@ -349,10 +321,6 @@ class AuthorizationCodeFlowService {
 
         if let redirectMethod = redirectToWebAuthorizationMethod,
            case let .redirectToWeb(openWebPage) = redirectMethod {
-            print(
-                "Using non-interactive authorization endpoint: \(authorizationEndpoint) (redirect_to_web) for issuer=\(issuerMetadata.credentialIssuer)"
-            )
-
             let requestData = ImplicitAuthorizationRequestData(
                 authorizeUrl: authorizationEndpoint,
                 clientMetadata: clientMetadata,
@@ -386,23 +354,4 @@ class AuthorizationCodeFlowService {
         }
     }
 
-    private func resolveNonceDraft13(
-        tokenResponse: TokenResponse,
-        timeoutInMillis: Int64
-    ) throws -> String? {
-        if let cNonce = tokenResponse.cNonce, !cNonce.isEmpty {
-            return cNonce
-        }
-        throw DownloadFailedException("No c_nonce in token response")
-    }
-
-    private func resolveNonce(
-        issuerMetadata: IssuerMetadata,
-        timeoutInMillis: Int64
-    ) async throws -> String? {
-        return try await nonceService.fetchNonce(
-            issuerMetadata: issuerMetadata,
-            timeoutInMillis: timeoutInMillis
-        )
-    }
 }

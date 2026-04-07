@@ -5,13 +5,13 @@ It supports **Issuer Initiated (Credential Offer)** and **Wallet Initiated (Trus
 
 ---
 
-## 📋 Specifications supported
+## Specifications supported
 
 The implementation follows
 - OpenID for Verifiable Credential Issuance 1.0
-- OpenID for Verifiable Credential Issuance draft 13 compatibility for issuers that still expose the older metadata and request/response shape
+- OpenID for Verifiable Credential Issuance draft 13 compatibility for issuers that still expose the older metadata and request/response format
 
-## ✨ Features
+## Features
 
 - Request credentials from OID4VCI-compliant credential issuers
 - Supports both:
@@ -30,16 +30,16 @@ The implementation follows
 [//]: # (The reference for PDI  is intentionally pointing to kotlin library master branch to be release agnostic, as the PDI support is available for both kotlin and swift libraries. The documentation for PDI support is also common for both libraries, hence it is placed in the common doc folder in the root of the repository.)
 - Presentation During Issuance (PDI) support for both download flows (For more details on PDI support, please refer to the [Presentation During Issuance documentation](https://github.com/inji/inji-vci-client/tree/master/doc/presentation-during-issuance-support.md))
 
-> ⚠️ Consumer of this library is responsible for processing and rendering the credential after it is downloaded.
+> Consumer of this library is responsible for processing and rendering the credential after it is downloaded.
 
-## 📚 Library implementations available in:
+## Library implementations available in:
 This library is officially supported and available in both Kotlin and Swift, ensuring seamless integration across Android and iOS platforms. The references for both implementations are provided below:
 
 * [Kotlin](https://github.com/inji/inji-vci-client/tree/master/kotlin)
 * [Swift](.)
 ---
 
-## 📦 Installation
+## Installation
 
 Add VCIClient to your Swift Package Manager dependencies:
 
@@ -57,7 +57,7 @@ Version `1.0.0` defines the stable public API surface for credential download:
 - retained Draft-13 issuer compatibility behind the new APIs
 - structured error handling so wallet applications can distinguish between library-level failures and issuer or authorization server error payloads
 
-## 🏗️ Construction of VCIClient instance
+## Construction of VCIClient instance
 
 - The `VCIClient` is constructed with a `traceabilityId` which is used to track the session and traceability of the credential request.
 
@@ -72,7 +72,7 @@ let vciClient = VCIClient(traceabilityId: traceabilityId)
 |-----------------|--------|----------|---------------|--------------------------------------|
 | traceabilityId  | String | Yes      | N/A           | Unique identifier for the session    |
 
-## 📖 API Overview
+## API Overview
 
 ### 1. Obtain Issuer Metadata
 
@@ -86,7 +86,7 @@ Retrieve the issuer metadata from the credential issuer's well-known endpoint.
 
 #### Returns
 
-`IssuerMetadata` object containing details like `credential_endpoint`, `credential_issuer`, and other IssuerMetadata information from the well-known endpoint of Credential Issuer, which can be used by the consumer to display Issuer information, etc.
+`[String: Any]` dictionary containing details like `credential_endpoint`, `credential_issuer`, and other issuer metadata from the well-known endpoint of Credential Issuer, which can be used by the consumer to display Issuer information, etc.
 
 > Note: This method does not parse the metadata, it simply returns the raw Network response of well-known endpoint as a `[String: Any]`.
 
@@ -176,13 +176,13 @@ Both methods use the OpenID4VCI 1.0-facing proof callback and return a normalize
 | getTxCode               | TxCodeCallback                | No       | N/A           | Optional callback for TX Code in pre-authorized flows                                                                                                                  |
 | authorizationMethods    | [AuthorizationMethod]         | Yes      | N/A           | Supported authorization callbacks for interactive flows [see authorization details](#authorizations)                                                                   |
 | getTokenResponse        | TokenResponseCallback         | Yes      | N/A           | Callback that exchanges the authorization grant for an access token                                                                                                    |
-| getProofs               | ProofsCallbackSpecVersion1    | Yes      | N/A           | Callback that prepares the proof set for the credential request                                                                                                        |
+| getProofs               | ProofsCallback                | Yes      | N/A           | Callback that prepares the proof set for the credential request                                                                                                        |
 | onCheckIssuerTrust      | CheckIssuerTrustCallback      | No       | nil           | Optional callback to confirm that the issuer is trusted                                                                                                                |
 | downloadTimeoutInMillis | Int64                         | No       | 10000         | Timeout for the credential request to the issuer                                                                                                                       |
 
 ##### Returns
 
-An instance of `CredentialResponseSpecVersion1` containing:
+An instance of `CredentialResponse` containing:
 
 | Name                      | Type           | Description                                                                    |
 |---------------------------|----------------|--------------------------------------------------------------------------------|
@@ -217,7 +217,7 @@ let credentialResponse = try await vciClient.fetchCredentialsUsingCredentialOffe
         )
     },
     getProofs: { credentialIssuer, nonce, proofSigningAlgorithmsSupported in
-        CredentialRequestProofs(jwt: ["sampleProofJwt"])
+        CredentialRequestProofs(proofs: ["sampleProofJwt"])
     },
     onCheckIssuerTrust: { credentialIssuer, issuerDisplay in
         true
@@ -247,12 +247,12 @@ credentialResponse.credentialIssuer
 | clientMetadata            | ClientMetadata             | Yes      | N/A           | Contains client ID and redirect URI                                                                                                                                    |
 | authorizationMethods      | [AuthorizationMethod]      | Yes      | N/A           | Supported authorization callbacks for interactive flows [see authorization details](#authorizations)                                                                   |
 | getTokenResponse          | TokenResponseCallback      | Yes      | N/A           | Callback that exchanges the authorization grant for an access token                                                                                                    |
-| getProofs                 | ProofsCallbackSpecVersion1 | Yes      | N/A           | Callback that prepares the proof set for the credential request                                                                                                        |
+| getProofs                 | ProofsCallback             | Yes      | N/A           | Callback that prepares the proof set for the credential request                                                                                                        |
 | downloadTimeoutInMillis   | Int64                      | No       | 10000         | Timeout for the credential request to the issuer                                                                                                                       |
 
 ##### Returns
 
-An instance of `CredentialResponseSpecVersion1` containing:
+An instance of `CredentialResponse` containing:
 
 | Name                      | Type           | Description                                                                    |
 |---------------------------|----------------|--------------------------------------------------------------------------------|
@@ -288,7 +288,7 @@ let credentialResponse = try await vciClient.fetchCredentialsFromTrustedIssuer(
         )
     },
     getProofs: { credentialIssuer, nonce, proofSigningAlgorithmsSupported in
-        CredentialRequestProofs(jwt: ["sampleProofJwt"])
+        CredentialRequestProofs(proofs: ["sampleProofJwt"])
     },
     downloadTimeoutInMillis: 10_000
 )
@@ -354,7 +354,7 @@ AuthorizationMethod.presentationDuringIssuance(
 
 ---
 
-## 🔐 Security Support
+## Security Support
 
 -  **PKCE (Proof Key for Code Exchange)** handled internally (RFC 7636)
 -  Supports `S256` code challenge method
@@ -362,7 +362,7 @@ AuthorizationMethod.presentationDuringIssuance(
 
 ---
 
-## 🛑 Error Handling
+## Error Handling
 
 All exceptions thrown by the library are subclasses of `VCIClientException`.  
 They carry structured fields that help consumers identify whether the failure came from the library itself, a wrapped library exception, or an upstream server response.
@@ -377,45 +377,22 @@ They carry structured fields that help consumers identify whether the failure ca
 | `serverErrorCode`        | `String?` | The issuer or authorization server `error` value when the remote service returned a structured OAuth/OID4VCI-style error response. |
 | `serverErrorDescription` | `String?` | The upstream `error_description` value when available. If the response body is not parseable JSON, the raw response body may be propagated here for diagnostics. |
 
-### Old vs new error handling
+### Error model
 
-Before `0.8.0`, consumers could reliably use only:
+The error model provides full observability into failures:
 
-- `code` to identify the immediate library error category.
-- `message` for a human-readable summary.
-
-In `0.8.0`, the error model is more expressive:
-
-- `code` still identifies the current exception returned to the caller.
+- `code` identifies the current exception returned to the caller.
 - `sourceErrorCode` preserves the deeper `VCI-*` code when the current exception wraps another library exception.
 - `serverErrorCode` captures the upstream server `error` field when present.
 - `serverErrorDescription` captures the upstream `error_description`, or the raw error body when structured parsing is not possible.
 
-This means consumers can now distinguish between:
+This means consumers can distinguish between:
 
 - a library wrapper error exposed at the public API boundary,
 - the original underlying library failure,
 - and a server-originated error payload returned by the issuer or authorization server.
 
-#### Comparison
-
-| Aspect | Before `0.8.0` | From `0.8.0` |
-|--------|----------------|--------------|
-| Library error code | Available through `code` | Available through `code` |
-| Human-readable message | Available through `message` | Available through `message` |
-| Root cause library code after wrapping | Not preserved explicitly | Available through `sourceErrorCode` |
-| Upstream OAuth / issuer `error` value | Usually lost or only visible in message text | Available through `serverErrorCode` |
-| Upstream `error_description` | Usually lost or only visible in message text | Available through `serverErrorDescription` |
-| Consumer-side recovery decisions | Mostly based on `code` and message parsing | Can be based on `code`, `sourceErrorCode`, and upstream server fields |
-
-#### Impact on consumers
-
-- If your integration only switches on `code`, it will continue to work.
-- If you previously parsed `message` to infer server-side failures, you should move that logic to `serverErrorCode` and `serverErrorDescription`.
-- If you want better observability, log all four fields: `code`, `sourceErrorCode`, `serverErrorCode`, and `serverErrorDescription`.
-- If you want better retry and UX decisions, use `code` for the top-level category and `serverErrorCode` for server-specific remediation.
-
-### What each field means for consumers
+#### Consumer guidance
 
 - Use `code` for primary client-side branching, telemetry dimensions, and product analytics.
 - Use `sourceErrorCode` when `code` represents a wrapper exception and you need the more specific underlying failure category.
@@ -464,23 +441,23 @@ do {
 
 ### Error code reference
 
-| Code    | Exception Type                          | Description                                                                                              |
-|---------|-----------------------------------------|----------------------------------------------------------------------------------------------------------|
-| VCI-001 | `AuthorizationServerDiscoveryException` | Failed to discover authorization server                                                                  |
-| VCI-002 | `DownloadFailedException`               | Failed to download credential                                                                            |
-| VCI-003 | `InvalidAccessTokenException`           | Access token is invalid                                                                                  |
-| VCI-004 | `InvalidDataProvidedException`          | Required details not provided                                                                            |
-| VCI-005 | `InvalidPublicKeyException`             | Invalid public key passed                                                                                |
-| VCI-006 | `NetworkRequestFailedException`         | Network request failed                                                                                   |
-| VCI-007 | `NetworkRequestTimeoutException`        | Network request timed-out                                                                                |
-| VCI-008 | `CredentialOfferFetchFailedException`   | Failed to fetch credential offer                                                                         |
-| VCI-009 | `IssuerMetadataFetchException`          | Failed to fetch issuerMetadata                                                                           |
-| VCI-010 | `VCIClientException`                    | Generic API-boundary wrapper or unknown exception surfaced by `VCIClient` public methods                |
-| VCI-011 | `InteractiveAuthorizationException`     | Failed to perform Interactive authorization (Presentation During Issuance / Redirect to Web interaction) |
+| Code    | Exception Type                             | Description                                                                                              |
+|---------|--------------------------------------------|----------------------------------------------------------------------------------------------------------|
+| VCI-001 | `AuthorizationServerDiscoveryException`    | Failed to discover authorization server                                                                  |
+| VCI-002 | `DownloadFailedException`                  | Failed to download credential                                                                            |
+| VCI-003 | `InvalidAccessTokenException`              | Access token is invalid                                                                                  |
+| VCI-004 | `InvalidDataProvidedException`             | Required details not provided                                                                            |
+| VCI-005 | `InvalidPublicKeyException`                | Invalid public key passed                                                                                |
+| VCI-006 | `NetworkRequestFailedException`            | Network request failed                                                                                   |
+| VCI-007 | `NetworkRequestTimeoutException`           | Network request timed-out                                                                                |
+| VCI-008 | `CredentialOfferFetchFailedException`      | Failed to fetch credential offer                                                                         |
+| VCI-009 | `IssuerMetadataFetchException`             | Failed to fetch issuerMetadata                                                                           |
+| VCI-010 | `VCIClientException`                       | Generic API-boundary wrapper or unknown exception surfaced by `VCIClient` public methods                |
+| VCI-011 | `InteractiveAuthorizationException`        | Failed to perform Interactive authorization (Presentation During Issuance / Redirect to Web interaction) |
 
 ---
 
-## 🧪 Testing
+## Testing
 
 Mock-based tests are available covering:
 
@@ -509,7 +486,7 @@ Mock-based tests are available covering:
 
 A complete sample app demonstrating credential issuance flows, proof JWT signing, and error handling with `VCIClient` is available here:
 
-[👉 Example iOS App Repository](./SwiftExample)
+[Example iOS App Repository](./SwiftExample)
 
 - Shows both **Credential Offer** and **Trusted Issuer** flows
 - Includes best practices for callbacks and UI integration

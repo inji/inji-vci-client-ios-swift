@@ -12,10 +12,6 @@ class CredentialRequestExecutor {
         self.factory = factorySpecVersion1
     }
 
-    private var logTag: String {
-        Util.getLogTag(className: String(describing: type(of: self)))
-    }
-
     func requestCredential(
         issuerMetadata: IssuerMetadata,
         credentialConfigurationId: String,
@@ -23,7 +19,7 @@ class CredentialRequestExecutor {
         accessToken: String,
         timeoutInMillis: Int64 = 10000,
         session: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponseSpecVersion1? {
+    ) async throws -> CredentialResponse? {
         let timeoutSeconds = timeoutInMillis / 1000
 
         do {
@@ -39,13 +35,13 @@ class CredentialRequestExecutor {
             let networkResponse = try await session.sendRequest(request: request)
             let responseBody = networkResponse.body
 
-            print("\(logTag) Credential downloaded successfully.")
+
 
             if !responseBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
 
                 guard var result = try JsonUtils.deserialize(
                     responseBody,
-                    as: CredentialResponseSpecVersion1.self
+                    as: CredentialResponse.self
                 ) else {
                     throw DownloadFailedException(
                         "Failed to parse credential response."
@@ -123,7 +119,7 @@ class CredentialRequestExecutor {
         accessToken: String,
         timeoutInMillis: Int64 = 10000,
         session: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponse? {
+    ) async throws -> CredentialResponseDraft13? {
 
         let timeoutSeconds = timeoutInMillis / 1000
 
@@ -140,13 +136,13 @@ class CredentialRequestExecutor {
             let networkResponse = try await session.sendRequest(request: request)
             let responseBody = networkResponse.body
 
-            print("\(logTag) Credential downloaded successfully.")
+
 
             if !responseBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
 
                 guard var result = try JsonUtils.deserialize(
                     responseBody,
-                    as: CredentialResponse.self
+                    as: CredentialResponseDraft13.self
                 ) else {
                     throw DownloadFailedException(
                         "Failed to parse credential response."
@@ -217,21 +213,4 @@ class CredentialRequestExecutor {
         }
     }
 
-    func requestCredential(
-        issuerMetadata: IssuerMetadata,
-        credentialConfigurationId: String,
-        proof: Proof,
-        accessToken: String,
-        timeoutInMillis: Int64 = 10000,
-        session: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponse? {
-        try await requestCredentialDraft13(
-            issuerMetadata: issuerMetadata,
-            credentialConfigurationId: credentialConfigurationId,
-            proof: proof,
-            accessToken: accessToken,
-            timeoutInMillis: timeoutInMillis,
-            session: session
-        )
-    }
 }

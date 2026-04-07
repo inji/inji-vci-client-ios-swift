@@ -63,7 +63,7 @@ final class CredentialRequestExecutorTests: XCTestCase {
         networkManager.responseBody = "{\"credential\":\"test\"}"
 
         let executor = CredentialRequestExecutor(factory: factory)
-        let result = try await executor.requestCredential(
+        let result = try await executor.requestCredentialDraft13(
             issuerMetadata: mockIssuerMetadata(),
             credentialConfigurationId: "mock",
             proof: mockProof(),
@@ -84,7 +84,7 @@ final class CredentialRequestExecutorTests: XCTestCase {
             let executor = CredentialRequestExecutor(factory: factory)
             
             do {
-                _ = try await executor.requestCredential(
+                _ = try await executor.requestCredentialDraft13(
                     issuerMetadata: mockIssuerMetadata(),
                     credentialConfigurationId: "mock",
                     proof: mockProof(),
@@ -105,7 +105,7 @@ final class CredentialRequestExecutorTests: XCTestCase {
             let executor = CredentialRequestExecutor(factory: factory)
             
             do {
-                _ = try await executor.requestCredential(
+                _ = try await executor.requestCredentialDraft13(
                     issuerMetadata: mockIssuerMetadata(),
                     credentialConfigurationId: "mock",
                     proof: mockProof(),
@@ -127,7 +127,7 @@ final class CredentialRequestExecutorTests: XCTestCase {
             let executor = CredentialRequestExecutor(factory: factory)
             
             do {
-                _ = try await executor.requestCredential(
+                _ = try await executor.requestCredentialDraft13(
                     issuerMetadata: mockIssuerMetadata(),
                     credentialConfigurationId: "mock",
                     proof: mockProof(),
@@ -149,7 +149,7 @@ final class CredentialRequestExecutorTests: XCTestCase {
             let executor = CredentialRequestExecutor(factory: factory)
             
             do {
-                _ = try await executor.requestCredential(
+                _ = try await executor.requestCredentialDraft13(
                     issuerMetadata: mockIssuerMetadata(),
                     credentialConfigurationId: "mock",
                     proof: mockProof(),
@@ -176,7 +176,7 @@ final class CredentialRequestExecutorTests: XCTestCase {
             let executor = CredentialRequestExecutor(factory: factory)
             
             do {
-                _ = try await executor.requestCredential(
+                _ = try await executor.requestCredentialDraft13(
                     issuerMetadata: mockIssuerMetadata(),
                     credentialConfigurationId: "mock",
                     proof: mockProof(),

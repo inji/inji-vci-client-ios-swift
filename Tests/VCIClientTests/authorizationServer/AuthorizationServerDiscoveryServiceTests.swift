@@ -118,7 +118,7 @@ final class AuthorizationServerDiscoveryServiceTests: XCTestCase {
                 baseUrl: "https://issuer.example.com"
             )
             XCTFail("Expected discovery failure")
-        } catch let error as AutorizationServerDiscoveryException {
+        } catch let error as AuthorizationServerDiscoveryException {
             XCTAssertTrue(error.message.contains("Failed to discover authorization server metadata"))
         } catch {
             XCTFail("Unexpected error type: \(error)")
@@ -146,7 +146,7 @@ final class AuthorizationServerDiscoveryServiceTests: XCTestCase {
                 baseUrl: "https://issuer.example.com"
             )
             XCTFail("Expected discovery failure")
-        } catch let error as AutorizationServerDiscoveryException {
+        } catch let error as AuthorizationServerDiscoveryException {
             XCTAssertTrue(error.message.contains("Failed to discover authorization server metadata"))
         } catch {
             XCTFail("Unexpected error type: \(error)")

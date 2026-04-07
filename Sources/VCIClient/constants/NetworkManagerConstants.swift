@@ -4,7 +4,7 @@ enum Header : String {
 }
 
 
-public enum ContentTypes : String {
+enum ContentTypes : String {
     case applicationFormUrlEncoded = "application/x-www-form-urlencoded"
     case applicationJson = "application/json"
 }

@@ -15,7 +15,7 @@ final class CredentialRequestFactoryTests: XCTestCase {
             accessToken: "token",
             issuer: issuer,
             credentialConfigurationId: "UniversityDegreeCredential",
-            proofs: CredentialRequestProofs(jwt: ["proof-1"])
+            proofs: CredentialRequestProofs(proofs: ["proof-1"])
         )
 
         XCTAssertEqual(request.httpMethod, "POST")
@@ -37,9 +37,9 @@ final class CredentialRequestFactoryTests: XCTestCase {
 
     func testCreateCredentialRequest_forMsoMdocStillUsesCredentialConfigurationIdShape() throws {
         let factory = CredentialRequestFactory()
-        let body = try factory.makeRequestBody(
+        let body = try factory.constructRequestBody(
             credentialConfigurationId: "org.iso.18013.5.1.mDL",
-            proofs: CredentialRequestProofs(jwt: ["proof-1"])
+            proofs: CredentialRequestProofs(proofs: ["proof-1"])
         )
 
         let json = try XCTUnwrap(

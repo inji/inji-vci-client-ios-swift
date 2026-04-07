@@ -55,8 +55,8 @@ extension CredentialOffer {
     }
 }
 
-extension CredentialResponse {
-    static func mock() -> CredentialResponse {
+extension CredentialResponseDraft13 {
+    static func mock() -> CredentialResponseDraft13 {
         let fakeCredential = [
             "id": "urn:uuid:1234-abcd",
             "type": ["VerifiableCredential"],
@@ -67,7 +67,7 @@ extension CredentialResponse {
             ],
         ] as [String: Any]
 
-        return CredentialResponse(credential: AnyCodable(fakeCredential),credentialIssuer: "mock-issuer",credentialConfigurationId: "mock")
+        return CredentialResponseDraft13(credential: AnyCodable(fakeCredential),credentialIssuer: "mock-issuer",credentialConfigurationId: "mock")
     }
 }
 

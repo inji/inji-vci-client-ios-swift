@@ -11,18 +11,18 @@ class CredentialRequestFactory {
             throw InvalidDataProvidedException("Proof collection cannot be empty")
         }
 
-        var request = try makeBaseRequest(
+        var request = try constructBaseRequest(
             accessToken: accessToken,
             issuer: issuer
         )
-        request.httpBody = try makeRequestBody(
+        request.httpBody = try constructRequestBody(
             credentialConfigurationId: credentialConfigurationId,
             proofs: proofs
         )
         return request
     }
 
-    func makeBaseRequest(
+    func constructBaseRequest(
         accessToken: String,
         issuer: IssuerMetadata
     ) throws -> URLRequest {
@@ -37,7 +37,7 @@ class CredentialRequestFactory {
         return request
     }
 
-    func makeRequestBody(
+    func constructRequestBody(
         credentialConfigurationId: String,
         proofs: CredentialRequestProofs
     ) throws -> Data {

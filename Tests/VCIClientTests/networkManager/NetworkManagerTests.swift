@@ -210,7 +210,7 @@ final class NetworkManagerTests: XCTestCase {
             return (response, #"{"status":"ok"}"#.data(using: .utf8)!)
         }
 
-        _ = try await NetworkManager.shared.sendRequestV2(
+        _ = try await NetworkManager.shared.sendRawRequest(
             url: "https://example.com/raw",
             method: .post,
             body: expectedBody
@@ -232,7 +232,7 @@ final class NetworkManagerTests: XCTestCase {
             return (response, Data())
         }
 
-        _ = try await NetworkManager.shared.sendRequestV2(
+        _ = try await NetworkManager.shared.sendRawRequest(
             url: "https://example.com/raw",
             method: .get,
             body: Data("ignored".utf8)

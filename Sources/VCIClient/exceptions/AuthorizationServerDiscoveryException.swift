@@ -1,13 +1,13 @@
 import Foundation
 
-class AutorizationServerDiscoveryException: VCIClientException {
+class AuthorizationServerDiscoveryException: VCIClientException {
     init(_ message: String?) {
         super.init(
             code: "VCI-001",
-            message: "Failed to discover authorization server  : \(message ?? "")"
+            message: "Failed to discover authorization server: \(message ?? "")"
         )
     }
-    
+
     init(
         message: String?,
         serverErrorCode: String? = nil,
@@ -16,7 +16,7 @@ class AutorizationServerDiscoveryException: VCIClientException {
     ) {
         super.init(
             code: "VCI-001",
-            message: "Failed to discover authorization server  : \(message ?? "")",
+            message: "Failed to discover authorization server: \(message ?? "")",
             serverErrorCode: serverErrorCode,
             serverErrorDescription: serverErrorDescription,
             cause: cause

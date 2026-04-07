@@ -51,9 +51,9 @@ public class VCIClient {
         clientMetadata: ClientMetadata,
         getTokenResponse: @escaping TokenResponseCallback,
         authorizationMethods: [AuthorizationMethod],
-        getProofs: @escaping ProofsCallbackSpecVersion1,
+        getProofs: @escaping ProofsCallback,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
-    ) async throws -> CredentialResponseSpecVersion1 {
+    ) async throws -> CredentialResponse {
 
         do {
             return try await self.trustedIssuerFlowHandler.downloadCredentials(
@@ -80,10 +80,10 @@ public class VCIClient {
         getTxCode: TxCodeCallback,
         authorizationMethods: [AuthorizationMethod],
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofs: @escaping ProofsCallbackSpecVersion1,
+        getProofs: @escaping ProofsCallback,
         onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
-    ) async throws -> CredentialResponseSpecVersion1 {
+    ) async throws -> CredentialResponse {
 
         do {
             return try await self.credentialOfferFlowHandler.downloadCredentials(

@@ -3,12 +3,12 @@ import OpenID4VPBridge
 
 public typealias AuthorizeUserCallback = (_ authorizationUrl: String) async throws -> String
 public typealias TokenResponseCallback = (_ tokenRequest: TokenRequest) async throws -> TokenResponse
-public typealias ProofJwtCallback = (
+typealias ProofJwtCallback = (
     _ credentialIssuer: String,
     _ cNonce: String?,
     _ proofSigningAlgorithmsSupported: [String]
 ) async throws -> String
-public typealias ProofsCallbackSpecVersion1 = (
+public typealias ProofsCallback = (
     _ credentialIssuer: String,
     _ nonce: String?,
     _ proofSigningAlgorithmsSupported: [String]

@@ -56,20 +56,20 @@ class InteractiveAuthorizationHandler {
             }
             
         } catch let e as InteractiveAuthorizationException {
-            print("Interactive authorization failed: \(e.message)")
+            Util.logError(message: "Interactive authorization failed: \(e.message)", className: "InteractiveAuthorizationHandler")
             throw e
-            
+
         } catch let e as VCIClientException {
-            print("Interactive authorization failed: \(e.message)")
+            Util.logError(message: "Interactive authorization failed: \(e.message)", className: "InteractiveAuthorizationHandler")
             throw InteractiveAuthorizationException(
                 message: "Interactive authorization failed: \(e.message)",
                 serverErrorCode: e.serverErrorCode,
                 serverErrorDescription: e.serverErrorDescription,
                 cause: e
             )
-            
+
         } catch {
-            print("Unexpected error during interactive authorization: \(error.localizedDescription)")
+            Util.logError(message: "Unexpected error during interactive authorization: \(error.localizedDescription)", className: "InteractiveAuthorizationHandler")
             throw InteractiveAuthorizationException(
                 message: "Unexpected error during interactive authorization: \(error.localizedDescription)",
                 cause: error

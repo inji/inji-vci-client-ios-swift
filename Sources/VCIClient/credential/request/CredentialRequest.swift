@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol CredentialRequestProtocol {
+protocol CredentialRequestProtocol {
     init(accessToken: String,
          issuerMetaData: IssuerMetadata,
          proof: JWTProof)

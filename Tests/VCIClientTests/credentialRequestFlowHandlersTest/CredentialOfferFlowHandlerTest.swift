@@ -26,8 +26,8 @@ final class CredentialOfferFlowHandlerTests: XCTestCase {
         )
     }
 
-    private func makeMinimalCredentialResponse() -> CredentialResponse {
-        return CredentialResponse(credential: .init("mock-credential"), credentialIssuer: "mock",credentialConfigurationId: "mcok-id")
+    private func makeMinimalCredentialResponse() -> CredentialResponseDraft13 {
+        return CredentialResponseDraft13(credential: .init("mock-credential"), credentialIssuer: "mock",credentialConfigurationId: "mcok-id")
     }
 
     func testPreAuthorizedFlow_withNonceEndpoint_routesToV1() async throws {
@@ -56,7 +56,7 @@ final class CredentialOfferFlowHandlerTests: XCTestCase {
             getTxCode: { _, _, _ in "tx-code" },
             authorizationMethods: [],
             getTokenResponse: { _ in TokenResponse(accessToken: "mock", tokenType: "Bearer") },
-            getProofs: { _, _, _ in CredentialRequestProofs(jwt: ["mock-jwt"]) }
+            getProofs: { _, _, _ in CredentialRequestProofs(proofs: ["mock-jwt"]) }
         )
 
         XCTAssertTrue(preAuthFlowService.didCallRequest)
@@ -75,7 +75,7 @@ final class CredentialOfferFlowHandlerTests: XCTestCase {
         issuerService.resultToReturn = makeMinimalIssuerMetadataResult() // no nonceEndpoint → draft13
 
         let preAuthFlowService = MockPreAuthFlowService()
-        preAuthFlowService.responseToReturn = CredentialResponse(
+        preAuthFlowService.responseToReturn = CredentialResponseDraft13(
             credential: .init("draft13-credential"),
             credentialIssuer: "mock-issuer",
             credentialConfigurationId: "mock"
@@ -94,7 +94,7 @@ final class CredentialOfferFlowHandlerTests: XCTestCase {
             getTxCode: { _, _, _ in "tx-code" },
             authorizationMethods: [],
             getTokenResponse: { _ in TokenResponse(accessToken: "mock", tokenType: "Bearer") },
-            getProofs: { _, _, _ in CredentialRequestProofs(jwt: ["mock-jwt"]) }
+            getProofs: { _, _, _ in CredentialRequestProofs(proofs: ["mock-jwt"]) }
         )
 
         XCTAssertTrue(preAuthFlowService.didCallRequest)
@@ -130,7 +130,7 @@ final class CredentialOfferFlowHandlerTests: XCTestCase {
             getTxCode: { _, _, _ in "tx-code" },
             authorizationMethods: [.redirectToWeb(openWebPage: { _ in ["code": "auth_code"] })],
             getTokenResponse: { _ in TokenResponse(accessToken: "mock", tokenType: "Bearer") },
-            getProofs: { _, _, _ in CredentialRequestProofs(jwt: ["mock-jwt"]) }
+            getProofs: { _, _, _ in CredentialRequestProofs(proofs: ["mock-jwt"]) }
         )
 
         XCTAssertTrue(authCodeFlowService.didCallRequestCredentials)
@@ -173,7 +173,7 @@ final class CredentialOfferFlowHandlerTests: XCTestCase {
                 getTxCode: { _, _, _ in "tx-code" },
                 authorizationMethods: [],
                 getTokenResponse: { _ in TokenResponse(accessToken: "mock", tokenType: "Bearer") },
-                getProofs: { _, _, _ in CredentialRequestProofs(jwt: []) }
+                getProofs: { _, _, _ in CredentialRequestProofs(proofs: []) }
             ) as Any
         }
     }

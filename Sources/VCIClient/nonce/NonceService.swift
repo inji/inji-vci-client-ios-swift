@@ -7,6 +7,13 @@ class NonceService {
         self.session = session
     }
 
+    static func extractNonceFromTokenResponse(_ tokenResponse: TokenResponse) throws -> String? {
+        if let cNonce = tokenResponse.cNonce, !cNonce.isEmpty {
+            return cNonce
+        }
+        throw DownloadFailedException("No c_nonce in token response")
+    }
+
     func fetchNonce(
         issuerMetadata: IssuerMetadata,
         timeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
@@ -15,7 +22,7 @@ class NonceService {
             return nil
         }
 
-        let response = try await session.sendRequestV2(
+        let response = try await session.sendRawRequest(
             url: nonceEndpoint,
             method: .post,
             headers: [
