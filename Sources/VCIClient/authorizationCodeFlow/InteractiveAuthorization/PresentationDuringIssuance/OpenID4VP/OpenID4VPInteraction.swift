@@ -45,7 +45,7 @@ class OpenID4VPInteraction: OpenID4VPInteracting {
         holderId: String?,
         ldpVpSignatureSuite: String?
     ) async throws -> [UnsignedVPTokenV2] {
-        try await openId4vp.constructUnsignedVPTokenV2(
+        try await openId4vp.constructUnsignedVPToken(
             verifiableCredentials: verifiableCredentials,
             holderId: holderId,
             signatureSuite: ldpVpSignatureSuite
@@ -55,7 +55,7 @@ class OpenID4VPInteraction: OpenID4VPInteracting {
     func constructVPResponse(
         vpTokenSigningResults: [VPTokenSigningResultV2]
     ) -> [String: Any] {
-        openId4vp.constructVPResponseV2(vpTokenSigningResults: vpTokenSigningResults)
+        openId4vp.constructVPResponse(vpTokenSigningResults: vpTokenSigningResults)
     }
     
     func constructErrorInfo(exception: Error) -> [String: Any] {
