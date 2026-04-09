@@ -110,55 +110,6 @@ class CredentialOfferFlowHandler {
         }
     }
 
-    func downloadCredentialsDraft13(
-        credentialOffer: String,
-        clientMetadata: ClientMetadata,
-        getTxCode: TxCodeCallback,
-        authorizationMethods: [AuthorizationMethod],
-        getTokenResponse: @escaping TokenResponseCallback,
-        getProofJwt: @escaping ProofJwtCallback,
-        onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
-        networkSession: NetworkManager = NetworkManager.shared,
-        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
-    ) async throws -> CredentialResponseDraft13 {
-        try await executeDownloadCredentials(
-            credentialOffer: credentialOffer,
-            clientMetadata: clientMetadata,
-            getTxCode: getTxCode,
-            authorizationMethods: authorizationMethods,
-            onCheckIssuerTrust: onCheckIssuerTrust,
-            downloadTimeoutInMillis: downloadTimeoutInMillis
-        ) { offer, issuerMetadataResponse, credentialConfigurationId, proofSigningAlgorithmsSupported in
-            if offer.isPreAuthorizedFlow {
-                return try await self.preAuthFlowService.requestCredentialsDraft13(
-                    issuerMetadata: issuerMetadataResponse.issuerMetadata,
-                    credentialOffer: offer,
-                    getTokenResponse: getTokenResponse,
-                    getProofJwt: getProofJwt,
-                    credentialConfigurationId: credentialConfigurationId,
-                    proofSigningAlgorithmsSupported: proofSigningAlgorithmsSupported,
-                    getTxCode: getTxCode,
-                    downloadTimeoutInMillis: downloadTimeoutInMillis
-                )
-            } else if offer.isAuthorizationCodeFlow {
-                return try await self.authorizationCodeFlowService.requestCredentialsDraft13(
-                    issuerMetadata: issuerMetadataResponse.issuerMetadata,
-                    clientMetadata: clientMetadata,
-                    authorizationMethods: authorizationMethods,
-                    getTokenResponse: getTokenResponse,
-                    getProofJwt: getProofJwt,
-                    credentialConfigurationId: credentialConfigurationId,
-                    proofSigningAlgorithmsSupported: proofSigningAlgorithmsSupported,
-                    credentialOffer: offer,
-                    downloadTimeOutInMillis: downloadTimeoutInMillis,
-                    session: networkSession
-                )
-            } else {
-                throw CredentialOfferFetchFailedException("Credential offer does not contain a supported grant type")
-            }
-        }
-    }
-
     private func executeDownloadCredentials<Response>(
         credentialOffer: String,
         clientMetadata: ClientMetadata,

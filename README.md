@@ -56,6 +56,7 @@ Version `1.0.0` defines the stable public API surface for credential download:
 - plural proof and response models aligned with OpenID4VCI 1.0
 - retained Draft-13 issuer compatibility behind the new APIs
 - structured error handling so wallet applications can distinguish between library-level failures and issuer or authorization server error payloads
+- issuer metadata fetches validate that the `credential_issuer` returned by the well-known endpoint matches the requested issuer, per [OID4VCI Section 13.5](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-13.5)
 
 ## Construction of VCIClient instance
 

@@ -240,6 +240,56 @@ final class IssuerMetadataServiceTests: XCTestCase {
         }
     }
 
+    func test_fetch_credentialIssuerMismatch_shouldThrow() async {
+        let json = """
+        {
+          "credential_issuer": "https://other.issuer.com",
+          "credential_endpoint": "https://other.issuer.com/credential",
+          "credential_configurations_supported": {
+            "vc1": {
+              "format": "ldp_vc",
+              "credential_definition": {
+                "type": ["VerifiableCredential"],
+                "@context": ["https://www.w3.org/2018/credentials/v1"]
+              }
+            }
+          }
+        }
+        """
+        let service = makeService(response: json)
+
+        await assertThrowsVCIErrorContainingMessage(
+            expectedType: IssuerMetadataFetchException.self,
+            messageContains: "credential_issuer mismatch"
+        ) {
+            try await service.fetchIssuerMetadataResult(
+                credentialIssuer: "https://issuer.com",
+                credentialConfigurationId: "vc1"
+            )
+        }
+    }
+
+    func test_fetchCredentialConfigurationsSupported_credentialIssuerMismatch_shouldThrow() async {
+        let json = """
+        {
+          "credential_issuer": "https://other.issuer.com",
+          "credential_configurations_supported": {
+            "vc1": {
+              "format": "ldp_vc"
+            }
+          }
+        }
+        """
+        let service = makeService(response: json)
+
+        await assertThrowsVCIErrorContainingMessage(
+            expectedType: IssuerMetadataFetchException.self,
+            messageContains: "credential_issuer mismatch"
+        ) {
+            try await service.fetchCredentialConfigurationsSupported(from: "https://issuer.com")
+        }
+    }
+
     func test_fetch_networkFailure_shouldThrow() async {
         let service = makeService(response: "{}", shouldThrow: true)
 

@@ -19,23 +19,23 @@ final class TrustedIssuerHandlerTests: XCTestCase {
 
         let handler = TrustedIssuerFlowHandler(authService: mockService, issuerMetadataService: mockIssuerMetadataService)
 
-        let result = try await handler.downloadCredentialsDraft13(
+        let result = try await handler.downloadCredentials(
             credentialIssuer: "mock-issuer",
             credentialConfigurationId: "mock",
             clientMetadata: ClientMetadata(clientId: "", redirectUri: ""),
             authorizationMethods: [AuthorizationMethod.redirectToWeb(openWebPage: {_ in ["code": "auth_code"]})],
             getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer", expiresIn: nil) },
-            getProofJwt: { _, _, _ in "jwt" }
+            getProofs: { _, _, _ in CredentialRequestProofs(proofs: ["jwt"]) }
         )
 
         XCTAssertTrue(mockService.didCallRequestCredentials)
-        let actualData = try result.toJsonString().data(using: .utf8)
+        let actualData = try result.toJsonString().data(using: String.Encoding.utf8)
         let actualJson = try JSONSerialization.jsonObject(with: actualData!, options: []) as? [String: Any]
 
         let expectedJson: [String: Any] = [
-            "credential": "mock",
-            "credentialIssuer": "mock-issuer",
-            "credentialConfigurationId": "mock"
+            "credentials": ["mock"],
+            "credential_issuer": "mock-issuer",
+            "credential_configuration_id": "mock"
         ]
 
         XCTAssertEqual(actualJson! as NSDictionary, expectedJson as NSDictionary)
@@ -101,6 +101,9 @@ final class TrustedIssuerHandlerTests: XCTestCase {
 
         XCTAssertTrue(mockService.didCallRequestCredentials)
         XCTAssertEqual(result.credentials?.count, 1)
+        XCTAssertEqual(result.credentials?.first?.value as? String, "draft13-credential")
+        XCTAssertEqual(result.credentialIssuer, "mock-issuer")
+        XCTAssertEqual(result.credentialConfigurationId, "mock")
     }
 
     func testDownloadCredentials_propagatesError() async {
@@ -120,13 +123,13 @@ final class TrustedIssuerHandlerTests: XCTestCase {
         let handler = TrustedIssuerFlowHandler(authService: mockAuthorizationCodeFlowService, issuerMetadataService: mockIssuerMetadataService)
 
         do {
-            _ = try await handler.downloadCredentialsDraft13(
+            _ = try await handler.downloadCredentials(
                 credentialIssuer: "mock-issuer",
                 credentialConfigurationId: "mock",
                 clientMetadata: ClientMetadata(clientId: "", redirectUri: ""),
                 authorizationMethods: [AuthorizationMethod.redirectToWeb(openWebPage: {_ in ["code": "auth_code"]})],
                 getTokenResponse: { _ in TokenResponse(accessToken: "mock-token", tokenType: "Bearer", expiresIn: nil) },
-                getProofJwt: { _, _, _ in "jwt" }
+                getProofs: { _, _, _ in CredentialRequestProofs(proofs: ["jwt"]) }
             )
             XCTFail("Expected error but got success")
         } catch let error as VCIClientException {

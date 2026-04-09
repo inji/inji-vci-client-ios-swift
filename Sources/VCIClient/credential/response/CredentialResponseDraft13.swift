@@ -1,9 +1,9 @@
 import Foundation
 
-public struct CredentialResponseDraft13: Codable {
-    public let credential: AnyCodable
-    public var credentialIssuer: String?
-    public var credentialConfigurationId: String?
+struct CredentialResponseDraft13: Codable {
+    let credential: AnyCodable
+    var credentialIssuer: String?
+    var credentialConfigurationId: String?
 
     enum CodingKeys: String, CodingKey {
         case credential
@@ -11,7 +11,7 @@ public struct CredentialResponseDraft13: Codable {
         case credentialConfigurationId
     }
 
-    public init(
+    init(
         credential: AnyCodable,
         credentialIssuer: String? = nil,
         credentialConfigurationId: String? = nil
@@ -21,7 +21,7 @@ public struct CredentialResponseDraft13: Codable {
         self.credentialConfigurationId = credentialConfigurationId
     }
 
-    public func toJsonString() throws -> String {
+    func toJsonString() throws -> String {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         let data = try encoder.encode(self)
@@ -32,11 +32,10 @@ public struct CredentialResponseDraft13: Codable {
     }
 }
 
-
 public struct AnyCodable: Codable {
-    var value: Any
+    public var value: Any
 
-    init(_ value: Any) {
+    public init(_ value: Any) {
         self.value = value
     }
 

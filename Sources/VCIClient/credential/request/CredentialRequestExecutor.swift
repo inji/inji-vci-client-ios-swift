@@ -1,16 +1,16 @@
 import Foundation
 
 class CredentialRequestExecutor {
-    private let draft13Factory: CredentialRequestFactoryProtocol
-    private let factory: CredentialRequestFactory
+    private let credentialRequestFactory: CredentialRequestFactory
+        private let credentialRequestFactoryDraft13: CredentialRequestFactoryProtocol
 
-    init(
-        factory: CredentialRequestFactoryProtocol = CredentialRequestFactoryDraft13(),
-        factorySpecVersion1: CredentialRequestFactory = CredentialRequestFactory()
-    ) {
-        self.draft13Factory = factory
-        self.factory = factorySpecVersion1
-    }
+        init(
+            credentialRequestFactoryDraft13: CredentialRequestFactoryProtocol = CredentialRequestFactoryDraft13(),
+            credentialRequestFactory: CredentialRequestFactory = CredentialRequestFactory()
+        ) {
+            self.credentialRequestFactoryDraft13 = credentialRequestFactoryDraft13
+            self.credentialRequestFactory = credentialRequestFactory
+        }
 
     func requestCredential(
         issuerMetadata: IssuerMetadata,
@@ -23,7 +23,7 @@ class CredentialRequestExecutor {
         let timeoutSeconds = timeoutInMillis / 1000
 
         do {
-            var request = try factory.createCredentialRequest(
+            var request = try credentialRequestFactory.createCredentialRequest(
                 accessToken: accessToken,
                 issuer: issuerMetadata,
                 credentialConfigurationId: credentialConfigurationId,
@@ -124,7 +124,7 @@ class CredentialRequestExecutor {
         let timeoutSeconds = timeoutInMillis / 1000
 
         do {
-            var request = try draft13Factory.createCredentialRequest(
+            var request = try credentialRequestFactoryDraft13.createCredentialRequest(
                 credentialFormat: issuerMetadata.credentialFormat,
                 accessToken: accessToken,
                 issuer: issuerMetadata,

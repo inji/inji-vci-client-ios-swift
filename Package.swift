@@ -7,7 +7,6 @@ let package = Package(
     name: "VCIClient",
     platforms: [
         .iOS(.v14),
-        .macOS(.v12),
     ],
     products: [
         .library(

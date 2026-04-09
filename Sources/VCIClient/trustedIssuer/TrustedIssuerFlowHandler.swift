@@ -66,35 +66,6 @@ class TrustedIssuerFlowHandler {
         }
     }
 
-    func downloadCredentialsDraft13(
-        credentialIssuer: String,
-        credentialConfigurationId: String,
-        clientMetadata: ClientMetadata,
-        authorizationMethods: [AuthorizationMethod],
-        getTokenResponse: @escaping TokenResponseCallback,
-        getProofJwt: @escaping ProofJwtCallback,
-        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
-        networkSession: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponseDraft13 {
-        let issuerMetadata = try await loadIssuerMetadata(
-            credentialIssuer: credentialIssuer,
-            credentialConfigurationId: credentialConfigurationId
-        )
-
-        return try await authorizationCodeFlowService.requestCredentialsDraft13(
-            issuerMetadata: issuerMetadata.issuerMetadata,
-            clientMetadata: clientMetadata,
-            authorizationMethods: authorizationMethods,
-            getTokenResponse: getTokenResponse,
-            getProofJwt: getProofJwt,
-            credentialConfigurationId: credentialConfigurationId,
-            proofSigningAlgorithmsSupported: issuerMetadata.extractJwtProofSigningAlgorithms(
-                credentialConfigurationId: credentialConfigurationId
-            ),
-            downloadTimeOutInMillis: downloadTimeoutInMillis,
-            session: networkSession
-        )
-    }
 
     private func loadIssuerMetadata(
         credentialIssuer: String,
