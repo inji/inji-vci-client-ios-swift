@@ -1,6 +1,6 @@
 import Foundation
 
-class LdpVcCredentialRequest: CredentialRequestProtocol {
+class LdpVcCredentialRequestDraft13: CredentialRequestProtocol {
     let accessToken: String
     let issuerMetaData: IssuerMetadata
     let proof: JWTProof
@@ -19,13 +19,16 @@ class LdpVcCredentialRequest: CredentialRequestProtocol {
     }
 
     func constructRequest() throws -> URLRequest {
-        var request = URLRequest(url: URL(string: issuerMetaData.credentialEndpoint)!)
+        guard let url = URL(string: issuerMetaData.credentialEndpoint) else {
+            throw DownloadFailedException("Invalid credential endpoint URL: \(issuerMetaData.credentialEndpoint)")
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
 
         guard let requestBody = try generateRequestBody(proofJWT: proof, issuer: issuerMetaData) else {
-            throw DownloadFailedException("")
+            throw DownloadFailedException("Failed to generate ldp_vc credential request body")
         }
 
         request.httpBody = requestBody
@@ -36,7 +39,7 @@ class LdpVcCredentialRequest: CredentialRequestProtocol {
     func generateRequestBody(proofJWT: JWTProof, issuer: IssuerMetadata) throws -> Data? {
         let credentialDefinition = CredentialDefinition(context: getIssuerContext(issuer: issuer), type: issuer.credentialType!)
 
-        let credentialRequestBody = LdpCredentialRequestBody(
+        let credentialRequestBody = LdpCredentialRequestBodyDraft13(
             format: issuer.credentialFormat,
             credential_definition: credentialDefinition,
             proof: proofJWT
@@ -46,7 +49,7 @@ class LdpVcCredentialRequest: CredentialRequestProtocol {
             let jsonData = try JSONEncoder().encode(credentialRequestBody)
             return jsonData
         } catch {
-            throw DownloadFailedException("")
+            throw DownloadFailedException("Failed to encode ldp_vc credential request body")
         }
     }
 
@@ -58,7 +61,7 @@ class LdpVcCredentialRequest: CredentialRequestProtocol {
     }
 }
 
-struct LdpCredentialRequestBody: Encodable {
+struct LdpCredentialRequestBodyDraft13: Encodable {
     let format: CredentialFormat
     let credential_definition: CredentialDefinition
     let proof: JWTProof

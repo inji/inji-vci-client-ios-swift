@@ -1,9 +1,9 @@
 import XCTest
 @testable import VCIClient
 
-final class JwtVcCredentialRequestTests: XCTestCase {
+final class JwtVcCredentialRequestDraft13Tests: XCTestCase {
 
-    var credentialRequest: JwtVcCredentialRequest!
+    var credentialRequest: JwtVcCredentialRequestDraft13!
     let accessToken = "AccessToken"
     let proofJWT = JWTProof(jwt: "xxxx.yyyy.zzzz")
     let sampleEndpoint = "https://issuer.example.com/credential"
@@ -17,7 +17,7 @@ final class JwtVcCredentialRequestTests: XCTestCase {
             credentialType: sampleTypes,
             credentialFormat: .jwt_vc_json
         )
-        credentialRequest = JwtVcCredentialRequest(accessToken: accessToken, issuerMetaData: issuer, proof: proofJWT)
+        credentialRequest = JwtVcCredentialRequestDraft13(accessToken: accessToken, issuerMetaData: issuer, proof: proofJWT)
     }
 
     override func tearDown() {
@@ -38,7 +38,7 @@ final class JwtVcCredentialRequestTests: XCTestCase {
             credentialFormat: .jwt_vc_json
         )
 
-        let requestWithMissingType = JwtVcCredentialRequest(accessToken: accessToken, issuerMetaData: issuerMissingType, proof: proofJWT)
+        let requestWithMissingType = JwtVcCredentialRequestDraft13(accessToken: accessToken, issuerMetaData: issuerMissingType, proof: proofJWT)
         let result = requestWithMissingType.validateIssuerMetadata()
 
         XCTAssertFalse(result.isValid)
@@ -52,7 +52,7 @@ final class JwtVcCredentialRequestTests: XCTestCase {
             credentialFormat: .jwt_vc_json
         )
         
-        let requestWithMissingType = JwtVcCredentialRequest(accessToken: accessToken, issuerMetaData: issuerMissingType, proof: proofJWT)
+        let requestWithMissingType = JwtVcCredentialRequestDraft13(accessToken: accessToken, issuerMetaData: issuerMissingType, proof: proofJWT)
         
         XCTAssertThrowsError(try requestWithMissingType.constructRequest()) { error in
             XCTAssertTrue(error is InvalidDataProvidedException)

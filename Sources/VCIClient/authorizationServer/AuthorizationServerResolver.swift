@@ -74,7 +74,7 @@ class AuthorizationServerResolver {
         let authServerMetadata = try await authServerDiscoveryService.discover(baseUrl: authServerUrl)
 
         if authServerMetadata.issuer != authServerUrl {
-            throw AutorizationServerDiscoveryException(
+            throw AuthorizationServerDiscoveryException(
                 "Issuer mismatch: expected '\(authServerUrl)', got '\(authServerMetadata.issuer)'"
             )
         }
@@ -84,7 +84,7 @@ class AuthorizationServerResolver {
 
         if !supportedGrants.contains(expectedGrantType),
            expectedGrantType != GrantType.preAuthorized.rawValue {
-            throw AutorizationServerDiscoveryException(
+            throw AuthorizationServerDiscoveryException(
                 "Grant type '\(expectedGrantType)' not supported by auth server."
             )
         }
@@ -93,7 +93,7 @@ class AuthorizationServerResolver {
            (authServerMetadata.authorizationEndpoint == nil || authServerMetadata.authorizationEndpoint?.isEmpty == true) &&
            (authServerMetadata.interactiveAuthorizationEndpoint == nil || authServerMetadata.interactiveAuthorizationEndpoint?.isEmpty == true)
         {
-            throw AutorizationServerDiscoveryException(
+            throw AuthorizationServerDiscoveryException(
                 "Missing authorization_endpoint for authorization_code flow."
             )
         }
@@ -123,7 +123,7 @@ class AuthorizationServerResolver {
                 }
             }
 
-            throw AutorizationServerDiscoveryException(
+            throw AuthorizationServerDiscoveryException(
                 "None of the authorization servers responded with valid metadata."
             )
         }

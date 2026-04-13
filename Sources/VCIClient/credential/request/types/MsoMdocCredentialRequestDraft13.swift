@@ -1,6 +1,6 @@
 import Foundation
 
-class MsoMdocVcCredentialRequest: CredentialRequestProtocol {
+class MsoMdocCredentialRequestDraft13: CredentialRequestProtocol {
     let accessToken: String
     let issuerMetaData: IssuerMetadata
     let proof: JWTProof
@@ -20,13 +20,16 @@ class MsoMdocVcCredentialRequest: CredentialRequestProtocol {
     }
 
     func constructRequest() throws -> URLRequest {
-        var request = URLRequest(url: URL(string: issuerMetaData.credentialEndpoint)!)
+        guard let url = URL(string: issuerMetaData.credentialEndpoint) else {
+            throw DownloadFailedException("Invalid credential endpoint URL: \(issuerMetaData.credentialEndpoint)")
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
 
         guard let requestBody = try generateRequestBody() else {
-            throw DownloadFailedException("")
+            throw DownloadFailedException("Failed to generate mso_mdoc credential request body")
         }
         request.httpBody = requestBody
 
@@ -34,13 +37,11 @@ class MsoMdocVcCredentialRequest: CredentialRequestProtocol {
     }
 
     private func generateRequestBody() throws -> Data? {
-        let logTag = Util.getLogTag(className: String(describing: type(of: self)))
-
         guard let doctype = issuerMetaData.doctype else {
             throw DownloadFailedException("Missing doctype in issuer metadata")
         }
 
-        let credentialRequestBody = MsoMdocCredentialRequestBody(
+        let credentialRequestBody = MsoMdocCredentialRequestBodyDraft13(
             format: issuerMetaData.credentialFormat,
             doctype: doctype,
             proof: proof as JWTProof
@@ -49,14 +50,12 @@ class MsoMdocVcCredentialRequest: CredentialRequestProtocol {
         do {
             return try JSONEncoder().encode(credentialRequestBody)
         } catch {
-            print(
-                logTag,
-                "Error occurred while constructing request body: \(error.localizedDescription)")
+            Util.logError(message: "Error occurred while constructing request body: \(error.localizedDescription)", className: String(describing: type(of: self)))
             throw DownloadFailedException("Failed to encode credential request body")
         }
     }
 }
-struct MsoMdocCredentialRequestBody: Encodable {
+struct MsoMdocCredentialRequestBodyDraft13: Encodable {
     let format: CredentialFormat
     let proof: JWTProof
     let doctype: String

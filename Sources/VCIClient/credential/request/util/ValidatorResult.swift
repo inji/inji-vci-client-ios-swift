@@ -1,6 +1,6 @@
 import Foundation
 
-public class ValidatorResult {
+class ValidatorResult {
     var isValid: Bool = true
     var invalidFields: [String] = []
 

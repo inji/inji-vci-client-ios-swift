@@ -18,6 +18,8 @@ class IssuerMetadataService {
             let rawIssuerMetadata: [String: Any] =
                 try await getOrFetchRawIssuerMetadata(for: credentialIssuer)
 
+            try validateCredentialIssuerMatch(expected: credentialIssuer, rawMetadata: rawIssuerMetadata)
+
             let resolvedIssuerMetadata = try resolveMetadata(
                 credentialConfigurationId: credentialConfigurationId,
                 rawIssuerMetadata: rawIssuerMetadata
@@ -85,8 +87,19 @@ class IssuerMetadataService {
         }
     }
 
+    private func validateCredentialIssuerMatch(expected: String, rawMetadata: [String: Any]) throws {
+        guard let actual = rawMetadata["credential_issuer"] as? String else {
+            throw IssuerMetadataFetchException("Missing credential_issuer in issuer metadata")
+        }
+        if expected != actual {
+            throw IssuerMetadataFetchException("credential_issuer mismatch: expected '\(expected)', got '\(actual)'")
+        }
+    }
+
     func fetchCredentialConfigurationsSupported(from credentialIssuer: String) async throws -> [String: Any] {
         let rawIssuerMetadata: [String: Any] = try await fetchAndParseIssuerMetadata(from: credentialIssuer)
+
+        try validateCredentialIssuerMatch(expected: credentialIssuer, rawMetadata: rawIssuerMetadata)
 
         guard let configurations = rawIssuerMetadata["credential_configurations_supported"] as? [String: Any] else {
             throw IssuerMetadataFetchException("Missing or invalid 'credential_configurations_supported' in issuer metadata.")
@@ -137,6 +150,11 @@ class IssuerMetadataService {
         }
 
         let scope = credentialType["scope"] as? String ?? "openid"
+        let nonceEndpoint = rawIssuerMetadata["nonce_endpoint"] as? String
+        let specVersion = detectSpecVersion(
+            rawIssuerMetadata: rawIssuerMetadata,
+            credentialConfiguration: credentialType
+        )
 
         switch format {
         case .mso_mdoc:
@@ -152,7 +170,9 @@ class IssuerMetadataService {
                 doctype: doctype,
                 claims: claims?.mapValues { AnyCodable($0) },
                 authorizationServers: rawIssuerMetadata["authorization_servers"] as? [String],
-                scope: scope
+                nonceEndpoint: nonceEndpoint,
+                scope: scope,
+                specVersion: specVersion
             )
 
         case .ldp_vc:
@@ -166,7 +186,9 @@ class IssuerMetadataService {
                 context: context,
                 credentialFormat: .ldp_vc,
                 authorizationServers: rawIssuerMetadata["authorization_servers"] as? [String],
-                scope: scope
+                nonceEndpoint: nonceEndpoint,
+                scope: scope,
+                specVersion: specVersion
             )
 
         case .vc_sd_jwt, .dc_sd_jwt:
@@ -179,8 +201,10 @@ class IssuerMetadataService {
                 credentialEndpoint: credentialEndpoint,
                 credentialFormat: format,
                 authorizationServers: rawIssuerMetadata["authorization_servers"] as? [String],
+                nonceEndpoint: nonceEndpoint,
                 vct: vct,
-                scope: scope
+                scope: scope,
+                specVersion: specVersion
             )
 
         case .jwt_vc_json:
@@ -194,8 +218,30 @@ class IssuerMetadataService {
                 context: nil,
                 credentialFormat: format,
                 authorizationServers: rawIssuerMetadata["authorization_servers"] as? [String],
-                scope: scope
+                nonceEndpoint: nonceEndpoint,
+                scope: scope,
+                specVersion: specVersion
             )
         }
+    }
+
+    private func detectSpecVersion(
+        rawIssuerMetadata: [String: Any],
+        credentialConfiguration: [String: Any]
+    ) -> OID4VCIVersion {
+        if let nonceEndpoint = rawIssuerMetadata["nonce_endpoint"] as? String,
+           !nonceEndpoint.isEmpty {
+            return .v1
+        }
+        
+        if credentialConfiguration["credential_metadata"] != nil {
+                return .v1
+            }
+        
+        if credentialConfiguration["display"] != nil {
+            return .draft13
+        }
+
+        return .v1
     }
 }

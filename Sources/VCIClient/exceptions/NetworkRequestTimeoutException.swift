@@ -8,7 +8,7 @@ class NetworkRequestTimeoutException: VCIClientException {
         )
     }
     
-    public init(
+    init(
             message: String?,
             serverErrorCode: String? = nil,
             serverErrorDescription: String? = nil,

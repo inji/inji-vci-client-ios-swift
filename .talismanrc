@@ -49,4 +49,14 @@ fileignoreconfig:
   checksum: 69292c31ea3522763f54324b7e320c968be252aa595e81cf31ecc20f479a9a79
 - filename: Sources/VCIClient/credentialResponse/types/LdpVcCredentialResponse.swift
   checksum: d32fd6ae865bedac6bc0f09e05da930deb05351121daa217efb01e5db6ba88fe
+- filename: Sources/VCIClient/nonce/NonceService.swift
+  checksum: 3335ec2b053a306ccca3be5d26cb8b1beeaf1f8d44623b84011a7900c73be098
+- filename: Sources/VCIClient/credential/response/CredentialResponseV2.swift
+  checksum: eb4c08d4bb9f8e546b82367a657279da18b95b4ed248e2994a4dcf0274c304bd
+- filename: Tests/VCIClientTests/credentialResponse/CredentialResponseTest.swift
+  checksum: a74e0a7a9067d4809eb199c48dd49598ae2bcaaa448eb619f9830c5b3bde6e11
+- filename: Sources/VCIClient/credential/response/CredentialResponseDraft13.swift
+  checksum: 3c95c171c27aecf3c938df53b928658e054ecd0f37304b6bb71f1757d17cec12
+- filename: Sources/VCIClient/proof/CredentialRequestProofs.swift
+  checksum: 7cc4e85d1720b174fdb41267e6896812c9540e3eb59acd31f4b3ba156a66bbd0
 version: ""

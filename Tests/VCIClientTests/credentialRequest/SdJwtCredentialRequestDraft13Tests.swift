@@ -1,9 +1,9 @@
 import XCTest
 @testable import VCIClient
 
-final class SdJwtCredentialRequestTests: XCTestCase {
+final class SdJwtCredentialRequestDraft13Tests: XCTestCase {
 
-    var credentialRequest: SdJwtCredentialRequest!
+    var credentialRequest: SdJwtCredentialRequestDraft13!
     let accessToken = "AccessToken"
     let proofJWT = JWTProof(jwt: "xxxx.yyyy.zzzz")
 
@@ -15,7 +15,7 @@ final class SdJwtCredentialRequestTests: XCTestCase {
             credentialFormat: .vc_sd_jwt,
             vct: "IdentityCredential"
         )
-        credentialRequest = SdJwtCredentialRequest(accessToken: accessToken, issuerMetaData: issuer, proof: proofJWT)
+        credentialRequest = SdJwtCredentialRequestDraft13(accessToken: accessToken, issuerMetaData: issuer, proof: proofJWT)
     }
 
     override func tearDown() {
@@ -54,7 +54,7 @@ final class SdJwtCredentialRequestTests: XCTestCase {
             claims: ["family_name": AnyCodable("Paul")]
         )
 
-        let requestWithMissingVct = SdJwtCredentialRequest(accessToken: accessToken, issuerMetaData: issuerMissingVct, proof: proofJWT)
+        let requestWithMissingVct = SdJwtCredentialRequestDraft13(accessToken: accessToken, issuerMetaData: issuerMissingVct, proof: proofJWT)
 
         XCTAssertThrowsError(try requestWithMissingVct.constructRequest()) { error in
             guard let downloadError = error as? DownloadFailedException else {
@@ -77,7 +77,7 @@ final class SdJwtCredentialRequestTests: XCTestCase {
             credentialFormat: .vc_sd_jwt
         )
 
-        let requestWithMissingVct = SdJwtCredentialRequest(accessToken: accessToken, issuerMetaData: issuerMissingVct, proof: proofJWT)
+        let requestWithMissingVct = SdJwtCredentialRequestDraft13(accessToken: accessToken, issuerMetaData: issuerMissingVct, proof: proofJWT)
         let result = requestWithMissingVct.validateIssuerMetadata()
 
         XCTAssertFalse(result.isValid)
@@ -93,7 +93,7 @@ final class SdJwtCredentialRequestTests: XCTestCase {
                 vct: "SomeCredential"
             )
             
-            let request = SdJwtCredentialRequest(
+            let request = SdJwtCredentialRequestDraft13(
                 accessToken: accessToken,
                 issuerMetaData: issuer,
                 proof: proofJWT

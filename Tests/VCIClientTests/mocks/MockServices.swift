@@ -36,19 +36,27 @@ final class MockAuthServerResolver: AuthorizationServerResolver {
 
 final class MockTokenService: TokenService {
     var authCodeErrorToThrow: Error?
+    var preAuthTokenResponse = TokenResponse(
+        accessToken: "mock-access-token",
+        tokenType: "Bearer",
+        expiresIn: 3600,
+        cNonce: "mock-cnonce",
+        cNonceExpiresIn: 600
+    )
+    var authCodeTokenResponse = TokenResponse(
+        accessToken: "mock-access-token",
+        tokenType: "Bearer",
+        expiresIn: 3600,
+        cNonce: "mock-cnonce",
+        cNonceExpiresIn: 600
+    )
 
     override func getAccessToken(getTokenResponse: @escaping TokenResponseCallback,
                                  tokenEndpoint: String,
                                  timeoutMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
                                  preAuthCode: String,
                                  txCode: String? = nil) async throws -> TokenResponse {
-        return TokenResponse(
-            accessToken: "mock-access-token",
-            tokenType: "Bearer",
-            expiresIn: 3600,
-            cNonce: "mock-cnonce",
-            cNonceExpiresIn: 600
-        )
+        return preAuthTokenResponse
     }
 
     override func getAccessToken(getTokenResponse: @escaping TokenResponseCallback,
@@ -61,13 +69,22 @@ final class MockTokenService: TokenService {
         if let authCodeErrorToThrow {
             throw authCodeErrorToThrow
         }
-        return TokenResponse(
-            accessToken: "mock-access-token",
-            tokenType: "Bearer",
-            expiresIn: 3600,
-            cNonce: "mock-cnonce",
-            cNonceExpiresIn: 600
-        )
+        return authCodeTokenResponse
+    }
+}
+
+final class MockNonceService: NonceService {
+    var nonceToReturn: String? = "mock-nonce"
+    var errorToThrow: Error?
+
+    override func fetchNonce(
+        issuerMetadata: IssuerMetadata,
+        timeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
+    ) async throws -> String? {
+        if let errorToThrow {
+            throw errorToThrow
+        }
+        return nonceToReturn
     }
 }
 
@@ -85,7 +102,7 @@ final class MockCredentialRequestExecutor: CredentialRequestExecutor {
     override func requestCredential(
         issuerMetadata: IssuerMetadata,
         credentialConfigurationId: String,
-        proof: Proof,
+        proofs: CredentialRequestProofs,
         accessToken: String,
         timeoutInMillis: Int64 = 10000,
         session: NetworkManager = NetworkManager.shared
@@ -94,9 +111,37 @@ final class MockCredentialRequestExecutor: CredentialRequestExecutor {
         if let errorToThrow {
             throw errorToThrow
         }
-        if shouldThrow { throw DownloadFailedException("test-error: credential request failed") }
-        return CredentialResponse(credential: AnyCodable("mock-credential"), credentialIssuer: "mock-issuer", credentialConfigurationId: "mock-id")
+
+        return CredentialResponse(
+            credentials: [AnyCodable("mock-credential")],
+            credentialIssuer: "mock-issuer",
+            credentialConfigurationId: "mock-id"
+        )
     }
+
+    override func requestCredentialDraft13(
+        issuerMetadata: IssuerMetadata,
+        credentialConfigurationId: String,
+        proof: Proof,
+        accessToken: String,
+        timeoutInMillis: Int64 = 10000,
+        session: NetworkManager = NetworkManager.shared
+    ) async throws -> CredentialResponseDraft13? {
+        if shouldReturnNil { return nil }
+        if let errorToThrow {
+            throw errorToThrow
+        }
+        if shouldThrow {
+            throw DownloadFailedException("test-error: credential request failed")
+        }
+
+        return CredentialResponseDraft13(
+            credential: AnyCodable("mock-credential"),
+            credentialIssuer: "mock-issuer",
+            credentialConfigurationId: "mock-id"
+        )
+    }
+
 }
 
 final class MockCredentialOfferHandler: CredentialOfferFlowHandler {
@@ -109,7 +154,7 @@ final class MockCredentialOfferHandler: CredentialOfferFlowHandler {
         getTxCode: TxCodeCallback,
         authorizationMethods: [AuthorizationMethod],
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofJwt: @escaping ProofJwtCallback,
+        getProofs: @escaping ProofsCallback,
         onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
         networkSession: NetworkManager = NetworkManager.shared,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
@@ -118,8 +163,13 @@ final class MockCredentialOfferHandler: CredentialOfferFlowHandler {
         if shouldThrow {
             throw DownloadFailedException("Simulated failure")
         }
-        return CredentialResponse.mock()
+        return CredentialResponse(
+            credentials: [AnyCodable("mock-credential")],
+            credentialIssuer: "mock-issuer",
+            credentialConfigurationId: "mock-id"
+        )
     }
+
 }
 
 class MockTrustedIssuerHandler: TrustedIssuerFlowHandler {
@@ -130,18 +180,23 @@ class MockTrustedIssuerHandler: TrustedIssuerFlowHandler {
         credentialIssuer: String,
         credentialConfigurationId: String,
         clientMetadata: ClientMetadata,
-        authorizationMethods: [AuthorizationMethod]? = nil,
+        authorizationMethods: [AuthorizationMethod],
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofJwt: @escaping ProofJwtCallback,
+        getProofs: @escaping ProofsCallback,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
         networkSession: NetworkManager = NetworkManager.shared
-    ) async throws -> CredentialResponse? {
+    ) async throws -> CredentialResponse {
         didCallDownload = true
         if shouldThrow {
             throw DownloadFailedException("Simulated failure")
         }
-        return CredentialResponse.mock()
+        return CredentialResponse(
+            credentials: [AnyCodable("mock-credential")],
+            credentialIssuer: "mock-issuer",
+            credentialConfigurationId: "mock-id"
+        )
     }
+
 }
 
 final class MockNetworkManager: NetworkManager {
@@ -203,10 +258,10 @@ final class MockAuthServerDiscoveryService: AuthorizationServerDiscoveryService 
 
     override func discover(baseUrl: String) async throws -> AuthorizationServerMetadata {
         if urlsThatThrow.contains(baseUrl) {
-            throw AutorizationServerDiscoveryException("Simulated failure for \(baseUrl)")
+            throw AuthorizationServerDiscoveryException("Simulated failure for \(baseUrl)")
         }
         guard let metadata = mockMetadataByUrl[baseUrl] else {
-            throw AutorizationServerDiscoveryException("No mock available for \(baseUrl)")
+            throw AuthorizationServerDiscoveryException("No mock available for \(baseUrl)")
         }
         return metadata
     }
@@ -297,6 +352,7 @@ func mockIssuerMetadata() -> IssuerMetadata {
         claims: [:],
         authorizationServers: nil,
         tokenEndpoint: nil,
+        nonceEndpoint: nil,
         scope: ""
     )
 }
@@ -307,7 +363,7 @@ func mockProof() -> Proof {
 
 // MARK: - Subclassed Factory to Inject Mocks
 
-class TestableCredentialRequestFactory: CredentialRequestFactory {
+class TestableCredentialRequestFactory: CredentialRequestFactoryDraft13 {
     var credentialRequestToReturn: CredentialRequestProtocol!
 
     override func validateAndConstructCredentialRequest(credentialRequest: CredentialRequestProtocol) throws -> URLRequest {
@@ -323,20 +379,43 @@ class TestableCredentialRequestFactory: CredentialRequestFactory {
 final class MockAuthorizationCodeFlowService: AuthorizationCodeFlowService {
     var didCallRequestCredentials = false
     var shouldThrow = false
-    var responseToReturn: CredentialResponse?
+    var responseToReturn: CredentialResponseDraft13?
 
     override func requestCredentials(
         issuerMetadata: IssuerMetadata,
         clientMetadata: ClientMetadata,
         authorizationMethods: [AuthorizationMethod],
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofJwt: @escaping ProofJwtCallback,
+        getProofs: @escaping ProofsCallback,
         credentialConfigurationId: String,
-        proofSigningAlgorithmsSupportedSupported: [String],
+        proofSigningAlgorithmsSupported: [String],
         credentialOffer: CredentialOffer? = nil,
         downloadTimeOutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
         session: NetworkManager = NetworkManager.shared
     ) async throws -> CredentialResponse {
+        didCallRequestCredentials = true
+        if shouldThrow {
+            throw VCIClientException(code: "VCI-009", message: "Simulated error")
+        }
+        return CredentialResponse(
+            credentials: [AnyCodable("mock-credential")],
+            credentialIssuer: "mock-issuer",
+            credentialConfigurationId: "mock-id"
+        )
+    }
+
+    override func requestCredentialsDraft13(
+        issuerMetadata: IssuerMetadata,
+        clientMetadata: ClientMetadata,
+        authorizationMethods: [AuthorizationMethod],
+        getTokenResponse: @escaping TokenResponseCallback,
+        getProofJwt: @escaping ProofJwtCallback,
+        credentialConfigurationId: String,
+        proofSigningAlgorithmsSupported: [String],
+        credentialOffer: CredentialOffer? = nil,
+        downloadTimeOutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
+        session: NetworkManager = NetworkManager.shared
+    ) async throws -> CredentialResponseDraft13 {
         didCallRequestCredentials = true
         if shouldThrow {
             throw VCIClientException(code: "VCI-009", message: "Simulated error")
@@ -383,18 +462,36 @@ final class MockIssuerMetadataService: IssuerMetadataService {
 
 final class MockPreAuthFlowService: PreAuthCodeFlowService {
     var didCallRequest = false
-    var responseToReturn: CredentialResponse!
+    var responseToReturn: CredentialResponseDraft13!
 
     override func requestCredentials(
         issuerMetadata: IssuerMetadata,
         credentialOffer: CredentialOffer,
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofJwt: @escaping ProofJwtCallback,
+        getProofs: @escaping ProofsCallback,
         credentialConfigurationId: String,
-        proofSigningAlgorithmsSupportedSupported: [String],
+        proofSigningAlgorithmsSupported: [String],
         getTxCode: TxCodeCallback = nil,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
     ) async throws -> CredentialResponse {
+        didCallRequest = true
+        return CredentialResponse(
+            credentials: [AnyCodable("mock-credential")],
+            credentialIssuer: "mock-issuer",
+            credentialConfigurationId: "mock-id"
+        )
+    }
+
+    override func requestCredentialsDraft13(
+        issuerMetadata: IssuerMetadata,
+        credentialOffer: CredentialOffer,
+        getTokenResponse: @escaping TokenResponseCallback,
+        getProofJwt: @escaping ProofJwtCallback,
+        credentialConfigurationId: String,
+        proofSigningAlgorithmsSupported: [String],
+        getTxCode: TxCodeCallback = nil,
+        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
+    ) async throws -> CredentialResponseDraft13 {
         didCallRequest = true
         return responseToReturn
     }

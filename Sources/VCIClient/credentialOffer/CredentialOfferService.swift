@@ -1,9 +1,9 @@
 import Foundation
 
-public class CredentialOfferService {
+class CredentialOfferService {
     private let session: NetworkManager
 
-    public init(session: NetworkManager = NetworkManager.shared) {
+    init(session: NetworkManager = NetworkManager.shared) {
         self.session = session
     }
 

@@ -4,30 +4,115 @@ class PreAuthCodeFlowService {
     private let authServerResolver: AuthorizationServerResolver
     private let tokenService: TokenService
     private let credentialExecutor: CredentialRequestExecutor
+    private let nonceService: NonceService
 
     init(
         authServerResolver: AuthorizationServerResolver = AuthorizationServerResolver(),
         tokenService: TokenService = TokenService(),
-        credentialExecutor: CredentialRequestExecutor = CredentialRequestExecutor()
+        credentialExecutor: CredentialRequestExecutor = CredentialRequestExecutor(),
+        nonceService: NonceService = NonceService()
     ) {
         self.authServerResolver = authServerResolver
         self.tokenService = tokenService
         self.credentialExecutor = credentialExecutor
+        self.nonceService = nonceService
     }
 
     func requestCredentials(
         issuerMetadata: IssuerMetadata,
         credentialOffer: CredentialOffer,
         getTokenResponse: @escaping TokenResponseCallback,
-        getProofJwt: @escaping ProofJwtCallback,
+        getProofs: @escaping ProofsCallback,
         credentialConfigurationId: String,
-        proofSigningAlgorithmsSupportedSupported: [String],
+        proofSigningAlgorithmsSupported: [String],
         getTxCode: TxCodeCallback = nil,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
     ) async throws -> CredentialResponse {
+        try await executeRequestCredentials(
+            issuerMetadata: issuerMetadata,
+            credentialOffer: credentialOffer,
+            getTokenResponse: getTokenResponse,
+            credentialConfigurationId: credentialConfigurationId,
+            proofSigningAlgorithmsSupported: proofSigningAlgorithmsSupported,
+            getTxCode: getTxCode,
+            downloadTimeoutInMillis: downloadTimeoutInMillis
+        ) { token in
+            let proofs: CredentialRequestProofs
+            let nonce = try await nonceService.fetchNonce(issuerMetadata: issuerMetadata, timeoutInMillis: downloadTimeoutInMillis)
+            do {
+                proofs = try await getProofs(
+                    issuerMetadata.credentialIssuer,
+                    nonce,
+                    proofSigningAlgorithmsSupported
+                )
+            } catch {
+                throw DownloadFailedException("Failed to obtain proofs from callback: \(error.localizedDescription)")
+            }
 
+            return try await self.credentialExecutor.requestCredential(
+                issuerMetadata: issuerMetadata,
+                credentialConfigurationId: credentialConfigurationId,
+                proofs: proofs,
+                accessToken: token.accessToken,
+                timeoutInMillis: downloadTimeoutInMillis
+            )
+        }
+    }
+
+    func requestCredentialsDraft13(
+        issuerMetadata: IssuerMetadata,
+        credentialOffer: CredentialOffer,
+        getTokenResponse: @escaping TokenResponseCallback,
+        getProofJwt: @escaping ProofJwtCallback,
+        credentialConfigurationId: String,
+        proofSigningAlgorithmsSupported: [String],
+        getTxCode: TxCodeCallback = nil,
+        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
+    ) async throws -> CredentialResponseDraft13 {
+        let response = try await executeRequestCredentials(
+            issuerMetadata: issuerMetadata,
+            credentialOffer: credentialOffer,
+            getTokenResponse: getTokenResponse,
+            credentialConfigurationId: credentialConfigurationId,
+            proofSigningAlgorithmsSupported: proofSigningAlgorithmsSupported,
+            getTxCode: getTxCode,
+            downloadTimeoutInMillis: downloadTimeoutInMillis
+        ) { token in
+            let nonce = try NonceService.extractNonceFromTokenResponse(token)
+            let jwt: String
+            do {
+                jwt = try await getProofJwt(
+                    issuerMetadata.credentialIssuer,
+                    nonce,
+                    proofSigningAlgorithmsSupported
+                )
+            } catch {
+                throw DownloadFailedException("Failed to obtain proof JWT from callback: \(error.localizedDescription)")
+            }
+
+            return try await self.credentialExecutor.requestCredentialDraft13(
+                issuerMetadata: issuerMetadata,
+                credentialConfigurationId: credentialConfigurationId,
+                proof: JWTProof(jwt: jwt),
+                accessToken: token.accessToken,
+                timeoutInMillis: downloadTimeoutInMillis
+            )
+        }
+
+        return response
+    }
+
+    private func executeRequestCredentials<Response>(
+        issuerMetadata: IssuerMetadata,
+        credentialOffer: CredentialOffer,
+        getTokenResponse: @escaping TokenResponseCallback,
+        credentialConfigurationId: String,
+        proofSigningAlgorithmsSupported: [String],
+        getTxCode: TxCodeCallback,
+        downloadTimeoutInMillis: Int64,
+        requestCredential: (TokenResponse) async throws -> Response?
+    ) async throws -> Response {
         do {
-
             let authServerMetadata = try await authServerResolver
                 .resolveForPreAuth(
                     issuerMetadata: issuerMetadata,
@@ -67,29 +152,14 @@ class PreAuthCodeFlowService {
                 txCode: txCode
             )
 
-            let jwt = try await getProofJwt(
-                issuerMetadata.credentialIssuer,
-                token.cNonce,
-                proofSigningAlgorithmsSupportedSupported
-            )
 
-            let proof = JWTProof(jwt: jwt)
-
-            guard let credential = try await credentialExecutor.requestCredential(
-                issuerMetadata: issuerMetadata,
-                credentialConfigurationId: credentialConfigurationId,
-                proof: proof,
-                accessToken: token.accessToken,
-                timeoutInMillis: downloadTimeoutInMillis
-            ) else {
+            guard let credential = try await requestCredential(token) else {
                 throw DownloadFailedException("Credential request failed.")
             }
 
             return credential
-
         } catch let e as DownloadFailedException {
             throw e
-
         } catch let e as VCIClientException {
             throw DownloadFailedException(
                 message: "Pre-Authorized Code Flow failed: \(e.message)",
@@ -97,7 +167,6 @@ class PreAuthCodeFlowService {
                 serverErrorDescription: e.serverErrorDescription,
                 cause: e
             )
-
         } catch {
             throw DownloadFailedException(
                 message: "Unexpected error during Pre-Authorized Code Flow: \(error.localizedDescription)",
@@ -105,4 +174,5 @@ class PreAuthCodeFlowService {
             )
         }
     }
+
 }

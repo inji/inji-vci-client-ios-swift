@@ -83,7 +83,7 @@ final class AuthorizationServerResolverTests: XCTestCase {
         do {
             _ = try await resolver.resolveForAuthCode(issuerMetadata: issuer)
             XCTFail("Expected AuthServerDiscoveryException but no error was thrown")
-        } catch let error as AutorizationServerDiscoveryException {
+        } catch let error as AuthorizationServerDiscoveryException {
             XCTAssertTrue(error.message.contains("None of the authorization servers"))
         } catch {
             XCTFail("Expected AuthServerDiscoveryException, but got \(type(of: error)): \(error)")
@@ -134,7 +134,7 @@ final class AuthorizationServerResolverTests: XCTestCase {
         do {
             _ = try await resolver.resolveForAuthCode(issuerMetadata: issuer)
             XCTFail("Expected AuthServerDiscoveryException but no error was thrown")
-        } catch let error as AutorizationServerDiscoveryException {
+        } catch let error as AuthorizationServerDiscoveryException {
             XCTAssertTrue(error.message.contains("Issuer mismatch"))
         } catch {
             XCTFail("Expected AuthServerDiscoveryException, but got \(type(of: error)): \(error)")
@@ -162,7 +162,7 @@ final class AuthorizationServerResolverTests: XCTestCase {
         do {
             _ = try await resolver.resolveForAuthCode(issuerMetadata: issuer)
             XCTFail("Expected AuthServerDiscoveryException but no error was thrown")
-        } catch let error as AutorizationServerDiscoveryException {
+        } catch let error as AuthorizationServerDiscoveryException {
             print("---------",error.localizedDescription)
             XCTAssertTrue(error.message.contains("not supported"))
         } catch {

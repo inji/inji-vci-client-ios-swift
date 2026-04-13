@@ -1,6 +1,37 @@
 
 import XCTest
 @testable import VCIClient
+final class IssuerMetadataSpecVersionTests: XCTestCase {
+    func testSpecVersion_withNonceEndpoint_returnsV1() {
+        let metadata = IssuerMetadata(
+            credentialIssuer: "issuer",
+            credentialEndpoint: "https://example.com/credential",
+            credentialFormat: .ldp_vc,
+            nonceEndpoint: "https://example.com/nonce"
+        )
+        XCTAssertEqual(metadata.specVersion, .v1)
+    }
+
+    func testSpecVersion_defaultsToV1WhenUnspecified() {
+        let metadata = IssuerMetadata(
+            credentialIssuer: "issuer",
+            credentialEndpoint: "https://example.com/credential",
+            credentialFormat: .ldp_vc
+        )
+        XCTAssertEqual(metadata.specVersion, .v1)
+    }
+
+    func testSpecVersion_canBeExplicitlyMarkedAsDraft13() {
+        let metadata = IssuerMetadata(
+            credentialIssuer: "issuer",
+            credentialEndpoint: "https://example.com/credential",
+            credentialFormat: .ldp_vc,
+            specVersion: .draft13
+        )
+        XCTAssertEqual(metadata.specVersion, .draft13)
+    }
+}
+
 final class IssuerMetadataServiceTests: XCTestCase {
 
     func makeService(response: String, shouldThrow: Bool = false) -> IssuerMetadataService {
@@ -63,6 +94,37 @@ final class IssuerMetadataServiceTests: XCTestCase {
         XCTAssertEqual(result.issuerMetadata.credentialType, ["VerifiableCredential", "ProfileCredential"])
         XCTAssertEqual(result.issuerMetadata.scope, "identity")
         XCTAssertEqual(result.issuerMetadata.authorizationServers, ["https://auth.issuer.com"])
+    }
+
+    func test_fetch_ldp_vc_withoutNonceEndpoint_usesDraft13WhenConfigurationHasDisplayHint() async throws {
+        let json = """
+        {
+          "credential_issuer": "https://issuer.com",
+          "credential_endpoint": "https://issuer.com/credential",
+          "credential_configurations_supported": {
+            "vc1": {
+              "format": "ldp_vc",
+              "display": [
+                {
+                  "name": "Profile Credential"
+                }
+              ],
+              "credential_definition": {
+                "type": ["VerifiableCredential", "ProfileCredential"],
+                "@context": ["https://www.w3.org/2018/credentials/v1"]
+              }
+            }
+          }
+        }
+        """
+
+        let service = makeService(response: json)
+        let result = try await service.fetchIssuerMetadataResult(
+            credentialIssuer: "https://issuer.com",
+            credentialConfigurationId: "vc1"
+        )
+
+        XCTAssertEqual(result.issuerMetadata.specVersion, .draft13)
     }
 
     func test_fetch_emptyResponse_shouldThrow() async {
@@ -175,6 +237,56 @@ final class IssuerMetadataServiceTests: XCTestCase {
                 credentialIssuer: "https://issuer.com",
                 credentialConfigurationId: "conf1"
             )
+        }
+    }
+
+    func test_fetch_credentialIssuerMismatch_shouldThrow() async {
+        let json = """
+        {
+          "credential_issuer": "https://other.issuer.com",
+          "credential_endpoint": "https://other.issuer.com/credential",
+          "credential_configurations_supported": {
+            "vc1": {
+              "format": "ldp_vc",
+              "credential_definition": {
+                "type": ["VerifiableCredential"],
+                "@context": ["https://www.w3.org/2018/credentials/v1"]
+              }
+            }
+          }
+        }
+        """
+        let service = makeService(response: json)
+
+        await assertThrowsVCIErrorContainingMessage(
+            expectedType: IssuerMetadataFetchException.self,
+            messageContains: "credential_issuer mismatch"
+        ) {
+            try await service.fetchIssuerMetadataResult(
+                credentialIssuer: "https://issuer.com",
+                credentialConfigurationId: "vc1"
+            )
+        }
+    }
+
+    func test_fetchCredentialConfigurationsSupported_credentialIssuerMismatch_shouldThrow() async {
+        let json = """
+        {
+          "credential_issuer": "https://other.issuer.com",
+          "credential_configurations_supported": {
+            "vc1": {
+              "format": "ldp_vc"
+            }
+          }
+        }
+        """
+        let service = makeService(response: json)
+
+        await assertThrowsVCIErrorContainingMessage(
+            expectedType: IssuerMetadataFetchException.self,
+            messageContains: "credential_issuer mismatch"
+        ) {
+            try await service.fetchCredentialConfigurationsSupported(from: "https://issuer.com")
         }
     }
 
@@ -361,6 +473,7 @@ final class IssuerMetadataServiceTests: XCTestCase {
     func test_fetchCredentialConfigurationsSupported_success() async throws {
         let json = """
         {
+          "credential_issuer": "https://issuer.com",
           "credential_configurations_supported": {
             "vc1": {
               "format": "ldp_vc"
@@ -399,6 +512,7 @@ final class IssuerMetadataServiceTests: XCTestCase {
     func test_fetchCredentialConfigurationsSupported_emptyBlock_shouldThrow() async {
         let json = """
         {
+          "credential_issuer": "https://issuer.com",
           "credential_configurations_supported": {}
         }
         """
@@ -415,6 +529,7 @@ final class IssuerMetadataServiceTests: XCTestCase {
     func test_fetchCredentialConfigurationsSupported_invalidConfigStructure_shouldThrow() async {
         let json = """
         {
+          "credential_issuer": "https://issuer.com",
           "credential_configurations_supported": {
             "vc1": "not a dictionary"
           }
@@ -433,6 +548,7 @@ final class IssuerMetadataServiceTests: XCTestCase {
     func test_fetchCredentialConfigurationsSupported_missingFormat_shouldThrow() async {
         let json = """
         {
+          "credential_issuer": "https://issuer.com",
           "credential_configurations_supported": {
             "vc1": {
               "scope": "identity"

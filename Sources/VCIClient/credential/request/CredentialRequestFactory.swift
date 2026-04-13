@@ -1,58 +1,58 @@
 import Foundation
 
-public protocol CredentialRequestFactoryProtocol {
+class CredentialRequestFactory {
     func createCredentialRequest(
-        credentialFormat: CredentialFormat,
         accessToken: String,
         issuer: IssuerMetadata,
-        proofJwt: Proof) throws -> URLRequest
+        credentialConfigurationId: String,
+        proofs: CredentialRequestProofs
+    ) throws -> URLRequest {
+        guard !proofs.isEmpty else {
+            throw InvalidDataProvidedException("Proof collection cannot be empty")
+        }
+
+        var request = try constructBaseRequest(
+            accessToken: accessToken,
+            issuer: issuer
+        )
+        request.httpBody = try constructRequestBody(
+            credentialConfigurationId: credentialConfigurationId,
+            proofs: proofs
+        )
+        return request
+    }
+
+    func constructBaseRequest(
+        accessToken: String,
+        issuer: IssuerMetadata
+    ) throws -> URLRequest {
+        guard let url = URL(string: issuer.credentialEndpoint) else {
+            throw DownloadFailedException("Invalid credential endpoint URL")
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        return request
+    }
+
+    func constructRequestBody(
+        credentialConfigurationId: String,
+        proofs: CredentialRequestProofs
+    ) throws -> Data {
+        let encoder = JSONEncoder()
+        return try encoder.encode(
+            CredentialRequestBody(
+                credential_configuration_id: credentialConfigurationId,
+                proofs: proofs
+            )
+        )
+    }
 }
 
-class CredentialRequestFactory: CredentialRequestFactoryProtocol {
-    static let shared = CredentialRequestFactory()
-    
-    func createCredentialRequest(
-        credentialFormat: CredentialFormat,
-        accessToken: String,
-        issuer: IssuerMetadata,
-        proofJwt: Proof) throws -> URLRequest {
 
-            guard let proof = proofJwt as? JWTProof, !proof.jwt.isEmpty else {
-                throw InvalidDataProvidedException("Proof object cannot be empty or invalid")
-            }
-
-            switch credentialFormat {
-            case .ldp_vc:
-                return try validateAndConstructCredentialRequest(credentialRequest: LdpVcCredentialRequest(
-                    accessToken: accessToken,
-                    issuerMetaData: issuer,
-                    proof: proof))
-                    
-            case .jwt_vc_json:
-                 return try validateAndConstructCredentialRequest(credentialRequest: JwtVcCredentialRequest(
-                    accessToken: accessToken,
-                    issuerMetaData: issuer,
-                    proof: proof))
-                    
-            case .mso_mdoc:
-                return try validateAndConstructCredentialRequest(credentialRequest: MsoMdocVcCredentialRequest(
-                    accessToken: accessToken, 
-                    issuerMetaData: issuer, 
-                    proof: proof))
-                    
-            case .vc_sd_jwt, .dc_sd_jwt:
-                return try validateAndConstructCredentialRequest(credentialRequest: SdJwtCredentialRequest(
-                    accessToken: accessToken, 
-                    issuerMetaData: issuer, 
-                    proof: proof))
-            }
-    }
-
-    func validateAndConstructCredentialRequest(credentialRequest: CredentialRequestProtocol) throws -> URLRequest {
-        let issuerMetadataValidatorResult = credentialRequest.validateIssuerMetadata()
-        if issuerMetadataValidatorResult.isValid {
-            return try credentialRequest.constructRequest()
-        }
-        throw InvalidDataProvidedException("invalid fields: \(issuerMetadataValidatorResult.invalidFields.joined())")
-    }
+private struct CredentialRequestBody: Encodable {
+    let credential_configuration_id: String
+    let proofs: CredentialRequestProofs
 }

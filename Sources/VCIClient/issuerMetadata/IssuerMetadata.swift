@@ -10,8 +10,13 @@ public struct IssuerMetadata : Codable{
     public let claims: [String: AnyCodable]?
     public let authorizationServers: [String]?
     public let tokenEndpoint: String?
+    public let nonceEndpoint: String?
     public let vct: String?
     public let scope: String?
+    public let specVersion: OID4VCIVersion
+
+    /// Detected spec version based on issuer metadata hints.
+    /// This is resolved during metadata parsing, with v1 as the fallback when the hints are inconclusive.
 
     public init(
         credentialIssuer: String,
@@ -23,8 +28,10 @@ public struct IssuerMetadata : Codable{
         claims: [String: AnyCodable]? = nil,
         authorizationServers: [String]? = nil,
         tokenEndpoint: String? = nil,
+        nonceEndpoint: String? = nil,
         vct: String? = nil,
-        scope: String = "openId"
+        scope: String = "openId",
+        specVersion: OID4VCIVersion = .v1
     ) {
         self.credentialIssuer = credentialIssuer
         self.credentialEndpoint = credentialEndpoint
@@ -35,7 +42,9 @@ public struct IssuerMetadata : Codable{
         self.claims = claims
         self.authorizationServers = authorizationServers
         self.tokenEndpoint = tokenEndpoint
+        self.nonceEndpoint = nonceEndpoint
         self.vct = vct
         self.scope = scope
+        self.specVersion = specVersion
     }
 }

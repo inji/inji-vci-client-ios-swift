@@ -5,8 +5,8 @@ struct NetworkResponse {
     let headers: [AnyHashable: Any]?
 }
 
-public class NetworkManager {
-    public static let shared = NetworkManager()
+class NetworkManager {
+    static let shared = NetworkManager()
 
     func sendRequest(
         url: String,
@@ -41,7 +41,7 @@ public class NetworkManager {
         return try await sendRequest(request: request)
     }
 
-    func sendRequestV2(
+    func sendRawRequest(
         url: String,
         method: HttpMethod,
         headers: [String: String]? = nil,

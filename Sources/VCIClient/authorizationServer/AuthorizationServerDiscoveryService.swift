@@ -43,6 +43,6 @@ class AuthorizationServerDiscoveryService {
             )
         }
 
-        throw AutorizationServerDiscoveryException("Failed to discover authorization server metadata at both endpoints.")
+        throw AuthorizationServerDiscoveryException("Failed to discover authorization server metadata at both endpoints.")
     }
 }
