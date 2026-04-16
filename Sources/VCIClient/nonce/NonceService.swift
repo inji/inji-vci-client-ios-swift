@@ -11,7 +11,7 @@ class NonceService {
         if let cNonce = tokenResponse.cNonce, !cNonce.isEmpty {
             return cNonce
         }
-        throw DownloadFailedException("No c_nonce in token response")
+        return nil
     }
 
     func fetchNonce(
