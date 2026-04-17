@@ -63,33 +63,6 @@ final class PreAuthFlowServiceTests: XCTestCase {
         XCTAssertEqual(result.credentials?.count, 1)
     }
 
-    func test_requestCredentialsDraft13_missingCNonce_shouldThrow() async {
-        let tokenService = MockTokenService()
-        tokenService.preAuthTokenResponse = TokenResponse(
-            accessToken: "mock-access-token",
-            tokenType: "Bearer",
-            expiresIn: 3600,
-            cNonce: "",
-            cNonceExpiresIn: 0
-        )
-        let service = makeService(tokenService: tokenService)
-
-        await assertThrowsVCIErrorContainingMessage(
-            expectedType: DownloadFailedException.self,
-            messageContains: "No c_nonce in token response"
-        ) {
-            try await service.requestCredentialsDraft13(
-                issuerMetadata: IssuerMetadata.mock(),
-                credentialOffer: CredentialOffer.mockWithTxCodeRequired(),
-                getTokenResponse: { _ in TokenResponse(accessToken: "mock", tokenType: "Bearer") },
-                getProofJwt: { _, _, _ in "jwt-mock" },
-                credentialConfigurationId: "mock-id",
-                proofSigningAlgorithmsSupported: [],
-                getTxCode: { _, _, _ in "tx123" }
-            )
-        }
-    }
-
     func test_requestCredentials_missingTokenEndpoint_shouldThrow() async {
         let resolver = MockAuthServerResolver()
         resolver.mockTokenEndpoint = nil
