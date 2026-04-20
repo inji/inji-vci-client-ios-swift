@@ -113,7 +113,7 @@ final class MockCredentialRequestExecutor: CredentialRequestExecutor {
         }
 
         return CredentialResponse(
-            credentials: [AnyCodable("mock-credential")],
+            credentials: [CredentialItem(credential: AnyCodable("mock-credential"))],
             credentialIssuer: "mock-issuer",
             credentialConfigurationId: "mock-id"
         )
@@ -164,7 +164,7 @@ final class MockCredentialOfferHandler: CredentialOfferFlowHandler {
             throw DownloadFailedException("Simulated failure")
         }
         return CredentialResponse(
-            credentials: [AnyCodable("mock-credential")],
+            credentials: [CredentialItem(credential: AnyCodable("mock-credential"))],
             credentialIssuer: "mock-issuer",
             credentialConfigurationId: "mock-id"
         )
@@ -191,7 +191,7 @@ class MockTrustedIssuerHandler: TrustedIssuerFlowHandler {
             throw DownloadFailedException("Simulated failure")
         }
         return CredentialResponse(
-            credentials: [AnyCodable("mock-credential")],
+            credentials: [CredentialItem(credential: AnyCodable("mock-credential"))],
             credentialIssuer: "mock-issuer",
             credentialConfigurationId: "mock-id"
         )
@@ -398,7 +398,7 @@ final class MockAuthorizationCodeFlowService: AuthorizationCodeFlowService {
             throw VCIClientException(code: "VCI-009", message: "Simulated error")
         }
         return CredentialResponse(
-            credentials: [AnyCodable("mock-credential")],
+            credentials: [CredentialItem(credential: AnyCodable("mock-credential"))],
             credentialIssuer: "mock-issuer",
             credentialConfigurationId: "mock-id"
         )
@@ -476,7 +476,7 @@ final class MockPreAuthFlowService: PreAuthCodeFlowService {
     ) async throws -> CredentialResponse {
         didCallRequest = true
         return CredentialResponse(
-            credentials: [AnyCodable("mock-credential")],
+            credentials: [CredentialItem(credential: AnyCodable("mock-credential"))],
             credentialIssuer: "mock-issuer",
             credentialConfigurationId: "mock-id"
         )

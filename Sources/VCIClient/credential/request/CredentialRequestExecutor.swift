@@ -48,6 +48,17 @@ class CredentialRequestExecutor {
                     )
                 }
 
+                if let items = result.credentials {
+                    for (index, item) in items.enumerated() {
+                        guard let credential = item.credential,
+                              !(credential.value is NSNull) else {
+                            throw DownloadFailedException(
+                                "Invalid credential response: credentials[\(index)] is missing the 'credential' key or has a null value."
+                            )
+                        }
+                    }
+                }
+
                 result.credentialConfigurationId = credentialConfigurationId
                 result.credentialIssuer = issuerMetadata.credentialIssuer
 

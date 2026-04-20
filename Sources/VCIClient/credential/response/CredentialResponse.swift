@@ -1,7 +1,15 @@
 import Foundation
 
+public struct CredentialItem: Codable {
+    public let credential: AnyCodable?
+
+    public init(credential: AnyCodable) {
+        self.credential = credential
+    }
+}
+
 public struct CredentialResponse: Codable {
-    public let credentials: [AnyCodable]?
+    public let credentials: [CredentialItem]?
     public var credentialIssuer: String?
     public var credentialConfigurationId: String?
 
@@ -12,7 +20,7 @@ public struct CredentialResponse: Codable {
     }
 
     public init(
-        credentials: [AnyCodable]? = nil,
+        credentials: [CredentialItem]? = nil,
         credentialIssuer: String? = nil,
         credentialConfigurationId: String? = nil
     ) {
