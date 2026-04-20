@@ -6,8 +6,8 @@ class CredentialResponseTest: XCTestCase {
         let responseBodyJsonData = """
         {
             "credentials": [
-                { "id": "credential-1" },
-                { "id": "credential-2" }
+                { "credential": "LUpixVCWJk0eOt4CXQe1NXK.WZwmhmn9OQp6YxX0a2L" },
+                { "credential": "ABCxyz123.456def" }
             ]
         }
         """.data(using: .utf8)!
@@ -15,7 +15,27 @@ class CredentialResponseTest: XCTestCase {
         let credentialResponse = try JSONDecoder().decode(CredentialResponse.self, from: responseBodyJsonData)
 
         XCTAssertEqual(credentialResponse.credentials?.count, 2)
-        XCTAssertEqual((credentialResponse.credentials?.first?.value as? [String: Any])?["id"] as? String, "credential-1")
+        XCTAssertEqual(credentialResponse.credentials?.first?.credential?.value as? String, "LUpixVCWJk0eOt4CXQe1NXK.WZwmhmn9OQp6YxX0a2L")
+    }
+
+    func testCredentialResponseWithJsonObjectCredential() throws {
+        let responseBodyJsonData = """
+        {
+            "credentials": [
+                {
+                    "credential": {
+                        "@context": ["https://www.w3.org/2018/credentials/v1"],
+                        "type": ["VerifiableCredential"]
+                    }
+                }
+            ]
+        }
+        """.data(using: .utf8)!
+
+        let credentialResponse = try JSONDecoder().decode(CredentialResponse.self, from: responseBodyJsonData)
+
+        XCTAssertEqual(credentialResponse.credentials?.count, 1)
+        XCTAssertNotNil(credentialResponse.credentials?.first?.credential?.value as? [String: Any])
     }
 
     func testLdpVcCredentialResponse() {

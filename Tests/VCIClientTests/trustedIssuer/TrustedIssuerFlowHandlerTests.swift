@@ -33,7 +33,7 @@ final class TrustedIssuerHandlerTests: XCTestCase {
         let actualJson = try JSONSerialization.jsonObject(with: actualData!, options: []) as? [String: Any]
 
         let expectedJson: [String: Any] = [
-            "credentials": ["mock"],
+            "credentials": [["credential": "mock"]],
             "credential_issuer": "mock-issuer",
             "credential_configuration_id": "mock"
         ]
@@ -101,7 +101,7 @@ final class TrustedIssuerHandlerTests: XCTestCase {
 
         XCTAssertTrue(mockService.didCallRequestCredentials)
         XCTAssertEqual(result.credentials?.count, 1)
-        XCTAssertEqual(result.credentials?.first?.value as? String, "draft13-credential")
+        XCTAssertEqual(result.credentials?.first?.credential?.value as? String, "draft13-credential")
         XCTAssertEqual(result.credentialIssuer, "mock-issuer")
         XCTAssertEqual(result.credentialConfigurationId, "mock")
     }

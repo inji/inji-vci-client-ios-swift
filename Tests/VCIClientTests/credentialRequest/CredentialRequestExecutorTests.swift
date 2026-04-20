@@ -98,7 +98,7 @@ final class CredentialRequestExecutorTests: XCTestCase {
         factory.mockRequestToReturn = URLRequest(url: URL(string: "https://mocked.com")!)
 
         let networkManager = MockNetworkManager()
-        networkManager.responseBody = "{\"credentials\":[\"test\"]}"
+        networkManager.responseBody = "{\"credentials\":[{\"credential\":\"test\"}]}"
 
         let executor = CredentialRequestExecutor(credentialRequestFactory: factory)
         let result = try await executor.requestCredential(
@@ -112,7 +112,7 @@ final class CredentialRequestExecutorTests: XCTestCase {
 
         XCTAssertNotNil(result)
         XCTAssertEqual(result?.credentials?.count, 1)
-        XCTAssertEqual(result?.credentials?.first?.value as? String, "test")
+        XCTAssertEqual(result?.credentials?.first?.credential?.value as? String, "test")
         XCTAssertEqual(result?.credentialConfigurationId, "mock-config")
         XCTAssertEqual(result?.credentialIssuer, mockIssuerMetadata().credentialIssuer)
     }

@@ -102,7 +102,7 @@ class CredentialOfferFlowHandler {
                     throw CredentialOfferFetchFailedException("Credential offer does not contain a supported grant type")
                 }
                 return CredentialResponse(
-                    credentials: [draft13Response.credential],
+                    credentials: [CredentialItem(credential: draft13Response.credential)],
                     credentialIssuer: draft13Response.credentialIssuer,
                     credentialConfigurationId: draft13Response.credentialConfigurationId
                 )

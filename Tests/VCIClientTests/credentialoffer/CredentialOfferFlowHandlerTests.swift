@@ -99,7 +99,7 @@ final class CredentialOfferFlowHandlerTests: XCTestCase {
 
         XCTAssertTrue(preAuthFlowService.didCallRequest)
         XCTAssertEqual(result.credentials?.count, 1)
-        XCTAssertEqual(result.credentials?.first?.value as? String, "draft13-credential")
+        XCTAssertEqual(result.credentials?.first?.credential?.value as? String, "draft13-credential")
         XCTAssertEqual(result.credentialIssuer, "mock-issuer")
         XCTAssertEqual(result.credentialConfigurationId, "mock")
     }
