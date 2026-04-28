@@ -12,10 +12,10 @@ internal protocol OpenID4VPInteracting {
         verifiableCredentials: [String: [FormatType: [OpenID4VPAnyCodable]]],
         holderId: String?,
         ldpVpSignatureSuite: String?
-    ) async throws -> [UnsignedVPTokenV2]
+    ) async throws -> [UnsignedVPToken]
     
     func constructVPResponse(
-        vpTokenSigningResults: [VPTokenSigningResultV2]
+        vpTokenSigningResults: [VPTokenSigningResult]
     ) -> [String: Any]
     
     func constructErrorInfo(exception: Error) -> [String: Any]
@@ -44,7 +44,7 @@ class OpenID4VPInteraction: OpenID4VPInteracting {
         verifiableCredentials: [String: [FormatType: [OpenID4VPAnyCodable]]],
         holderId: String?,
         ldpVpSignatureSuite: String?
-    ) async throws -> [UnsignedVPTokenV2] {
+    ) async throws -> [UnsignedVPToken] {
         try await openId4vp.constructUnsignedVPToken(
             verifiableCredentials: verifiableCredentials,
             holderId: holderId,
@@ -53,7 +53,7 @@ class OpenID4VPInteraction: OpenID4VPInteracting {
     }
     
     func constructVPResponse(
-        vpTokenSigningResults: [VPTokenSigningResultV2]
+        vpTokenSigningResults: [VPTokenSigningResult]
     ) -> [String: Any] {
         openId4vp.constructVPResponse(vpTokenSigningResults: vpTokenSigningResults)
     }

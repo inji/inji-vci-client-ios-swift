@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/valpackett/SwiftCBOR", .upToNextMajor(from: "0.5.0")),
-        .package(url: "https://github.com/tw-mosip/inji-openid4vp-ios-swift", branch: "2288")
+        .package(url: "https://github.com/tw-mosip/inji-openid4vp-ios-swift", branch: "2287-dcql-query-support")
     ],
     targets: [
         .target(
