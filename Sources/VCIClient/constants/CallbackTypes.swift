@@ -18,7 +18,7 @@ public typealias TxCodeCallback = ((_ inputMode: String?, _ description: String?
 
 // Presentation During Issuance related Callbacks
 
-public typealias SelectCredentialsForPresentationCallback = (_ ovpRequest: AuthorizationRequest) async throws -> [String : [FormatType : [OpenID4VPAnyCodable]]]
+public typealias SelectCredentialsForPresentationCallback = (_ ovpRequest: AuthorizationRequest) async throws -> [String : [Credential]]
 public typealias SignVerifiablePresentationCallback = (_ payload: [UnsignedVPToken]) async throws -> [VPTokenSigningResult]
 
 

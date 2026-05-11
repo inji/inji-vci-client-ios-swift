@@ -8,9 +8,9 @@ public enum AuthorizationMethod {
     )
 
     case presentationDuringIssuance(
+        jsonLdCanonicalizer: JsonLdCanonicalizerCallback? = nil,
         selectCredentialsForPresentation: SelectCredentialsForPresentationCallback,
-        signVerifiablePresentation: SignVerifiablePresentationCallback,
-        ldpVpSignatureSuite: String? = nil
+        signVerifiablePresentation: SignVerifiablePresentationCallback
     )
 
     var type: InteractionType {

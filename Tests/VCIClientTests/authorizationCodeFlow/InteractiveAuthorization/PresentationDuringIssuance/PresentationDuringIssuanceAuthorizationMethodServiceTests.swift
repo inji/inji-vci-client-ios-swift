@@ -6,8 +6,6 @@ import OpenID4VP
 private final class DummyAuthorizationRequestData: AuthorizationRequestData {}
 
 private final class FakeOpenID4VP: OpenID4VPInteracting {
-    
-
     enum Behavior {
         case success
         case authThrows(OpenID4VPException)
@@ -17,11 +15,10 @@ private final class FakeOpenID4VP: OpenID4VPInteracting {
 
     var behavior: Behavior = .success
 
-    private let real = OpenID4VP(traceabilityId: "", walletMetadata: nil)
+    private let real = OpenID4VP(traceabilityId: "", walletConfig: WalletConfig())
 
     func authenticateVerifier(
         authRequest authorizationRequest: [String : Any],
-        trustedVerifiers: [Verifier],
         shouldValidateClient: Bool
     ) async throws -> AuthorizationRequest {
 
@@ -31,17 +28,14 @@ private final class FakeOpenID4VP: OpenID4VPInteracting {
         default:
             return try await real.authenticateVerifier(
                 authorizationRequest: authorizationRequest,
-                trustedVerifiers: trustedVerifiers,
                 shouldValidateClient: shouldValidateClient
             )
         }
     }
 
     func constructUnsignedVPToken(
-        verifiableCredentials: [String : [FormatType : [OpenID4VPAnyCodable]]],
-        holderId: String?,
-        ldpVpSignatureSuite: String?
-    ) async throws -> [UnsignedVPTokenV2] {
+        selectedCredentials verifiableCredentials: [String : [Credential]],
+    ) async throws -> [UnsignedVPToken] {
 
         switch behavior {
         case .unsignedThrows(let err):
@@ -52,7 +46,7 @@ private final class FakeOpenID4VP: OpenID4VPInteracting {
     }
 
     func constructVPResponse(
-        vpTokenSigningResults: [VPTokenSigningResultV2]
+        vpTokenSigningResults: [VPTokenSigningResult]
     ) -> [String : Any] {
 
         switch behavior {
@@ -124,11 +118,11 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         let selectCallback = select ?? { _ in
             return [
                 "cred1": [
-                    FormatType.ldp_vc: [
-                        OpenID4VPAnyCodable([
-                            "credentialSubject": ["id": "did:example:123="]
-                        ])
-                    ]
+                    Credential(
+                        format: .ldp_vc,
+                        data: OpenID4VPAnyCodable(["credentialSubject": ["id": "did:example:123="]]),
+                        credentialId: "cred1"
+                    )
                 ]
             ]
         }
@@ -138,6 +132,9 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         }
 
         return PresentationDuringIssuanceAuthorizationMethodService(
+            jsonLdCanonicalizer: { jsonLd in
+                return "Y2Fub25pY2FsaXplZA=="
+            },
             selectCredentialsForPresentation: selectCallback,
             signVerifiablePresentation: signCallback,
             signatureSuite: signatureSuite,

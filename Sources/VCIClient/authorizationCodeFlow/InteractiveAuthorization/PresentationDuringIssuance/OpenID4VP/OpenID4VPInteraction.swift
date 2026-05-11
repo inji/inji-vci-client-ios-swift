@@ -4,14 +4,11 @@ import OpenID4VPBridge
 internal protocol OpenID4VPInteracting {
     func authenticateVerifier(
         authRequest: [String: Any],
-        trustedVerifiers: [Verifier],
         shouldValidateClient: Bool
     ) async throws -> AuthorizationRequest
     
     func constructUnsignedVPToken(
-        verifiableCredentials: [String: [FormatType: [OpenID4VPAnyCodable]]],
-        holderId: String?,
-        ldpVpSignatureSuite: String?
+        selectedCredentials: [String: [Credential]]
     ) async throws -> [UnsignedVPToken]
     
     func constructVPResponse(
@@ -24,31 +21,24 @@ internal protocol OpenID4VPInteracting {
 class OpenID4VPInteraction: OpenID4VPInteracting {
     private let openId4vp: OpenID4VP
     
-    init(traceabilityId: String) {
-        openId4vp = OpenID4VP(traceabilityId: traceabilityId, walletMetadata: nil)
+    init(jsonLdCanonicalizer:JsonLdCanonicalizerCallback?, traceabilityId: String) {
+        openId4vp = OpenID4VP(traceabilityId: traceabilityId, jsonLdCanonicalizer: jsonLdCanonicalizer)
     }
     
     func authenticateVerifier(
         authRequest: [String: Any],
-        trustedVerifiers: [Verifier],
         shouldValidateClient: Bool
     ) async throws -> AuthorizationRequest {
         try await openId4vp.authenticateVerifier(
-            authorizationRequest: authRequest,
-            trustedVerifiers: trustedVerifiers,
-            shouldValidateClient: shouldValidateClient
+            authorizationRequest: authRequest
         )
     }
     
     func constructUnsignedVPToken(
-        verifiableCredentials: [String: [FormatType: [OpenID4VPAnyCodable]]],
-        holderId: String?,
-        ldpVpSignatureSuite: String?
+        selectedCredentials verifiableCredentials: [String: [Credential]]
     ) async throws -> [UnsignedVPToken] {
         try await openId4vp.constructUnsignedVPToken(
-            verifiableCredentials: verifiableCredentials,
-            holderId: holderId,
-            signatureSuite: ldpVpSignatureSuite
+            selectedCredentials: verifiableCredentials
         )
     }
     
