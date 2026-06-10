@@ -39,10 +39,10 @@
     {
       "identity" : "inji-openid4vp-ios-swift",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tw-mosip/inji-openid4vp-ios-swift",
+      "location" : "https://github.com/inji/inji-openid4vp-ios-swift",
       "state" : {
-        "branch" : "2287-dcql-query-support",
-        "revision" : "8ce08af1764abb9232d544e4c28ecae3f1cd5b58"
+        "branch" : "develop",
+        "revision" : "921fcc6e95e3cc4ffcd59936e2486950049e4fc4"
       }
     },
     {
@@ -86,8 +86,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-asn1.git",
       "state" : {
-        "revision" : "eb50cbd14606a9161cbc5d452f18797c90ef0bab",
-        "version" : "1.7.0"
+        "revision" : "a9a5efd40eaf558a2bcd48d64b1d1646be686008",
+        "version" : "1.7.1"
       }
     },
     {

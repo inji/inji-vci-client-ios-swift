@@ -27,14 +27,13 @@ private final class FakeOpenID4VP: OpenID4VPInteracting {
             throw ex
         default:
             return try await real.authenticateVerifier(
-                authorizationRequest: authorizationRequest,
-                shouldValidateClient: shouldValidateClient
+                authorizationRequest: authorizationRequest
             )
         }
     }
 
     func constructUnsignedVPToken(
-        selectedCredentials verifiableCredentials: [String : [Credential]],
+        selectedCredentials verifiableCredentials: [String : [Credential]]
     ) async throws -> [UnsignedVPToken] {
 
         switch behavior {
