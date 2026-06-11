@@ -3,24 +3,25 @@ import OpenID4VP
 import OpenID4VPBridge
 
 class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodService {
+    private let jsonLdCanonicalizer: JsonLdCanonicalizerCallback?
     private let selectCredentialsForPresentation: SelectCredentialsForPresentationCallback
     private let signVerifiablePresentation: SignVerifiablePresentationCallback
     private let openId4vp: OpenID4VPInteracting
     private let networkManager: NetworkManager
-    private let ldpVpSignatureSuite: String?
 
     init(
+        jsonLdCanonicalizer: JsonLdCanonicalizerCallback?,
+        openid4vpWalletConfig: WalletConfig,
         selectCredentialsForPresentation: @escaping SelectCredentialsForPresentationCallback,
         signVerifiablePresentation: @escaping SignVerifiablePresentationCallback,
-        signatureSuite: String? = nil,
         networkManager: NetworkManager = NetworkManager.shared,
         openId4vp: OpenID4VPInteracting? = nil
     ) {
+        self.jsonLdCanonicalizer = jsonLdCanonicalizer
         self.selectCredentialsForPresentation = selectCredentialsForPresentation
         self.signVerifiablePresentation = signVerifiablePresentation
-        self.openId4vp = openId4vp ?? OpenID4VPInteraction(traceabilityId: Util.getTraceabilityId())
+        self.openId4vp = openId4vp ?? OpenID4VPInteraction(jsonLdCanonicalizer: jsonLdCanonicalizer, traceabilityId: Util.getTraceabilityId(), openid4vpWalletConfig: openid4vpWalletConfig)
         self.networkManager = networkManager
-        ldpVpSignatureSuite = signatureSuite
     }
 
     func type() -> String {
@@ -74,33 +75,19 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
     }
 
     private func validatePresentationRequest(request: [String: Any]) async throws -> AuthorizationRequest {
-        return try await openId4vp.authenticateVerifier(authRequest: request, trustedVerifiers: [Verifier](), shouldValidateClient: false)
+        return try await openId4vp.authenticateVerifier(authRequest: request)
     }
 
     private func handlePresentation(vpRequest: AuthorizationRequest) async throws -> [String: Any] {
-        let selectedCredentials: [String: [FormatType: [OpenID4VPAnyCodable]]] = try await selectCredentialsForPresentation(vpRequest)
+        let selectedCredentials: [String: [Credential]] = try await selectCredentialsForPresentation(vpRequest)
         if selectedCredentials.isEmpty {
             throw AccessDenied(message: "No credentials selected by user", className: "PresentationDuringIssuanceAuthorizationMethodService")
         }
 
-        let holderId: String? = extractHolderId(credentials: selectedCredentials)
-
-        let flattenedFormatEntries: [(FormatType, [OpenID4VPAnyCodable])] = selectedCredentials.values.flatMap { formatMap in
-            formatMap.map { ($0.key, $0.value) }
-        }
-        let hasLdpVc = flattenedFormatEntries.filter { formatType, _ in
-            formatType == .ldp_vc
-        }.count != 0
-        if hasLdpVc && ldpVpSignatureSuite == nil {
-            throw InteractiveAuthorizationException(message: "Missing signature suite for LDP VC")
-        }
-
-        let unsignedVpTokens: [UnsignedVPTokenV2] = try await openId4vp.constructUnsignedVPToken(
-            verifiableCredentials: selectedCredentials,
-            holderId: holderId,
-            ldpVpSignatureSuite: ldpVpSignatureSuite
+        let unsignedVpTokens: [UnsignedVPToken] = try await openId4vp.constructUnsignedVPToken(
+            selectedCredentials: selectedCredentials
         )
-        let signedVpTokens: [VPTokenSigningResultV2] = try await signVerifiablePresentation(unsignedVpTokens)
+        let signedVpTokens: [VPTokenSigningResult] = try await signVerifiablePresentation(unsignedVpTokens)
 
         return openId4vp.constructVPResponse(vpTokenSigningResults: signedVpTokens)
     }

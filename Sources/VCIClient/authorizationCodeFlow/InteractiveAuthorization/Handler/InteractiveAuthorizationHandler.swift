@@ -144,15 +144,16 @@ class InteractiveAuthorizationHandler {
         }
         
         guard
-            case let .presentationDuringIssuance(selectCredentialsForPresentation, signVerifiablePresentation, ldpVpSignatureSuite) = authorizationMethods.first(where: { $0.type == .openId4VpPresentation })
+            case let .presentationDuringIssuance(jsonLdCanonicalizer, openid4vpWalletConfig, selectCredentialsForPresentation, signVerifiablePresentation) = authorizationMethods.first(where: { $0.type == .openId4VpPresentation })
         else {
             throw InteractiveAuthorizationException(message: "Presentation callback missing")
         }
         
         let authorizationService = PresentationDuringIssuanceAuthorizationMethodService(
+            jsonLdCanonicalizer: jsonLdCanonicalizer,
+            openid4vpWalletConfig: openid4vpWalletConfig,
             selectCredentialsForPresentation: selectCredentialsForPresentation,
             signVerifiablePresentation: signVerifiablePresentation,
-            signatureSuite: ldpVpSignatureSuite,
             networkManager: self.networkManager
         )
         

@@ -82,4 +82,3 @@ extension TokenResponse {
     }
 }
 
-struct DummyVPTokenSigningResult: VPTokenSigningResult {}

@@ -3,19 +3,15 @@ import OpenID4VPBridge
 
 internal protocol OpenID4VPInteracting {
     func authenticateVerifier(
-        authRequest: [String: Any],
-        trustedVerifiers: [Verifier],
-        shouldValidateClient: Bool
+        authRequest: [String: Any]
     ) async throws -> AuthorizationRequest
     
     func constructUnsignedVPToken(
-        verifiableCredentials: [String: [FormatType: [OpenID4VPAnyCodable]]],
-        holderId: String?,
-        ldpVpSignatureSuite: String?
-    ) async throws -> [UnsignedVPTokenV2]
+        selectedCredentials: [String: [Credential]]
+    ) async throws -> [UnsignedVPToken]
     
     func constructVPResponse(
-        vpTokenSigningResults: [VPTokenSigningResultV2]
+        vpTokenSigningResults: [VPTokenSigningResult]
     ) -> [String: Any]
     
     func constructErrorInfo(exception: Error) -> [String: Any]
@@ -24,38 +20,30 @@ internal protocol OpenID4VPInteracting {
 class OpenID4VPInteraction: OpenID4VPInteracting {
     private let openId4vp: OpenID4VP
     
-    init(traceabilityId: String) {
-        openId4vp = OpenID4VP(traceabilityId: traceabilityId, walletMetadata: nil)
+    init(jsonLdCanonicalizer:JsonLdCanonicalizerCallback?, traceabilityId: String, openid4vpWalletConfig: WalletConfig) {
+        openId4vp = OpenID4VP(traceabilityId: traceabilityId, walletConfig: openid4vpWalletConfig, jsonLdCanonicalizer: jsonLdCanonicalizer)
     }
     
     func authenticateVerifier(
-        authRequest: [String: Any],
-        trustedVerifiers: [Verifier],
-        shouldValidateClient: Bool
+        authRequest: [String: Any]
     ) async throws -> AuthorizationRequest {
         try await openId4vp.authenticateVerifier(
-            authorizationRequest: authRequest,
-            trustedVerifiers: trustedVerifiers,
-            shouldValidateClient: shouldValidateClient
+            authorizationRequest: authRequest
         )
     }
     
     func constructUnsignedVPToken(
-        verifiableCredentials: [String: [FormatType: [OpenID4VPAnyCodable]]],
-        holderId: String?,
-        ldpVpSignatureSuite: String?
-    ) async throws -> [UnsignedVPTokenV2] {
-        try await openId4vp.constructUnsignedVPTokenV2(
-            verifiableCredentials: verifiableCredentials,
-            holderId: holderId,
-            signatureSuite: ldpVpSignatureSuite
+        selectedCredentials verifiableCredentials: [String: [Credential]]
+    ) async throws -> [UnsignedVPToken] {
+        try await openId4vp.constructUnsignedVPToken(
+            selectedCredentials: verifiableCredentials
         )
     }
     
     func constructVPResponse(
-        vpTokenSigningResults: [VPTokenSigningResultV2]
+        vpTokenSigningResults: [VPTokenSigningResult]
     ) -> [String: Any] {
-        openId4vp.constructVPResponseV2(vpTokenSigningResults: vpTokenSigningResults)
+        openId4vp.constructVPResponse(vpTokenSigningResults: vpTokenSigningResults)
     }
     
     func constructErrorInfo(exception: Error) -> [String: Any] {

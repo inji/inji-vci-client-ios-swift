@@ -41,8 +41,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/inji/inji-openid4vp-ios-swift",
       "state" : {
-        "revision" : "38e12ead6805da5cc2e214f065a5451f699e91dc",
-        "version" : "0.7.0"
+        "branch" : "develop",
+        "revision" : "921fcc6e95e3cc4ffcd59936e2486950049e4fc4"
       }
     },
     {
@@ -52,6 +52,15 @@
       "state" : {
         "revision" : "57fe5a03c83feaf73a84b23c02e641f86482e313",
         "version" : "4.0.2"
+      }
+    },
+    {
+      "identity" : "multiformatskit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ATProtoKit/MultiformatsKit.git",
+      "state" : {
+        "revision" : "cfb8003e2d6bd8c3520a1b38cdbef8e757876e6d",
+        "version" : "0.3.1"
       }
     },
     {
@@ -70,6 +79,24 @@
       "state" : {
         "revision" : "e325083424688055363bbfcb7f1a440d7d7a1bae",
         "version" : "1.2.2"
+      }
+    },
+    {
+      "identity" : "swift-asn1",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-asn1.git",
+      "state" : {
+        "revision" : "a9a5efd40eaf558a2bcd48d64b1d1646be686008",
+        "version" : "1.7.1"
+      }
+    },
+    {
+      "identity" : "swift-crypto",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-crypto.git",
+      "state" : {
+        "revision" : "95ba0316a9b733e92bb6b071255ff46263bbe7dc",
+        "version" : "3.15.1"
       }
     },
     {

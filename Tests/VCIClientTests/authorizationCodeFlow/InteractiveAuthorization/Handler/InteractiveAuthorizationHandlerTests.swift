@@ -25,7 +25,9 @@ final class InteractiveAuthorizationHandlerTests: XCTestCase {
     ) -> [AuthorizationMethod] {
         [
             .presentationDuringIssuance(
-                selectCredentialsForPresentation: select,
+                jsonLdCanonicalizer: { data in
+                    return "Y2Fub25pY2FsaXplZA=="
+                }, selectCredentialsForPresentation: select,
                 signVerifiablePresentation: sign
             )
         ]
@@ -53,9 +55,11 @@ final class InteractiveAuthorizationHandlerTests: XCTestCase {
         let select: SelectCredentialsForPresentationCallback = { _ in
             return [
                 "cred1": [
-                    .ldp_vc: [
-                        OpenID4VPAnyCodable("dummy-cred")
-                    ]
+                    OpenID4VPCredential(
+                        format: .ldp_vc,
+                        data: OpenID4VPAnyCodable("dummy-cred"),
+                        credentialId: "cred1"
+                    )
                 ]
             ]
         }
