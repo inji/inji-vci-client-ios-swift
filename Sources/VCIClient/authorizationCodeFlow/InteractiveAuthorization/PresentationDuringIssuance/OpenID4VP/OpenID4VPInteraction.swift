@@ -3,8 +3,7 @@ import OpenID4VPBridge
 
 internal protocol OpenID4VPInteracting {
     func authenticateVerifier(
-        authRequest: [String: Any],
-        shouldValidateClient: Bool
+        authRequest: [String: Any]
     ) async throws -> AuthorizationRequest
     
     func constructUnsignedVPToken(
@@ -21,13 +20,12 @@ internal protocol OpenID4VPInteracting {
 class OpenID4VPInteraction: OpenID4VPInteracting {
     private let openId4vp: OpenID4VP
     
-    init(jsonLdCanonicalizer:JsonLdCanonicalizerCallback?, traceabilityId: String) {
-        openId4vp = OpenID4VP(traceabilityId: traceabilityId, jsonLdCanonicalizer: jsonLdCanonicalizer)
+    init(jsonLdCanonicalizer:JsonLdCanonicalizerCallback?, traceabilityId: String, openid4vpWalletConfig: WalletConfig) {
+        openId4vp = OpenID4VP(traceabilityId: traceabilityId, walletConfig: openid4vpWalletConfig, jsonLdCanonicalizer: jsonLdCanonicalizer)
     }
     
     func authenticateVerifier(
-        authRequest: [String: Any],
-        shouldValidateClient: Bool
+        authRequest: [String: Any]
     ) async throws -> AuthorizationRequest {
         try await openId4vp.authenticateVerifier(
             authorizationRequest: authRequest

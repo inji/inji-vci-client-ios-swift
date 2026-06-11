@@ -18,8 +18,7 @@ private final class FakeOpenID4VP: OpenID4VPInteracting {
     private let real = OpenID4VP(traceabilityId: "", walletConfig: WalletConfig())
 
     func authenticateVerifier(
-        authRequest authorizationRequest: [String : Any],
-        shouldValidateClient: Bool
+        authRequest authorizationRequest: [String : Any]
     ) async throws -> AuthorizationRequest {
 
         switch behavior {
@@ -109,7 +108,6 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
     private func makeService(
         openId4vp: OpenID4VPInteracting,
         network: MockNetworkManager = MockNetworkManager(),
-        signatureSuite: String? = "Ed25519Signature2018",
         select: SelectCredentialsForPresentationCallback? = nil,
         sign: SignVerifiablePresentationCallback? = nil
     ) -> PresentationDuringIssuanceAuthorizationMethodService {
@@ -134,9 +132,9 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
             jsonLdCanonicalizer: { jsonLd in
                 return "Y2Fub25pY2FsaXplZA=="
             },
+            openid4vpWalletConfig: WalletConfig(),
             selectCredentialsForPresentation: selectCallback,
             signVerifiablePresentation: signCallback,
-            signatureSuite: signatureSuite,
             networkManager: network,
             openId4vp: openId4vp
         )

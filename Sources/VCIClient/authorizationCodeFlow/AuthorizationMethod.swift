@@ -1,6 +1,5 @@
 import Foundation
 import OpenID4VP
-import OpenID4VPBridge
 
 public enum AuthorizationMethod {
     case redirectToWeb(
@@ -9,6 +8,7 @@ public enum AuthorizationMethod {
 
     case presentationDuringIssuance(
         jsonLdCanonicalizer: JsonLdCanonicalizerCallback? = nil,
+        openid4vpWalletConfig: WalletConfig = WalletConfig(),
         selectCredentialsForPresentation: SelectCredentialsForPresentationCallback,
         signVerifiablePresentation: SignVerifiablePresentationCallback
     )

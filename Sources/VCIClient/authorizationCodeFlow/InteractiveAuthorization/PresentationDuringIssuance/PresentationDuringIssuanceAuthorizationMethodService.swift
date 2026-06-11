@@ -8,22 +8,20 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
     private let signVerifiablePresentation: SignVerifiablePresentationCallback
     private let openId4vp: OpenID4VPInteracting
     private let networkManager: NetworkManager
-    private let ldpVpSignatureSuite: String?
 
     init(
         jsonLdCanonicalizer: JsonLdCanonicalizerCallback?,
+        openid4vpWalletConfig: WalletConfig,
         selectCredentialsForPresentation: @escaping SelectCredentialsForPresentationCallback,
         signVerifiablePresentation: @escaping SignVerifiablePresentationCallback,
-        signatureSuite: String? = nil,
         networkManager: NetworkManager = NetworkManager.shared,
         openId4vp: OpenID4VPInteracting? = nil
     ) {
         self.jsonLdCanonicalizer = jsonLdCanonicalizer
         self.selectCredentialsForPresentation = selectCredentialsForPresentation
         self.signVerifiablePresentation = signVerifiablePresentation
-        self.openId4vp = openId4vp ?? OpenID4VPInteraction(jsonLdCanonicalizer: jsonLdCanonicalizer, traceabilityId: Util.getTraceabilityId())
+        self.openId4vp = openId4vp ?? OpenID4VPInteraction(jsonLdCanonicalizer: jsonLdCanonicalizer, traceabilityId: Util.getTraceabilityId(), openid4vpWalletConfig: openid4vpWalletConfig)
         self.networkManager = networkManager
-        ldpVpSignatureSuite = signatureSuite
     }
 
     func type() -> String {
@@ -77,7 +75,7 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
     }
 
     private func validatePresentationRequest(request: [String: Any]) async throws -> AuthorizationRequest {
-        return try await openId4vp.authenticateVerifier(authRequest: request, shouldValidateClient: false)
+        return try await openId4vp.authenticateVerifier(authRequest: request)
     }
 
     private func handlePresentation(vpRequest: AuthorizationRequest) async throws -> [String: Any] {
