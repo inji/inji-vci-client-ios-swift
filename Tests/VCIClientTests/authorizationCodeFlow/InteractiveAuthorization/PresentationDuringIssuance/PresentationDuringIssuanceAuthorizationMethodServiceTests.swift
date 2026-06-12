@@ -14,6 +14,7 @@ private final class FakeOpenID4VP: OpenID4VPInteracting {
     }
 
     var behavior: Behavior = .success
+    var constructedError: Error?
 
     private let real = OpenID4VP(traceabilityId: "", walletConfig: WalletConfig())
 
@@ -59,6 +60,7 @@ private final class FakeOpenID4VP: OpenID4VPInteracting {
     }
 
     func constructErrorInfo(exception: Error) -> [String : Any] {
+        constructedError = exception
         return [
             "error": "server_error",
             "error_description": "constructed error: \(exception)"
@@ -82,12 +84,23 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
                         "ldp_vc": [
                             "proof_type": ["Ed25519Signature2018"]
                         ]
+                    ],
+                    "constraints": [
+                        "fields": [
+                            [
+                                "path": ["$.credentialSubject.id"],
+                                "filter": [
+                                    "type": "string",
+                                    "pattern": "did:example:"
+                                ]
+                            ]
+                        ]
                     ]
                 ]
             ]
         ],
         "response_type": "vp_token",
-        "response_mode": "direct_post",
+        "response_mode": "iar-post",
         "nonce": "abc",
         "state": "xyz"
     ]
@@ -95,11 +108,12 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
 
     private func makeRequestData(
         authSession: String = "auth-session-1",
-        iar: String = "https://issuer.example.com/iar"
+        iar: String = "https://issuer.example.com/iar",
+        ovpRequest: [String: Any]? = nil
     ) -> PresentationDuringIssuanceRequestData {
 
         PresentationDuringIssuanceRequestData(
-            ovpRequest: authorizationRequest,
+            ovpRequest: ovpRequest ?? authorizationRequest,
             authSession: authSession,
             iar: iar
         )
@@ -227,6 +241,42 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         )
 
         XCTAssertEqual(response.error, "access_denied")
+    }
+
+    func test_unsupported_response_mode_posts_error_without_selecting_credentials() async throws {
+        let fake = FakeOpenID4VP()
+        let network = MockNetworkManager()
+        let issuerResponse = AuthorizationResponse(
+            authorizationCode: nil,
+            status: "error",
+            error: "invalid_request",
+            errorDescription: "unsupported response mode",
+            authSession: "auth-session-1"
+        )
+        network.responseBody =
+            String(data: try JSONEncoder().encode(issuerResponse), encoding: .utf8)!
+
+        var didSelectCredentials = false
+        let sut = makeService(
+            openId4vp: fake,
+            network: network,
+            select: { _ in
+                didSelectCredentials = true
+                return [:]
+            }
+        )
+        var unsupportedRequest = authorizationRequest
+        unsupportedRequest["response_mode"] = "direct_post"
+
+        _ = try await sut.authorizeUser(
+            requestData: makeRequestData(ovpRequest: unsupportedRequest)
+        )
+
+        XCTAssertFalse(didSelectCredentials)
+        XCTAssertEqual(
+            fake.constructedError?.localizedDescription,
+            "response_mode must be 'iar-post' or 'iar-post.jwt'"
+        )
     }
 
     // MARK: - Network failure

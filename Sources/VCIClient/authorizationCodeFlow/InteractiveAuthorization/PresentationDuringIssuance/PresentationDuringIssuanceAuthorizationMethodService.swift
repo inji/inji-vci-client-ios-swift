@@ -75,7 +75,12 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
     }
 
     private func validatePresentationRequest(request: [String: Any]) async throws -> AuthorizationRequest {
-        return try await openId4vp.authenticateVerifier(authRequest: request)
+        let authorizationRequest = try await openId4vp.authenticateVerifier(authRequest: request)
+        guard authorizationRequest.responseMode == "iar-post"
+                || authorizationRequest.responseMode == "iar-post.jwt" else {
+            throw IllegalArgumentException("response_mode must be 'iar-post' or 'iar-post.jwt'")
+        }
+        return authorizationRequest
     }
 
     private func handlePresentation(vpRequest: AuthorizationRequest) async throws -> [String: Any] {
