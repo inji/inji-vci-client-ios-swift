@@ -46,15 +46,14 @@ final class PresentationInteractionResponseTests: XCTestCase {
         )
     }
 
-    func testValidate_acceptsUnsignedRequestWithSupportedResponseMode() throws {
+    func testValidate_acceptsUnsignedRequestForLibraryValidation() throws {
         let response = try PresentationInteractionResponse(
             json: [
                 "status": "require_interaction",
                 "type": "openid4vp_presentation",
                 "auth_session": "session-1",
                 "openid4vp_request": [
-                    "response_type": "vp_token",
-                    "response_mode": "iar-post.jwt",
+                    "response_type": "vp_token"
                 ],
             ]
         )
@@ -62,18 +61,29 @@ final class PresentationInteractionResponseTests: XCTestCase {
         XCTAssertNoThrow(try response.validate())
     }
 
-    func testValidate_acceptsSignedRequestWithSupportedResponseMode() throws {
-        let payload = #"{"response_mode":"iar-post"}"#
-        let encodedPayload = Data(payload.utf8).base64URLEncodedString()
-        let jwt = "header.\(encodedPayload).signature"
-
+    func testValidate_acceptsSignedRequestForLibraryValidation() throws {
         let response = try PresentationInteractionResponse(
             json: [
                 "status": "require_interaction",
                 "type": "openid4vp_presentation",
                 "auth_session": "session-1",
                 "openid4vp_request": [
-                    "request": jwt,
+                    "request": "signed-request-jwt",
+                ],
+            ]
+        )
+
+        XCTAssertNoThrow(try response.validate())
+    }
+
+    func testValidate_acceptsRequestUriForLibraryValidation() throws {
+        let response = try PresentationInteractionResponse(
+            json: [
+                "status": "require_interaction",
+                "type": "openid4vp_presentation",
+                "auth_session": "session-1",
+                "openid4vp_request": [
+                    "request_uri": "https://verifier.example.com/request/123",
                 ],
             ]
         )
@@ -99,91 +109,7 @@ final class PresentationInteractionResponseTests: XCTestCase {
         }
     }
 
-    func testValidate_rejectsMissingResponseTypeInUnsignedRequest() throws {
-        let response = try PresentationInteractionResponse(
-            json: [
-                "status": "require_interaction",
-                "type": "openid4vp_presentation",
-                "auth_session": "session-1",
-                "openid4vp_request": [
-                    "response_mode": "iar-post",
-                ],
-            ]
-        )
-
-        XCTAssertThrowsError(try response.validate())
-    }
-
-    func testValidate_rejectsInvalidResponseTypeInUnsignedRequest() throws {
-        let response = try PresentationInteractionResponse(
-            json: [
-                "status": "require_interaction",
-                "type": "openid4vp_presentation",
-                "auth_session": "session-1",
-                "openid4vp_request": [
-                    "response_type": "code",
-                    "response_mode": "iar-post",
-                ],
-            ]
-        )
-
-        XCTAssertThrowsError(try response.validate())
-    }
-
-    func testValidate_rejectsMissingResponseMode() throws {
-        let response = try PresentationInteractionResponse(
-            json: [
-                "status": "require_interaction",
-                "type": "openid4vp_presentation",
-                "auth_session": "session-1",
-                "openid4vp_request": [
-                    "response_type": "vp_token",
-                ],
-            ]
-        )
-
-        XCTAssertThrowsError(try response.validate()) { error in
-            XCTAssertTrue(error is IllegalArgumentException)
-        }
-    }
-
-    func testValidate_rejectsUnsupportedResponseMode() throws {
-        let response = try PresentationInteractionResponse(
-            json: [
-                "status": "require_interaction",
-                "type": "openid4vp_presentation",
-                "auth_session": "session-1",
-                "openid4vp_request": [
-                    "response_type": "vp_token",
-                    "response_mode": "direct_post",
-                ],
-            ]
-        )
-
-        XCTAssertThrowsError(try response.validate()) { error in
-            XCTAssertTrue(error is IllegalArgumentException)
-        }
-    }
-
-    func testValidate_rejectsMalformedSignedRequestJwt() throws {
-        let response = try PresentationInteractionResponse(
-            json: [
-                "status": "require_interaction",
-                "type": "openid4vp_presentation",
-                "auth_session": "session-1",
-                "openid4vp_request": [
-                    "request": "not-a-jwt",
-                ],
-            ]
-        )
-
-        XCTAssertThrowsError(try response.validate())
-    }
-
-    func testDecodeJwtPayload_rejectsNonDictionaryPayload() throws {
-        let payload = #"["not","a","dictionary"]"#
-        let encodedPayload = Data(payload.utf8).base64URLEncodedString()
-        let jwt = "header.\(encodedPayload).signature"
+    func testValidate_rejectsEmptyRequest() throws {
         let response = try PresentationInteractionResponse(
             json: [
                 "status": "require_interaction",
@@ -193,6 +119,6 @@ final class PresentationInteractionResponseTests: XCTestCase {
             ]
         )
 
-        XCTAssertThrowsError(try response.decodeJwtPayload(jwt: jwt))
+        XCTAssertThrowsError(try response.validate())
     }
 }
