@@ -144,8 +144,8 @@ class AuthorizationCodeFlowService {
             } catch let e as VCIClientException {
                 throw DownloadFailedException(
                     message: "Failed to resolve authorization server metadata for issuer \(e.localizedDescription)",
-                    serverErrorCode: e.serverErrorCode,
-                    serverErrorDescription: e.serverErrorDescription
+                    issuerErrorCode: e.issuerErrorCode,
+                    issuerErrorDescription: e.issuerErrorDescription
                 )
             }
 
@@ -165,8 +165,8 @@ class AuthorizationCodeFlowService {
             } catch let e as VCIClientException {
                 throw DownloadFailedException(
                     message: "Failed to obtain access token via authorization code flow: \(e.localizedDescription)",
-                    serverErrorCode: e.serverErrorCode,
-                    serverErrorDescription: e.serverErrorDescription,
+                    issuerErrorCode: e.issuerErrorCode,
+                    issuerErrorDescription: e.issuerErrorDescription,
                     cause: e
                 )
             } catch {
@@ -183,8 +183,8 @@ class AuthorizationCodeFlowService {
         } catch let e as VCIClientException {
             throw DownloadFailedException(
                 message: e.message,
-                serverErrorCode: e.serverErrorCode,
-                serverErrorDescription: e.serverErrorDescription,
+                issuerErrorCode: e.issuerErrorCode,
+                issuerErrorDescription: e.issuerErrorDescription,
                 cause: e
             )
         } catch {
@@ -241,7 +241,7 @@ class AuthorizationCodeFlowService {
                     authorizationMethods: authorizationMethods
                 )
             } catch let error as VCIClientException {
-                if error.serverErrorCode == Constants.MISSING_INTERACTION_TYPE_ERROR {
+                if error.issuerErrorCode == Constants.MISSING_INTERACTION_TYPE_ERROR {
                     return try await obtainAuthorizationCodeViaAuthorizationEndpoint(authorizationServerMetadata: authorizationServerMetadata, issuerMetadata: issuerMetadata, clientMetadata: clientMetadata, pkceSession: pkceSession, authorizationMethods: authorizationMethods)
                 } else {
                     throw error
@@ -279,8 +279,8 @@ class AuthorizationCodeFlowService {
         } catch let error as VCIClientException {
             throw DownloadFailedException(
                 message: "Interactive authorization failed at endpoint \(endpoint): \(error.localizedDescription)",
-                serverErrorCode: error.serverErrorCode,
-                serverErrorDescription: error.serverErrorDescription,
+                issuerErrorCode: error.issuerErrorCode,
+                issuerErrorDescription: error.issuerErrorDescription,
                 cause: error
             )
         } catch {

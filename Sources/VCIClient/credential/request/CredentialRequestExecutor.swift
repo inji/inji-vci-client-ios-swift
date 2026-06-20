@@ -93,8 +93,8 @@ class CredentialRequestExecutor {
 
             throw DownloadFailedException(
                 message: e.message,
-                serverErrorCode: e.serverErrorCode,
-                serverErrorDescription: e.serverErrorDescription,
+                issuerErrorCode: e.issuerErrorCode,
+                issuerErrorDescription: e.issuerErrorDescription,
                 cause: e
             )
 
@@ -194,8 +194,8 @@ class CredentialRequestExecutor {
 
             throw DownloadFailedException(
                 message: e.message,
-                serverErrorCode: e.serverErrorCode,
-                serverErrorDescription: e.serverErrorDescription,
+                issuerErrorCode: e.issuerErrorCode,
+                issuerErrorDescription: e.issuerErrorDescription,
                 cause: e
             )
 

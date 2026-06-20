@@ -10,15 +10,15 @@ class InvalidAccessTokenException: VCIClientException {
     
     init(
         message: String?,
-        serverErrorCode: String? = nil,
-        serverErrorDescription: String? = nil,
+        issuerErrorCode: String? = nil,
+        issuerErrorDescription: String? = nil,
         cause: Error? = nil
     ) {
         super.init(
             code: "VCI-003",
             message: "Access token is invalid : \(message ?? "")",
-            serverErrorCode: serverErrorCode,
-            serverErrorDescription: serverErrorDescription,
+            issuerErrorCode: issuerErrorCode,
+            issuerErrorDescription: issuerErrorDescription,
             cause: cause
         )
     }
