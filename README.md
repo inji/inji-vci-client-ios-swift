@@ -372,43 +372,38 @@ They carry structured fields that help consumers identify whether the failure ca
 
 ### `VCIClientException` fields
 
-| Field                    | Type      | Meaning |
-|--------------------------|-----------|---------|
-| `code`                   | `String`  | The library-defined error code for the exception being thrown to the consumer. |
-| `message`                | `String`  | Human-readable summary of the failure, ready for logging or diagnostics. |
-| `sourceErrorCode`        | `String?` | The root `VCI-*` code from the underlying cause when the library wraps another `VCIClientException`. |
-| `serverErrorCode`        | `String?` | The issuer or authorization server `error` value when the remote service returned a structured OAuth/OID4VCI-style error response. |
-| `serverErrorDescription` | `String?` | The upstream `error_description` value when available. If the response body is not parseable JSON, the raw response body may be propagated here for diagnostics. |
+| Field                     | Type      | Meaning |
+|---------------------------|-----------|---------|
+| `code`                    | `String`  | The library-defined `VCI-*` error code. When the exception wraps another `VCIClientException`, `code` carries the **root** code resolved from the cause chain; otherwise it is the exception's own code. |
+| `message`                 | `String`  | Human-readable summary of the failure, ready for logging or diagnostics. |
+| `issuerErrorCode`         | `String?` | The issuer or authorization server `error` value when the remote service returned a structured OAuth/OID4VCI-style error response. |
+| `issuerErrorDescription`  | `String?` | The upstream `error_description` value when available. If the response body is not parseable JSON, the raw response body may be propagated here for diagnostics. |
 
 ### Error model
 
 The error model provides full observability into failures:
 
-- `code` identifies the current exception returned to the caller.
-- `sourceErrorCode` preserves the deeper `VCI-*` code when the current exception wraps another library exception.
-- `serverErrorCode` captures the upstream server `error` field when present.
-- `serverErrorDescription` captures the upstream `error_description`, or the raw error body when structured parsing is not possible.
+- `code` identifies the root library failure. When an exception wraps another library exception, `code` resolves to the deepest `VCI-*` code in the cause chain rather than the wrapper's own code.
+- `issuerErrorCode` captures the upstream server `error` field when present.
+- `issuerErrorDescription` captures the upstream `error_description`, or the raw error body when structured parsing is not possible.
 
 This means consumers can distinguish between:
 
-- a library wrapper error exposed at the public API boundary,
-- the original underlying library failure,
+- the original underlying library failure (surfaced through `code` even across wrapping),
 - and a server-originated error payload returned by the issuer or authorization server.
 
 #### Consumer guidance
 
-- Use `code` for primary client-side branching, telemetry dimensions, and product analytics.
-- Use `sourceErrorCode` when `code` represents a wrapper exception and you need the more specific underlying failure category.
-- Use `serverErrorCode` to decide whether a failure is recoverable through user action, such as re-authentication, retry, or correcting a request.
-- Use `serverErrorDescription` for logs, support tooling, and developer diagnostics. Avoid showing it directly to end users without sanitization because it may contain server-specific text.
+- Use `code` for primary client-side branching, telemetry dimensions, and product analytics. It identifies the root library failure even when the exception is wrapped.
+- Use `issuerErrorCode` to decide whether a failure is recoverable through user action, such as re-authentication, retry, or correcting a request.
+- Use `issuerErrorDescription` for logs, support tooling, and developer diagnostics. Avoid showing it directly to end users without sanitization because it may contain server-specific text.
 
 Some public API methods may wrap an internal `VCIClientException` into another `VCIClientException` before rethrowing it. This improves consistency at the API boundary without losing the root cause.
 
 Example:
 
-- `getIssuerMetadata()` may throw `VCI-010` at the API boundary.
-- `sourceErrorCode` may still contain `VCI-009` if the underlying failure was an issuer metadata fetch error.
-- `serverErrorCode` may contain a remote value such as `invalid_token` if the upstream endpoint returned it.
+- `getIssuerMetadata()` may wrap the failure at the API boundary, but `code` still resolves to `VCI-009` when the underlying failure was an issuer metadata fetch error.
+- `issuerErrorCode` may contain a remote value such as `invalid_token` if the upstream endpoint returned it.
 
 ### Recommended consumer handling
 
@@ -424,8 +419,8 @@ do {
     )
 } catch let error as VCIClientException {
     logger.error(
-        "VCI request failed. code=\(error.code), source=\(error.sourceErrorCode ?? "nil"), " +
-        "serverCode=\(error.serverErrorCode ?? "nil"), serverDescription=\(error.serverErrorDescription ?? "nil"), " +
+        "VCI request failed. code=\(error.code), " +
+        "issuerCode=\(error.issuerErrorCode ?? "nil"), issuerDescription=\(error.issuerErrorDescription ?? "nil"), " +
         "message=\(error.message)"
     )
 
