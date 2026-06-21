@@ -10,15 +10,15 @@ class InvalidPublicKeyException: VCIClientException {
     
     init(
         message: String?,
-        serverErrorCode: String? = nil,
-        serverErrorDescription: String? = nil,
+        issuerErrorCode: String? = nil,
+        issuerErrorDescription: String? = nil,
         cause: Error? = nil
     ) {
         super.init(
             code: "VCI-005",
             message: "Invalid public key passed: \(message ?? "")",
-            serverErrorCode: serverErrorCode,
-            serverErrorDescription: serverErrorDescription,
+            issuerErrorCode: issuerErrorCode,
+            issuerErrorDescription: issuerErrorDescription,
             cause: cause
         )
     }

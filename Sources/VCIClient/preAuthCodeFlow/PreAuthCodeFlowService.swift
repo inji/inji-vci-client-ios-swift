@@ -163,8 +163,8 @@ class PreAuthCodeFlowService {
         } catch let e as VCIClientException {
             throw DownloadFailedException(
                 message: "Pre-Authorized Code Flow failed: \(e.message)",
-                serverErrorCode: e.serverErrorCode,
-                serverErrorDescription: e.serverErrorDescription,
+                issuerErrorCode: e.issuerErrorCode,
+                issuerErrorDescription: e.issuerErrorDescription,
                 cause: e
             )
         } catch {

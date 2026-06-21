@@ -4,18 +4,16 @@ public class VCIClientException: Error, LocalizedError {
 
     public let code: String
     public let message: String
-    public let sourceErrorCode: String?
-    public let serverErrorCode: String?
-    public let serverErrorDescription: String?
+    public let issuerErrorCode: String?
+    public let issuerErrorDescription: String?
     public let cause: Error?
 
     public init(code: String, message: String) {
         self.code = code
         self.message = message
-        self.serverErrorCode = nil
-        self.serverErrorDescription = nil
+        self.issuerErrorCode = nil
+        self.issuerErrorDescription = nil
         self.cause = nil
-        self.sourceErrorCode = nil
 
         Util.logError(
             message: "Exception occurred with code: \(code), message: \(message)",
@@ -26,16 +24,15 @@ public class VCIClientException: Error, LocalizedError {
     public init(
         code: String,
         message: String,
-        serverErrorCode: String? = nil,
-        serverErrorDescription: String? = nil,
+        issuerErrorCode: String? = nil,
+        issuerErrorDescription: String? = nil,
         cause: Error? = nil
     ) {
-        self.code = code
+        self.code = VCIClientException.extractRootCode(from: cause) ?? code
         self.message = message
-        self.serverErrorCode = serverErrorCode
-        self.serverErrorDescription = serverErrorDescription
+        self.issuerErrorCode = issuerErrorCode
+        self.issuerErrorDescription = issuerErrorDescription
         self.cause = cause
-        self.sourceErrorCode = VCIClientException.extractRootCode(from: cause)
 
         Util.logError(
             message: "Exception occurred with code: \(code), message: \(message)",

@@ -52,13 +52,13 @@ func mapToVciClientException(_ error: Error) -> VCIClientException {
         return VCIClientException(
             code: "VCI-010",
             message: vciError.message,
-            serverErrorCode: vciError.serverErrorCode, serverErrorDescription: vciError.serverErrorDescription, cause: vciError.cause ?? vciError
+            issuerErrorCode: vciError.issuerErrorCode, issuerErrorDescription: vciError.issuerErrorDescription, cause: vciError.cause ?? vciError
         )
     }
 
     return VCIClientException(
         code: "VCI-010",
         message: "Unknown Exception - \(error.localizedDescription)",
-        serverErrorCode: nil, serverErrorDescription: nil, cause: error
+        issuerErrorCode: nil, issuerErrorDescription: nil, cause: error
     )
 }

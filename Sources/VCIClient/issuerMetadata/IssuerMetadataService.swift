@@ -36,8 +36,8 @@ class IssuerMetadataService {
         } catch let e as VCIClientException {
             throw IssuerMetadataFetchException(
                 e.message,
-                serverErrorCode: e.serverErrorCode,
-                serverErrorDescription: e.serverErrorDescription,
+                issuerErrorCode: e.issuerErrorCode,
+                issuerErrorDescription: e.issuerErrorDescription,
                 cause: e
             )
         } catch {
@@ -75,8 +75,8 @@ class IssuerMetadataService {
         } catch let e as VCIClientException {
             throw IssuerMetadataFetchException(
                 e.message,
-                serverErrorCode: e.serverErrorCode,
-                serverErrorDescription: e.serverErrorDescription,
+                issuerErrorCode: e.issuerErrorCode,
+                issuerErrorDescription: e.issuerErrorDescription,
                 cause: e
             )
         } catch {

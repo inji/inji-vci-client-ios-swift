@@ -10,15 +10,15 @@ class NetworkRequestFailedException: VCIClientException {
 
     init(
         message: String?,
-        serverErrorCode: String? = nil,
-        serverErrorDescription: String? = nil,
+        issuerErrorCode: String? = nil,
+        issuerErrorDescription: String? = nil,
         cause: Error? = nil
     ) {
         super.init(
             code: "VCI-006",
             message: "Network request failed, details - \(message ?? "")",
-            serverErrorCode: serverErrorCode,
-            serverErrorDescription: serverErrorDescription,
+            issuerErrorCode: issuerErrorCode,
+            issuerErrorDescription: issuerErrorDescription,
             cause: cause
         )
     }

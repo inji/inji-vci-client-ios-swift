@@ -61,8 +61,8 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
         } catch let ex as VCIClientException {
             throw InteractiveAuthorizationException(
                 message: "Error during presentation authorization: \(ex.message)",
-                serverErrorCode: ex.serverErrorCode,
-                serverErrorDescription: ex.serverErrorDescription,
+                issuerErrorCode: ex.issuerErrorCode,
+                issuerErrorDescription: ex.issuerErrorDescription,
                 cause: ex
             )
 
@@ -139,8 +139,8 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
         } catch let ex as VCIClientException {
             throw InteractiveAuthorizationException(
                 message: "Error while posting VP response: \(ex.message)",
-                serverErrorCode: ex.serverErrorCode,
-                serverErrorDescription: ex.serverErrorDescription,
+                issuerErrorCode: ex.issuerErrorCode,
+                issuerErrorDescription: ex.issuerErrorDescription,
                 cause: ex
             )
 

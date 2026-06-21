@@ -260,8 +260,8 @@ final class NetworkManagerTests: XCTestCase {
             )
             XCTFail("Expected HTTP error")
         } catch let error as NetworkRequestFailedException {
-            XCTAssertEqual(error.serverErrorCode, "invalid_request")
-            XCTAssertEqual(error.serverErrorDescription, "missing proof")
+            XCTAssertEqual(error.issuerErrorCode, "invalid_request")
+            XCTAssertEqual(error.issuerErrorDescription, "missing proof")
         } catch {
             XCTFail("Unexpected error type: \(error)")
         }

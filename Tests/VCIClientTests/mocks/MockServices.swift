@@ -319,7 +319,7 @@ class MockInteractiveAuthorizationHandler: InteractiveAuthorizationHandler {
             throw errorToThrow
         }
         if shouldThrowMissingInteractionType {
-            throw DownloadFailedException(message: "dummy", serverErrorCode: "missing_interaction_type")
+            throw DownloadFailedException(message: "dummy", issuerErrorCode: "missing_interaction_type")
         }
         return responseToReturn
     }

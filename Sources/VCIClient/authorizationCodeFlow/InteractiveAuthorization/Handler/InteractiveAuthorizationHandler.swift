@@ -63,8 +63,8 @@ class InteractiveAuthorizationHandler {
             Util.logError(message: "Interactive authorization failed: \(e.message)", className: "InteractiveAuthorizationHandler")
             throw InteractiveAuthorizationException(
                 message: "Interactive authorization failed: \(e.message)",
-                serverErrorCode: e.serverErrorCode,
-                serverErrorDescription: e.serverErrorDescription,
+                issuerErrorCode: e.issuerErrorCode,
+                issuerErrorDescription: e.issuerErrorDescription,
                 cause: e
             )
 
@@ -117,8 +117,8 @@ class InteractiveAuthorizationHandler {
             
             throw InteractiveAuthorizationException(
                 message: message,
-                serverErrorCode: error,
-                serverErrorDescription: errorDescription
+                issuerErrorCode: error,
+                issuerErrorDescription: errorDescription
             )
         }
         

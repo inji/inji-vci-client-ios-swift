@@ -43,8 +43,8 @@ class CredentialOfferService {
         } catch let e as VCIClientException {
             throw CredentialOfferFetchFailedException(
                 e.message,
-                serverErrorCode: e.serverErrorCode,
-                serverErrorDescription: e.serverErrorDescription,
+                issuerErrorCode: e.issuerErrorCode,
+                issuerErrorDescription: e.issuerErrorDescription,
                 cause: e
             )
 

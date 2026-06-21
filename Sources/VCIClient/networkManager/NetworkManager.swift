@@ -76,13 +76,13 @@ class NetworkManager {
             let body = String(data: data, encoding: .utf8) ?? ""
 
             guard (200 ... 299).contains(httpResponse.statusCode) else {
-                let (serverErrorCode, serverErrorDescription) =
+                let (issuerErrorCode, issuerErrorDescription) =
                     parseServerErrorResponse(body)
 
                 throw NetworkRequestFailedException(
                     message: "HTTP \(httpResponse.statusCode)",
-                    serverErrorCode: serverErrorCode,
-                    serverErrorDescription: serverErrorDescription
+                    issuerErrorCode: issuerErrorCode,
+                    issuerErrorDescription: issuerErrorDescription
                 )
             }
 

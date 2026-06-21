@@ -10,15 +10,15 @@ class IssuerMetadataFetchException: VCIClientException {
 
     init(
         _ message: String?,
-        serverErrorCode: String? = nil,
-        serverErrorDescription: String? = nil,
+        issuerErrorCode: String? = nil,
+        issuerErrorDescription: String? = nil,
         cause: Error? = nil
     ) {
         super.init(
             code: "VCI-009",
             message: "Failed to fetch issuerMetadata: \(message ?? "")",
-            serverErrorCode: serverErrorCode,
-            serverErrorDescription: serverErrorDescription,
+            issuerErrorCode: issuerErrorCode,
+            issuerErrorDescription: issuerErrorDescription,
             cause: cause
         )
     }
