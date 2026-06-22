@@ -133,6 +133,8 @@ class AuthorizationCodeFlowService {
         do {
             let pkceSession = pkceSessionManager.createSession()
 
+            let issuerState = credentialOffer?.grants?.authorizationCodeGrant?.issuerState
+
             let authServerMetadata: AuthorizationServerMetadata
             do {
                 authServerMetadata = try await authServerResolver.resolveForAuthCode(
@@ -158,7 +160,8 @@ class AuthorizationCodeFlowService {
                     authorizationMethods: authorizationMethods,
                     pkceSession: pkceSession,
                     getTokenResponse: getTokenResponse,
-                    credentialConfigurationId: credentialConfigurationId
+                    credentialConfigurationId: credentialConfigurationId,
+                    issuerState: issuerState
                 )
             } catch let e as DownloadFailedException {
                 throw e
@@ -202,13 +205,14 @@ class AuthorizationCodeFlowService {
         authorizationMethods: [AuthorizationMethod],
         pkceSession: PKCESessionManager.PKCESession,
         getTokenResponse: @escaping TokenResponseCallback,
-        credentialConfigurationId: String
+        credentialConfigurationId: String,
+        issuerState: String? = nil
     ) async throws -> TokenResponse {
         guard let tokenEndpoint = issuerMetadata.tokenEndpoint ?? authServerMetadata.tokenEndpoint else {
             throw DownloadFailedException("Missing token endpoint for issuer \(issuerMetadata.credentialIssuer)")
         }
 
-        let authCode = try await obtainAuthorizationCode(authorizationServerMetadata: authServerMetadata, issuerMetadata: issuerMetadata, clientMetadata: clientMetadata, pkceSession: pkceSession, credentialConfigurationId: credentialConfigurationId, authorizationMethods: authorizationMethods)
+        let authCode = try await obtainAuthorizationCode(authorizationServerMetadata: authServerMetadata, issuerMetadata: issuerMetadata, clientMetadata: clientMetadata, pkceSession: pkceSession, credentialConfigurationId: credentialConfigurationId, authorizationMethods: authorizationMethods, issuerState: issuerState)
 
         return try await tokenService.getAccessToken(
             getTokenResponse: getTokenResponse,
@@ -226,7 +230,8 @@ class AuthorizationCodeFlowService {
         clientMetadata: ClientMetadata,
         pkceSession: PKCESessionManager.PKCESession,
         credentialConfigurationId: String,
-        authorizationMethods: [AuthorizationMethod]
+        authorizationMethods: [AuthorizationMethod],
+        issuerState: String? = nil
     ) async throws -> String {
     
         let normalizedInteractiveEndpoint =
@@ -262,7 +267,8 @@ class AuthorizationCodeFlowService {
                         issuerMetadata: issuerMetadata,
                         clientMetadata: clientMetadata,
                         pkceSession: pkceSession,
-                        authorizationMethods: authorizationMethods
+                        authorizationMethods: authorizationMethods,
+                        issuerState: issuerState
                     )
                 }
 
@@ -275,7 +281,8 @@ class AuthorizationCodeFlowService {
                 issuerMetadata: issuerMetadata,
                 clientMetadata: clientMetadata,
                 pkceSession: pkceSession,
-                authorizationMethods: authorizationMethods
+                authorizationMethods: authorizationMethods,
+                issuerState: issuerState
             )
         }
     }
@@ -324,7 +331,8 @@ class AuthorizationCodeFlowService {
         issuerMetadata: IssuerMetadata,
         clientMetadata: ClientMetadata,
         pkceSession: PKCESessionManager.PKCESession,
-        authorizationMethods: [AuthorizationMethod]? = nil
+        authorizationMethods: [AuthorizationMethod]? = nil,
+        issuerState: String? = nil
     ) async throws -> String {
         guard let authorizationEndpoint =
             authorizationServerMetadata.authorizationEndpoint else {
@@ -346,7 +354,9 @@ class AuthorizationCodeFlowService {
                 authorizeUrl: authorizationEndpoint,
                 clientMetadata: clientMetadata,
                 pkceSession: pkceSession,
-                scope: issuerMetadata.scope ?? "default"
+                scope: issuerMetadata.scope ?? "default",
+                pushedAuthorizationRequestEndpoint: authorizationServerMetadata.pushedAuthorizationRequestEndpoint,
+                issuerState: issuerState
             )
 
             let response: AuthorizationResponse

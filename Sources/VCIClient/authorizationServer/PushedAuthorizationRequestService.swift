@@ -1,0 +1,87 @@
+import Foundation
+
+class PushedAuthorizationRequestService {
+
+    func pushAuthorizationRequest(
+        parEndpoint: String,
+        clientId: String,
+        redirectUri: String,
+        codeChallenge: String,
+        state: String,
+        nonce: String,
+        scope: String? = nil,
+        authorizationDetails: String? = nil,
+        issuerState: String? = nil,
+        codeChallengeMethod: CodeChallengeMethod = .s256,
+        responseType: AuthorizationResponseType = .code,
+        clientAuthParams: [String: String] = [:],
+        timeoutMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
+        session: NetworkManager = NetworkManager.shared
+    ) async throws -> PushedAuthorizationResponse {
+        var params: [String: String] = [
+            "response_type": responseType.rawValue,
+            "client_id": clientId,
+            "redirect_uri": redirectUri,
+            "code_challenge": codeChallenge,
+            "code_challenge_method": codeChallengeMethod.rawValue,
+            "state": state,
+            "nonce": nonce,
+        ]
+
+        if let authorizationDetails = authorizationDetails, !authorizationDetails.isEmpty {
+            params["authorization_details"] = authorizationDetails
+        } else if let scope = scope, !scope.isEmpty {
+            params["scope"] = scope
+        }
+
+        if let issuerState = issuerState, !issuerState.isEmpty {
+            params["issuer_state"] = issuerState
+        }
+
+        params.merge(clientAuthParams) { _, new in new }
+
+        let response: NetworkResponse
+        do {
+            response = try await session.sendRequest(
+                url: parEndpoint,
+                method: .post,
+                headers: [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue],
+                bodyParams: params,
+                timeoutMillis: timeoutMillis
+            )
+        } catch let e as VCIClientException {
+            throw PushedAuthorizationRequestException(
+                message: "PAR request failed at \(parEndpoint): \(e.message)",
+                issuerErrorCode: e.issuerErrorCode,
+                issuerErrorDescription: e.issuerErrorDescription,
+                cause: e
+            )
+        } catch {
+            throw PushedAuthorizationRequestException(
+                message: "PAR request failed at \(parEndpoint): \(error.localizedDescription)",
+                cause: error
+            )
+        }
+
+        let parResponse: PushedAuthorizationResponse?
+        do {
+            parResponse = try JsonUtils.deserialize(
+                response.body,
+                as: PushedAuthorizationResponse.self
+            )
+        } catch {
+            throw PushedAuthorizationRequestException(
+                message: "Invalid PAR response from \(parEndpoint): \(error.localizedDescription)",
+                cause: error
+            )
+        }
+
+        guard let parResponse = parResponse, !parResponse.requestUri.isEmpty else {
+            throw PushedAuthorizationRequestException(
+                "Invalid PAR response from \(parEndpoint): missing request_uri"
+            )
+        }
+
+        return parResponse
+    }
+}

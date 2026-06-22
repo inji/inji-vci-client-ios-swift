@@ -7,6 +7,8 @@ struct AuthorizationServerMetadata: Codable {
     let authorizationEndpoint: String?
     let interactiveAuthorizationEndpoint: String?
     let requireInteractiveAuthorizationRequest: Bool?
+    let pushedAuthorizationRequestEndpoint: String?
+    let requirePushedAuthorizationRequests: Bool?
 
     enum CodingKeys: String, CodingKey {
         case issuer
@@ -15,6 +17,27 @@ struct AuthorizationServerMetadata: Codable {
         case authorizationEndpoint = "authorization_endpoint"
         case interactiveAuthorizationEndpoint = "interactive_authorization_endpoint"
         case requireInteractiveAuthorizationRequest = "require_interactive_authorization_request"
+        case pushedAuthorizationRequestEndpoint = "pushed_authorization_request_endpoint"
+        case requirePushedAuthorizationRequests = "require_pushed_authorization_requests"
+    }
+
+    init(
+        issuer: String,
+        grantTypesSupported: [String]?,
+        tokenEndpoint: String?,
+        authorizationEndpoint: String?,
+        interactiveAuthorizationEndpoint: String?,
+        requireInteractiveAuthorizationRequest: Bool? = nil,
+        pushedAuthorizationRequestEndpoint: String? = nil,
+        requirePushedAuthorizationRequests: Bool? = nil
+    ) {
+        self.issuer = issuer
+        self.grantTypesSupported = grantTypesSupported
+        self.tokenEndpoint = tokenEndpoint
+        self.authorizationEndpoint = authorizationEndpoint
+        self.interactiveAuthorizationEndpoint = interactiveAuthorizationEndpoint
+        self.requireInteractiveAuthorizationRequest = requireInteractiveAuthorizationRequest
+        self.pushedAuthorizationRequestEndpoint = pushedAuthorizationRequestEndpoint
+        self.requirePushedAuthorizationRequests = requirePushedAuthorizationRequests
     }
 }
-

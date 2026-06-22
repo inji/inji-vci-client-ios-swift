@@ -1,9 +1,14 @@
 final class RedirectToWebAuthorizationMethodService: AuthorizationMethodService {
 
     private let openWebPage: OpenWebPageCallback
+    private let parService: PushedAuthorizationRequestService
 
-    init(openWebPage: @escaping OpenWebPageCallback) {
+    init(
+        openWebPage: @escaping OpenWebPageCallback,
+        parService: PushedAuthorizationRequestService = PushedAuthorizationRequestService()
+    ) {
         self.openWebPage = openWebPage
+        self.parService = parService
     }
 
     func type() -> String {
@@ -20,15 +25,35 @@ final class RedirectToWebAuthorizationMethodService: AuthorizationMethodService 
             )
         }
 
-        let authUrl = AuthorizationUrlBuilder.build(
-            baseUrl: request.authorizeUrl,
-            clientId: request.clientMetadata.clientId,
-            redirectUri: request.clientMetadata.redirectUri,
-            scope: request.scope,
-            state: request.pkceSession.state,
-            codeChallenge: request.pkceSession.codeChallenge,
-            nonce: request.pkceSession.nonce
-        )
+        let authUrl: String
+        if let parEndpoint = request.pushedAuthorizationRequestEndpoint, !parEndpoint.isEmpty {
+            let parResponse = try await parService.pushAuthorizationRequest(
+                parEndpoint: parEndpoint,
+                clientId: request.clientMetadata.clientId,
+                redirectUri: request.clientMetadata.redirectUri,
+                codeChallenge: request.pkceSession.codeChallenge,
+                state: request.pkceSession.state,
+                nonce: request.pkceSession.nonce,
+                scope: request.scope,
+                authorizationDetails: request.authorizationDetails,
+                issuerState: request.issuerState
+            )
+            authUrl = AuthorizationUrlBuilder.buildWithRequestUri(
+                baseUrl: request.authorizeUrl,
+                clientId: request.clientMetadata.clientId,
+                requestUri: parResponse.requestUri
+            )
+        } else {
+            authUrl = AuthorizationUrlBuilder.build(
+                baseUrl: request.authorizeUrl,
+                clientId: request.clientMetadata.clientId,
+                redirectUri: request.clientMetadata.redirectUri,
+                scope: request.scope,
+                state: request.pkceSession.state,
+                codeChallenge: request.pkceSession.codeChallenge,
+                nonce: request.pkceSession.nonce
+            )
+        }
 
         let authorizationResponse = try await openWebPage(authUrl)
 

@@ -25,6 +25,17 @@ enum AuthorizationUrlBuilder {
         return url
     }
 
+    static func buildWithRequestUri(
+        baseUrl: String,
+        clientId: String,
+        requestUri: String
+    ) -> String {
+        var url = baseUrl
+        url += "?client_id=\(encode(clientId))"
+        url += "&request_uri=\(encode(requestUri))"
+        return url
+    }
+
     private static func encode(_ value: String) -> String {
         return value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? value
     }
