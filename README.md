@@ -1,6 +1,6 @@
 # INJI VCI Client
 
-The **Inji-Vci-Client-iOS-Swift** is a Swift-based library built to simplify credential issuance via [OpenID for Verifiable Credential Issuance (OID4VCI)](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-13.html) protocol.  
+The **Inji-Vci-Client-iOS-Swift** is a Swift-based library built to simplify credential issuance via [OpenID for Verifiable Credential Issuance (OID4VCI)](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html) protocol.
 It supports **Issuer Initiated (Credential Offer)** and **Wallet Initiated (Trusted Issuer)** flows, with secure proof handling, PKCE support, and custom error handling.
 
 ---
@@ -20,7 +20,7 @@ The implementation follows
 - Authorization server discovery for both flows
 - PKCE-compliant OAuth 2.0 Authorization Code flow (RFC 7636)
   - PKCE session is managed internally by the library
-- Well-defined **exception handling** with `VCI-XXX` error codes (see more on [this](#error-handling))
+- Well-defined **exception handling** with `VCI-XXX` error codes (see more on [this](#-error-handling))
 - Support for multiple Credential formats:
   - `ldp_vc`
   - `mso_mdoc`
@@ -39,7 +39,7 @@ This library is officially supported and available in both Kotlin and Swift, ens
 * [Swift](.)
 ---
 
-## Installation
+## 📦 Installation
 
 Add VCIClient to your Swift Package Manager dependencies:
 
@@ -49,16 +49,17 @@ Add VCIClient to your Swift Package Manager dependencies:
 
 ## What's New in 1.0.0
 
-Version `1.0.0` defines the stable public API surface for credential download:
+Version `1.0.0` adds support for the final **OpenID for Verifiable Credential Issuance 1.0** specification while retaining backward compatibility with OID4VCI draft 13. The highlights below cover everything added since `0.7.0`:
 
-- `fetchCredentialsUsingCredentialOffer(...)` for issuer-initiated flows
-- `fetchCredentialsFromTrustedIssuer(...)` for wallet-initiated flows
-- plural proof and response models aligned with OpenID4VCI 1.0
-- retained Draft-13 issuer compatibility behind the new APIs
-- structured error handling so wallet applications can distinguish between library-level failures and issuer or authorization server error payloads
-- issuer metadata fetches validate that the `credential_issuer` returned by the well-known endpoint matches the requested issuer, per [OID4VCI Section 13.5](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-13.5)
+- **OID4VCI 1.0 support with retained draft 13 support** - The library auto-detects the spec version of the issuer from its metadata and builds the credential request accordingly, so a single integration works against both 1.0 and draft 13 issuers.
+- **Credential download methods renamed (and now return multiple credentials)** - `fetchCredentialUsingCredentialOffer` and `fetchCredentialFromTrustedIssuer` are now `fetchCredentialsUsingCredentialOffer` and `fetchCredentialsFromTrustedIssuer`.
+- **New `getProofs` callback** - The single-proof `getProofJwt` callback is replaced by `getProofs`, which returns a `CredentialRequestProofs` object and allows supplying one or more proofs in a single credential request, as per OID4VCI 1.0.
+- **`CredentialResponse` now exposes a `credentials` list** - Instead of a single `credential` field, the response carries a `credentials` list (`[CredentialItem]`), aligning with the OID4VCI 1.0 credential response structure.
+- **Legacy APIs removed** - `requestCredentialByCredentialOffer`, `requestCredentialFromTrustedIssuer`, and `requestCredential` have been removed. Migrate to the `fetchCredentials*` methods.
+- **Structured error handling** - `VCIClientException` now carries `issuerErrorCode` and `issuerErrorDescription` alongside `code` and `message`, and `code` resolves to the root error code across the cause chain, so consumers can distinguish library failures from issuer/authorization-server error payloads (see [Error Handling](#-error-handling)).
+- **Issuer identity validation** - Issuer metadata fetches now validate that the `credential_issuer` returned by the well-known endpoint matches the requested issuer, per [OID4VCI Section 13.5](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-13.5).
 
-## Construction of VCIClient instance
+## 🏗️ Construction of VCIClient instance
 
 - The `VCIClient` is constructed with a `traceabilityId` which is used to track the session and traceability of the credential request.
 
@@ -73,10 +74,9 @@ let vciClient = VCIClient(traceabilityId: traceabilityId)
 |-----------------|--------|----------|---------------|--------------------------------------|
 | traceabilityId  | String | Yes      | N/A           | Unique identifier for the session    |
 
-## API Overview
+## 📖 API Overview
 
 ### 1. Obtain Issuer Metadata
-#### getIssuerMetadata
 
 Retrieve the issuer metadata from the credential issuer's well-known endpoint.
 
@@ -105,7 +105,6 @@ let issuerMetadata: [String: Any] = try await vciClient.getIssuerMetadata(creden
 ```
 
 ### 2. Obtain Credential Configurations Supported
-#### getCredentialConfigurationsSupported
 
 Retrieve credential configurations supported for given issuer from its well-known endpoint.
 
@@ -165,10 +164,11 @@ Both methods use the OpenID4VCI 1.0-facing proof callback and return a normalize
 #### fetchCredentialsUsingCredentialOffer
 
 - Method: `fetchCredentialsUsingCredentialOffer`
-- Accepts either an embedded credential offer or a `credential_offer_uri`
-- Supports both **Pre-Authorization** and **Authorization** flows
-- Handles PKCE internally
-- Supports issuer trust checks via `onCheckIssuerTrust`
+- This method allows you to fetch credential(s) using a credential offer, which can be either an embedded JSON or a URI pointing to the credential offer.
+- It supports both **Pre-Authorization** and **Authorization** flows.
+- The library handles the PKCE flow internally.
+- User-trust based credential download supported through `onCheckIssuerTrust` callback.
+- This method is the recommended way to request credential using credential offer.
 
 ##### Parameters
 
@@ -179,7 +179,7 @@ Both methods use the OpenID4VCI 1.0-facing proof callback and return a normalize
 | getTxCode               | TxCodeCallback                | No       | N/A           | Optional callback for TX Code in pre-authorized flows                                                                                                                  |
 | authorizationMethods    | [AuthorizationMethod]         | Yes      | N/A           | Supported authorization callbacks for interactive flows [see authorization details](#authorizations)                                                                   |
 | getTokenResponse        | TokenResponseCallback         | Yes      | N/A           | Callback that exchanges the authorization grant for an access token                                                                                                    |
-| getProofs               | ProofsCallback                | Yes      | N/A           | Callback that prepares the proof set for the credential request                                                                                                        |
+| getProofs               | ProofsCallback                | Yes      | N/A           | Callback that prepares the proof set for the credential request, returning a `CredentialRequestProofs`                                                                 |
 | onCheckIssuerTrust      | CheckIssuerTrustCallback      | No       | nil           | Optional callback to confirm that the issuer is trusted                                                                                                                |
 | downloadTimeoutInMillis | Int64                         | No       | 10000         | Timeout for the credential request to the issuer                                                                                                                       |
 
@@ -187,11 +187,11 @@ Both methods use the OpenID4VCI 1.0-facing proof callback and return a normalize
 
 An instance of `CredentialResponse` containing:
 
-| Name                      | Type           | Description                                                                    |
-|---------------------------|----------------|--------------------------------------------------------------------------------|
-| credentials               | [AnyCodable]?  | Credentials downloaded from the issuer                                         |
-| credentialConfigurationId | String?        | The identifier of the respective supported credential from well-known response |
-| credentialIssuer          | String?        | URI of the credential issuer                                                   |
+| Name                      | Type             | Description                                                                                                |
+|---------------------------|------------------|------------------------------------------------------------------------------------------------------------|
+| credentials               | [CredentialItem] | The credential(s) downloaded from the Issuer. Each `CredentialItem` exposes a `credential` (`AnyCodable`)  |
+| credentialConfigurationId | String           | The identifier of the respective supported credential from well-known response                             |
+| credentialIssuer          | String           | URI of the Credential Issuer                                                                               |
 
 ##### Example usage
 
@@ -228,42 +228,46 @@ let credentialResponse = try await vciClient.fetchCredentialsUsingCredentialOffe
     downloadTimeoutInMillis: 10_000
 )
 
-credentialResponse.credentials
-credentialResponse.credentialConfigurationId
-credentialResponse.credentialIssuer
+credentialResponse.credentials // [CredentialItem]; each item's `credential` is an AnyCodable
+credentialResponse.credentialConfigurationId // eg - "DriversLicense"
+credentialResponse.credentialIssuer // eg - "https://sample-issuer.com"
 ```
+
+#### requestCredentialByCredentialOffer (removed in 1.0)
+
+> ⚠️ **Removed in 1.0**: `requestCredentialByCredentialOffer` (deprecated since `0.7.0`) has been removed. Use [`fetchCredentialsUsingCredentialOffer`](#fetchcredentialsusingcredentialoffer) instead, which supports both Pre-Authorization and Authorization flows along with the different authorization methods (Redirect to Web / Presentation During Issuance).
 
 ### 3.2 Request Credential from Trusted Issuer
 
 #### fetchCredentialsFromTrustedIssuer
 
 - Method: `fetchCredentialsFromTrustedIssuer`
-- Supports **Authorization** flow
-- Handles PKCE internally
+- It supports **Authorization** flow.
+- The library handles the PKCE flow internally.
 
-##### Parameters
+#### Parameters
 
 | Name                      | Type                       | Required | Default Value | Description                                                                                                                                                            |
 |---------------------------|----------------------------|----------|---------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | credentialIssuer          | String                     | Yes      | N/A           | URI of the credential issuer                                                                                                                                           |
-| credentialConfigurationId | String                     | Yes      | N/A           | Identifier of the supported credential configuration                                                                                                                   |
+| credentialConfigurationId | String                     | Yes      | N/A           | Identifier of the supported credential configuration                                                                                                                  |
 | clientMetadata            | ClientMetadata             | Yes      | N/A           | Contains client ID and redirect URI                                                                                                                                    |
 | authorizationMethods      | [AuthorizationMethod]      | Yes      | N/A           | Supported authorization callbacks for interactive flows [see authorization details](#authorizations)                                                                   |
 | getTokenResponse          | TokenResponseCallback      | Yes      | N/A           | Callback that exchanges the authorization grant for an access token                                                                                                    |
-| getProofs                 | ProofsCallback             | Yes      | N/A           | Callback that prepares the proof set for the credential request                                                                                                        |
+| getProofs                 | ProofsCallback             | Yes      | N/A           | Callback that prepares the proof set for the credential request, returning a `CredentialRequestProofs`                                                                 |
 | downloadTimeoutInMillis   | Int64                      | No       | 10000         | Timeout for the credential request to the issuer                                                                                                                       |
 
-##### Returns
+#### Returns
 
 An instance of `CredentialResponse` containing:
 
-| Name                      | Type           | Description                                                                    |
-|---------------------------|----------------|--------------------------------------------------------------------------------|
-| credentials               | [AnyCodable]?  | Credentials downloaded from the issuer                                         |
-| credentialConfigurationId | String?        | The identifier of the respective supported credential from well-known response |
-| credentialIssuer          | String?        | URI of the credential issuer                                                   |
+| Name                      | Type             | Description                                                                                                |
+|---------------------------|------------------|------------------------------------------------------------------------------------------------------------|
+| credentials               | [CredentialItem] | The credential(s) downloaded from the Issuer. Each `CredentialItem` exposes a `credential` (`AnyCodable`)  |
+| credentialConfigurationId | String           | The identifier of the respective supported credential from well-known response                             |
+| credentialIssuer          | String           | URI of the Credential Issuer                                                                               |
 
-##### Example usage
+#### Example usage
 
 ```swift
 let credentialResponse = try await vciClient.fetchCredentialsFromTrustedIssuer(
@@ -296,23 +300,30 @@ let credentialResponse = try await vciClient.fetchCredentialsFromTrustedIssuer(
     downloadTimeoutInMillis: 10_000
 )
 
-credentialResponse.credentials
-credentialResponse.credentialConfigurationId
-credentialResponse.credentialIssuer
+credentialResponse.credentials // [CredentialItem]; each item's `credential` is an AnyCodable
+credentialResponse.credentialConfigurationId // eg - "DriversLicense"
+credentialResponse.credentialIssuer // eg - "https://sample-issuer.com"
 ```
+
+#### requestCredentialFromTrustedIssuer (removed in 1.0)
+
+> ⚠️ **Removed in 1.0**: `requestCredentialFromTrustedIssuer` (deprecated since `0.7.0`) has been removed. Use [`fetchCredentialsFromTrustedIssuer`](#fetchcredentialsfromtrustedissuer) instead, which supports the different authorization methods (Redirect to Web / Presentation During Issuance).
 
 ##### Authorizations
 
-The `authorizationMethods` parameter is a list of supported wallet authorization flows. The library currently supports:
+The `authorizationMethods` parameter is a list of supported wallet authorization flows. The library currently supports two authorization flows - _Redirect To Web_ and _Presentation During Issuance_.
 
-1. Redirect To Web
+1. Redirect To Web (for Authorization flow)
 
 Redirect the user to the authorization endpoint in a web view or browser and return the authorization response parameters after successful authorization.
+
+**Parameters :**
 
 | Name        | Type                | Required | Default Value | Description                                                                                                                                                                         |
 |-------------|---------------------|----------|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | openWebPage | OpenWebPageCallback | Yes      | N/A           | Callback that opens the authorization endpoint and returns the authorization response parameters such as `code` and `state`                                                         |
 
+**Example usage**
 ```swift
 AuthorizationMethod.redirectToWeb(
     openWebPage: { authorizationEndpoint in
@@ -321,23 +332,29 @@ AuthorizationMethod.redirectToWeb(
     }
 )
 ```
+> Note: The Redirect to Web flow for an interactive authorization flow is exposed as an experimental API, and is expected to be improved in future releases.
 
 2. Presentation During Issuance
 
-Presentation During Issuance allows the wallet to present a verifiable presentation to the credential issuer during the issuance flow.
+Presentation During Issuance allows the wallet to present a verifiable presentation to the credential issuer during the issuance flow, which can be used by the issuer to verify certain claims about the user before issuing the credential. The authorization for the download here is presentation of another credential (or a verifiable presentation) instead of user interaction-based authorization as in Redirect To Web flow.
 
-This implementation follows [OpenID4VCI v1.1 Specification Commit](https://github.com/openid/OpenID4VCI/blob/31636e9bb7f0eef6933175e1e41c78ce79a69783/1.1/openid-4-verifiable-credential-issuance-1_1.md).
+###### Specification Reference
+
+This implementation follows - [OpenID4VCI v1.1 Specification Commit](https://github.com/openid/OpenID4VCI/blob/31636e9bb7f0eef6933175e1e41c78ce79a69783/1.1/openid-4-verifiable-credential-issuance-1_1.md)
 
 > Note:
-> - The public API surface is aligned to OpenID4VCI 1.0.
-> - For Presentation During Issuance, this library internally uses [inji-openid4vp-ios-swift](https://github.com/inji/inji-openid4vp-ios-swift) to construct the VP and handle presentation exchange.
+> - While this library primarily implements OpenID4VCI 1.0 and draft 13, the Presentation During Issuance feature follows the v1.1 specification as mentioned above.
+> - For Presentation During Issuance, this library internally uses [inji-openid4vp-ios-swift](https://github.com/inji/inji-openid4vp-ios-swift) to construct the VP and handle the presentation exchange with the issuer.
+
+**Parameters :**
 
 | Name                             | Type                                     | Required | Default Value | Description                                                                                                                                                                                                                                                                                                                                                                                            |
-|----------------------------------|------------------------------------------|----------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|----------------------------------|------------------------------------------|----------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | selectCredentialsForPresentation | SelectCredentialsForPresentationCallback | Yes      | N/A           | Callback to select credentials from the wallet for the issuer's presentation request                                                                                                                                                                                                                                                                                                                  |
 | signVerifiablePresentation       | SignVerifiablePresentationCallback       | Yes      | N/A           | Callback to sign the payload used for verifiable presentation construction                                                                                                                                                                                                                                                                                                                             |
 | ldpVpSignatureSuite              | String                                   | No       | nil           | Signature suite to use for signing the VP when the requested credential format is `ldp_vc`                                                                                                                                                                                                                                                                                                            |
 
+**Example usage**
 ```swift
 AuthorizationMethod.presentationDuringIssuance(
     selectCredentialsForPresentation: { presentationRequest in
@@ -355,9 +372,25 @@ AuthorizationMethod.presentationDuringIssuance(
 [//]: # (The branch in inji-wallet for pdi docs link is pointed to master intentionally to ensure that the latest documentation is always referred.)
 > For more details on the Presentation During Issuance flow and the expected implementation of the callbacks, please refer to the [inji-wallet Presentation During Issuance documentation](https://github.com/inji/inji-wallet/blob/master/docs/presentation-during-issuance-support.md)
 
+### 3.3 requestCredential (removed in 1.0)
+
+> ⚠️ **Removed in 1.0**: The low-level `requestCredential` method (deprecated since `0.7.0`) has been removed. Please migrate to [`fetchCredentialsUsingCredentialOffer()`](#fetchcredentialsusingcredentialoffer) or [`fetchCredentialsFromTrustedIssuer()`](#fetchcredentialsfromtrustedissuer), which fetch the issuer metadata, build the credential request (for OID4VCI 1.0 or draft 13), and download the credential for you.
+
 ---
 
-## Security Support
+## 🚨 Removed APIs
+
+The following methods were deprecated in earlier releases and have been **removed in 1.0**. Please migrate to the suggested alternatives.
+
+| Method Name                        | Deprecated Since | Removed In | Suggested Alternative                                                                                                                                      |
+|------------------------------------|------------------|------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| requestCredentialFromTrustedIssuer | 0.7.0            | 1.0.0      | [fetchCredentialsFromTrustedIssuer](#fetchcredentialsfromtrustedissuer)                                                                                    |
+| requestCredentialByCredentialOffer | 0.7.0            | 1.0.0      | [fetchCredentialsUsingCredentialOffer](#fetchcredentialsusingcredentialoffer)                                                                              |
+| requestCredential                  | 0.7.0            | 1.0.0      | [fetchCredentialsUsingCredentialOffer()](#fetchcredentialsusingcredentialoffer) or [fetchCredentialsFromTrustedIssuer()](#fetchcredentialsfromtrustedissuer) |
+
+---
+
+## 🔐 Security Support
 
 -  **PKCE (Proof Key for Code Exchange)** handled internally (RFC 7636)
 -  Supports `S256` code challenge method
@@ -365,7 +398,7 @@ AuthorizationMethod.presentationDuringIssuance(
 
 ---
 
-## Error Handling
+## 🛑 Error Handling
 
 All exceptions thrown by the library are subclasses of `VCIClientException`.  
 They carry structured fields that help consumers identify whether the failure came from the library itself, a wrapped library exception, or an upstream server response.
@@ -376,12 +409,14 @@ They carry structured fields that help consumers identify whether the failure ca
 |---------------------------|-----------|---------|
 | `code`                    | `String`  | The library-defined `VCI-*` error code. When the exception wraps another `VCIClientException`, `code` carries the **root** code resolved from the cause chain; otherwise it is the exception's own code. |
 | `message`                 | `String`  | Human-readable summary of the failure, ready for logging or diagnostics. |
-| `issuerErrorCode`         | `String?` | The issuer or authorization server `error` value when the remote service returned a structured OAuth/OID4VCI-style error response. |
+| `issuerErrorCode`         | `String?` | The issuer or authorization server `error` value when the remote service returned a structured OAuth/OID4VCI style error response. |
 | `issuerErrorDescription`  | `String?` | The upstream `error_description` value when available. If the response body is not parseable JSON, the raw response body may be propagated here for diagnostics. |
 
-### Error model
+### Structured error handling
 
-The error model provides full observability into failures:
+> New in `1.0.0`: if you are upgrading from `0.7.0`, where only `code` and `message` were reliably available, the structured fields below are new.
+
+The error model exposes the following fields so consumers can react precisely to failures:
 
 - `code` identifies the root library failure. When an exception wraps another library exception, `code` resolves to the deepest `VCI-*` code in the cause chain rather than the wrapper's own code.
 - `issuerErrorCode` captures the upstream server `error` field when present.
@@ -392,7 +427,14 @@ This means consumers can distinguish between:
 - the original underlying library failure (surfaced through `code` even across wrapping),
 - and a server-originated error payload returned by the issuer or authorization server.
 
-#### Consumer guidance
+#### Recommendations for consumers
+
+- If your integration only switches on `code`, it will continue to work — and `code` now reflects the root failure category even when the exception is wrapped at the API boundary.
+- If you want to infer server-side failures, use `issuerErrorCode` and `issuerErrorDescription` rather than parsing `message`.
+- If you want better observability, log all three fields: `code`, `issuerErrorCode`, and `issuerErrorDescription`.
+- If you want better retry and UX decisions, use `code` for the top-level category and `issuerErrorCode` for server-specific remediation.
+
+### What each field means for consumers
 
 - Use `code` for primary client-side branching, telemetry dimensions, and product analytics. It identifies the root library failure even when the exception is wrapped.
 - Use `issuerErrorCode` to decide whether a failure is recoverable through user action, such as re-authentication, retry, or correcting a request.
@@ -455,7 +497,7 @@ do {
 
 ---
 
-## Testing
+## 🧪 Testing
 
 Mock-based tests are available covering:
 
@@ -463,7 +505,7 @@ Mock-based tests are available covering:
 - Proof JWT signing callbacks
 - Token exchange logic
 
-> See `VCIClientTest` for full coverage
+> See `VCIClientTests` for full coverage
 
 ## Platform Support
 
