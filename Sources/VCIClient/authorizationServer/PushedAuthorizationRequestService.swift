@@ -32,6 +32,10 @@ class PushedAuthorizationRequestService {
             params["authorization_details"] = authorizationDetails
         } else if let scope = scope, !scope.isEmpty {
             params["scope"] = scope
+        } else {
+            throw PushedAuthorizationRequestException(
+                "Either scope or authorization_details must be provided for a PAR request"
+            )
         }
 
         if let issuerState = issuerState, !issuerState.isEmpty {

@@ -167,6 +167,27 @@ final class PushedAuthorizationRequestServiceTests: XCTestCase {
         XCTAssertEqual(mock.capturedParams["client_id"], "real-client-id")
     }
 
+    func test_throwsWhenBothScopeAndAuthorizationDetailsAbsent() async {
+        let mock = makeMock(responseBody: validResponseBody)
+
+        do {
+            _ = try await PushedAuthorizationRequestService().pushAuthorizationRequest(
+                parEndpoint: parEndpoint,
+                clientId: "client-id",
+                redirectUri: "app://callback",
+                codeChallenge: "challenge",
+                state: "state-123",
+                nonce: "nonce-123",
+                session: mock
+            )
+            XCTFail("Expected PushedAuthorizationRequestException to be thrown")
+        } catch is PushedAuthorizationRequestException {
+            // expected
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
+        }
+    }
+
     func test_throwsWhenResponseHasNoRequestUri() async {
         let mock = makeMock(responseBody: "{}")
 
