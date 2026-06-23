@@ -149,6 +149,24 @@ final class PushedAuthorizationRequestServiceTests: XCTestCase {
         XCTAssertEqual(body["client_assertion"], "signed.jwt.value")
     }
 
+    func test_clientAuthParamsMustNotOverwriteCoreParams() async throws {
+        let mock = makeMock(responseBody: validResponseBody)
+
+        _ = try await PushedAuthorizationRequestService().pushAuthorizationRequest(
+            parEndpoint: parEndpoint,
+            clientId: "real-client-id",
+            redirectUri: "app://callback",
+            codeChallenge: "challenge",
+            state: "state-123",
+            nonce: "nonce-123",
+            scope: "openid",
+            clientAuthParams: ["client_id": "malicious-id"],
+            session: mock
+        )
+
+        XCTAssertEqual(mock.capturedParams["client_id"], "real-client-id")
+    }
+
     func test_throwsWhenResponseHasNoRequestUri() async {
         let mock = makeMock(responseBody: "{}")
 

@@ -38,7 +38,9 @@ class PushedAuthorizationRequestService {
             params["issuer_state"] = issuerState
         }
 
-        params.merge(clientAuthParams) { _, new in new }
+        // Core authorization request params take precedence; clientAuthParams
+        // (e.g. client_assertion) may only add keys, never override reserved fields.
+        params.merge(clientAuthParams) { current, _ in current }
 
         let response: NetworkResponse
         do {
