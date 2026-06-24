@@ -81,7 +81,54 @@ final class InteractiveAuthorizationHandlerTests: XCTestCase {
         XCTAssertEqual(response.status, "require_interaction")
         XCTAssertEqual(response.authSession, "auth-session-1")
     }
+    
+    func test_handle_success_openId4VpPresentationIAE_flow() async throws {
 
+        let initialNetwork = MockNetworkManager()
+
+        let presentationJSON: [String: Any] = [
+            "status": "require_interaction",
+            "type": InteractionType.openId4VpPresentationIAE.rawValue,
+            "auth_session": "auth-session-1",
+            "openid4vp_request": [
+                "response_type": "vp_token",
+                "response_mode": "iar-post"
+            ]
+        ]
+
+        let initialBody = try JSONSerialization.data(withJSONObject: presentationJSON)
+        initialNetwork.responseBody = String(data: initialBody, encoding: .utf8) ?? ""
+
+        let select: SelectCredentialsForPresentationCallback = { _ in
+            return [
+                "cred1": [
+                    OpenID4VPCredential(
+                        format: .ldp_vc,
+                        data: OpenID4VPAnyCodable("dummy-cred"),
+                        credentialId: "cred1"
+                    )
+                ]
+            ]
+        }
+
+        let sign: SignVerifiablePresentationCallback = { _ in
+            return []
+        }
+
+        let handler = InteractiveAuthorizationHandler(networkManager: initialNetwork)
+
+        let response = try await handler.handle(
+            endpoint: "https://issuer.example.com/iar",
+            clientMetadata: self.makeClientMetadata(),
+            credentialConfigurationId: "cfg-1",
+            authorizationMethods: makeAuthMethods(select: select, sign: sign),
+            pkceSession: self.makePKCE()
+        )
+
+        XCTAssertEqual(response.status, "require_interaction")
+        XCTAssertEqual(response.authSession, "auth-session-1")
+    }
+    
     // MARK: - Failure: invalid JSON
 
     func test_handle_extractInteractionType_invalidJSON_throws() async {

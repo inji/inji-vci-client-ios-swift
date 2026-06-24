@@ -43,7 +43,9 @@ class InteractiveAuthorizationHandler {
             
             let type: String = try extractTypeAndThrowIfError(interactiveAuthorizationResponse.body)
             
-            if type == InteractionType.openId4VpPresentation.rawValue {
+            if type == InteractionType.openId4VpPresentation.rawValue ||
+               type == InteractionType.openId4VpPresentationIAE.rawValue {
+
                 return try await handlePresentationInteraction(
                     presentationInteractionResponse: interactiveAuthorizationResponse.body,
                     authorizationMethods: authorizationMethods,
