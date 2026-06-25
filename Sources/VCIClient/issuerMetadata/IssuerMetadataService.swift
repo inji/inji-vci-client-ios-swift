@@ -206,22 +206,6 @@ class IssuerMetadataService {
                 scope: scope,
                 specVersion: specVersion
             )
-
-        case .jwt_vc_json:
-            let definition = credentialType["credential_definition"] as? [String: Any] ?? [:]
-            let types = definition["type"] as? [String]
-            
-            return IssuerMetadata(
-                credentialIssuer: credentialIssuer,
-                credentialEndpoint: credentialEndpoint,
-                credentialType: types,
-                context: nil,
-                credentialFormat: format,
-                authorizationServers: rawIssuerMetadata["authorization_servers"] as? [String],
-                nonceEndpoint: nonceEndpoint,
-                scope: scope,
-                specVersion: specVersion
-            )
         }
     }
 

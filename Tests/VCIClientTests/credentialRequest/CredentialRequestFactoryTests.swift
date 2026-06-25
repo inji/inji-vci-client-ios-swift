@@ -8,7 +8,7 @@ final class CredentialRequestFactoryTests: XCTestCase {
             credentialIssuer: "https://issuer.example.com",
             credentialEndpoint: "https://issuer.example.com/credential",
             credentialType: ["VerifiableCredential"],
-            credentialFormat: .jwt_vc_json
+            credentialFormat: .ldp_vc
         )
 
         let request = try factory.createCredentialRequest(
