@@ -11,7 +11,7 @@ final class MockAuthServerResolver: AuthorizationServerResolver {
     var mockInteractiveAuthorizationEndpoint: String?
     var mockGrantTypesSupported: [String]? = nil
     var mockRequireInteractiveAuthorizationRequest: Bool? = nil
-    
+
     override func resolveForPreAuth(issuerMetadata: IssuerMetadata, credentialOffer: CredentialOffer) async throws -> AuthorizationServerMetadata {
         return AuthorizationServerMetadata(
             issuer: mockIssuer,

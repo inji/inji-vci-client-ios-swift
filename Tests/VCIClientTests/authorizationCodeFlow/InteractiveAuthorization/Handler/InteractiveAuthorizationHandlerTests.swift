@@ -82,7 +82,7 @@ final class InteractiveAuthorizationHandlerTests: XCTestCase {
         XCTAssertEqual(response.status, "require_interaction")
         XCTAssertEqual(response.authSession, "auth-session-1")
     }
-    
+
     func test_handle_success_openId4VpPresentationIAE_flow() async throws {
 
         let initialNetwork = MockNetworkManager()
@@ -130,7 +130,7 @@ final class InteractiveAuthorizationHandlerTests: XCTestCase {
         XCTAssertEqual(response.status, "require_interaction")
         XCTAssertEqual(response.authSession, "auth-session-1")
     }
-    
+
     // MARK: - Failure: invalid JSON
 
     func test_handle_extractInteractionType_invalidJSON_throws() async {

@@ -126,7 +126,7 @@ final class AuthorizationServerResolverTests: XCTestCase {
             authorizationEndpoint: "\(realUrl)/auth",
             interactiveAuthorizationEndpoint: nil,
             requireInteractiveAuthorizationRequest: nil, dpopSigningAlgValuesSupported: nil
-            
+
         )
 
         let resolver = AuthorizationServerResolver(authServerDiscoveryService: mockDiscovery)

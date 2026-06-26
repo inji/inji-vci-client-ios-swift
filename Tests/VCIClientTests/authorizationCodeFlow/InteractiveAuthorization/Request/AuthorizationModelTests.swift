@@ -103,7 +103,7 @@ final class AuthorizationModelTests: XCTestCase {
         XCTAssertEqual(authDetailsParsed?.first?["credential_configuration_id"] as? String, "cfg1")
     }
 
-    
+
     func test_IARInitialRequestBody_toFormMap_includesLegacyAndIAEInteractionTypes() throws {
 
         let details = [

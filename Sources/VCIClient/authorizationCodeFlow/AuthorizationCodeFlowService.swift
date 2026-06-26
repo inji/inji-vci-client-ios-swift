@@ -248,7 +248,7 @@ class AuthorizationCodeFlowService {
         authorizationMethods: [AuthorizationMethod],
         dpopManager: DPoPManager = DPoPManager()
     ) async throws -> String {
-    
+
         let normalizedInteractiveEndpoint =
             authorizationServerMetadata.interactiveAuthorizationEndpoint?
                 .trimmingCharacters(in: .whitespacesAndNewlines)
