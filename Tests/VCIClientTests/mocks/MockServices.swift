@@ -10,13 +10,16 @@ final class MockAuthServerResolver: AuthorizationServerResolver {
     var mcokAuthorizationEndpoint: String? = "https://example.com/auth"
     var mockInteractiveAuthorizationEndpoint: String?
     var mockGrantTypesSupported: [String]? = nil
+    var mockRequireInteractiveAuthorizationRequest: Bool? = nil
+    
     override func resolveForPreAuth(issuerMetadata: IssuerMetadata, credentialOffer: CredentialOffer) async throws -> AuthorizationServerMetadata {
         return AuthorizationServerMetadata(
             issuer: mockIssuer,
             grantTypesSupported: mockGrantTypesSupported,
             tokenEndpoint: mockTokenEndpoint,
             authorizationEndpoint: nil,
-            interactiveAuthorizationEndpoint: mockInteractiveAuthorizationEndpoint
+            interactiveAuthorizationEndpoint: mockInteractiveAuthorizationEndpoint,
+            requireInteractiveAuthorizationRequest: mockRequireInteractiveAuthorizationRequest
         )
     }
 
@@ -27,7 +30,8 @@ final class MockAuthServerResolver: AuthorizationServerResolver {
             grantTypesSupported: mockGrantTypesSupported,
             tokenEndpoint: mockTokenEndpoint,
             authorizationEndpoint: mcokAuthorizationEndpoint,
-            interactiveAuthorizationEndpoint: mockInteractiveAuthorizationEndpoint
+            interactiveAuthorizationEndpoint: mockInteractiveAuthorizationEndpoint,
+            requireInteractiveAuthorizationRequest: mockRequireInteractiveAuthorizationRequest
         )
     }
 }
