@@ -78,10 +78,10 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
         let authorizationRequest = try await openId4vp.authenticateVerifier(authRequest: request)
         guard authorizationRequest.responseMode == "iar-post"
            || authorizationRequest.responseMode == "iar-post.jwt"
-           || authorizationRequest.responseMode == "iae-post"
-           || authorizationRequest.responseMode == "iae-post.jwt" else {
+           || authorizationRequest.responseMode == "iae_post"
+           || authorizationRequest.responseMode == "iae_post.jwt" else {
             throw IllegalArgumentException(
-                "response_mode must be 'iar-post', 'iar-post.jwt', 'iae-post' or 'iae-post.jwt'"
+                "response_mode must be 'iar-post', 'iar-post.jwt', 'iae_post' or 'iae_post.jwt'"
             )
         }
         return authorizationRequest

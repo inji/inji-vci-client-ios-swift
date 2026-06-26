@@ -215,7 +215,7 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
     
     func test_full_success_flow_accepts_supported_iae_response_modes() async throws {
 
-        for responseMode in ["iae-post", "iae-post.jwt"] {
+        for responseMode in ["iae_post", "iae_post.jwt"] {
 
             let fake = FakeOpenID4VP()
             let network = MockNetworkManager()
@@ -310,7 +310,7 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         XCTAssertFalse(didSelectCredentials)
         XCTAssertEqual(
             fake.constructedError?.localizedDescription,
-            "response_mode must be 'iar-post', 'iar-post.jwt', 'iae-post' or 'iae-post.jwt'"
+            "response_mode must be 'iar-post', 'iar-post.jwt', 'iae_post' or 'iae_post.jwt'"
         )
     }
 
