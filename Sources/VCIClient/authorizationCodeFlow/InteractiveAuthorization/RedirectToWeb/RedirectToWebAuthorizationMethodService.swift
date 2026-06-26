@@ -34,9 +34,7 @@ final class RedirectToWebAuthorizationMethodService: AuthorizationMethodService 
                 codeChallenge: request.pkceSession.codeChallenge,
                 state: request.pkceSession.state,
                 nonce: request.pkceSession.nonce,
-                scope: request.scope,
-                authorizationDetails: request.authorizationDetails,
-                issuerState: request.issuerState
+                scope: request.scope
             )
             authUrl = AuthorizationUrlBuilder.buildWithRequestUri(
                 baseUrl: request.authorizeUrl,
@@ -44,7 +42,7 @@ final class RedirectToWebAuthorizationMethodService: AuthorizationMethodService 
                 requestUri: parResponse.requestUri
             )
         } else {
-            authUrl = AuthorizationUrlBuilder.build(
+            authUrl = AuthorizationUrlBuilder.buildWithParameters(
                 baseUrl: request.authorizeUrl,
                 clientId: request.clientMetadata.clientId,
                 redirectUri: request.clientMetadata.redirectUri,

@@ -10,8 +10,6 @@ class PushedAuthorizationRequestService {
         state: String,
         nonce: String,
         scope: String? = nil,
-        authorizationDetails: String? = nil,
-        issuerState: String? = nil,
         codeChallengeMethod: CodeChallengeMethod = .s256,
         responseType: AuthorizationResponseType = .code,
         clientAuthParams: [String: String] = [:],
@@ -28,18 +26,8 @@ class PushedAuthorizationRequestService {
             "nonce": nonce,
         ]
 
-        if let authorizationDetails = authorizationDetails, !authorizationDetails.isEmpty {
-            params["authorization_details"] = authorizationDetails
-        } else if let scope = scope, !scope.isEmpty {
+        if let scope = scope, !scope.isEmpty {
             params["scope"] = scope
-        } else {
-            throw PushedAuthorizationRequestException(
-                "Either scope or authorization_details must be provided for a PAR request"
-            )
-        }
-
-        if let issuerState = issuerState, !issuerState.isEmpty {
-            params["issuer_state"] = issuerState
         }
 
         // Core authorization request params take precedence; clientAuthParams

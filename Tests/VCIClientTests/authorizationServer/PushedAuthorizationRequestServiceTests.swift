@@ -55,27 +55,7 @@ final class PushedAuthorizationRequestServiceTests: XCTestCase {
         XCTAssertEqual(body["nonce"], "nonce-123")
     }
 
-    func test_sendsAuthorizationDetailsAndOmitsScope() async throws {
-        let mock = makeMock(responseBody: validResponseBody)
-
-        _ = try await PushedAuthorizationRequestService().pushAuthorizationRequest(
-            parEndpoint: parEndpoint,
-            clientId: "client-id",
-            redirectUri: "app://callback",
-            codeChallenge: "challenge",
-            state: "state-123",
-            nonce: "nonce-123",
-            scope: "openid",
-            authorizationDetails: "[{\"type\":\"openid_credential\"}]",
-            session: mock
-        )
-
-        let body = mock.capturedParams
-        XCTAssertEqual(body["authorization_details"], "[{\"type\":\"openid_credential\"}]")
-        XCTAssertNil(body["scope"])
-    }
-
-    func test_sendsScopeWhenAuthorizationDetailsAbsent() async throws {
+    func test_sendsScopeAndNeverAuthorizationDetails() async throws {
         let mock = makeMock(responseBody: validResponseBody)
 
         _ = try await PushedAuthorizationRequestService().pushAuthorizationRequest(
@@ -92,35 +72,6 @@ final class PushedAuthorizationRequestServiceTests: XCTestCase {
         let body = mock.capturedParams
         XCTAssertEqual(body["scope"], "openid")
         XCTAssertNil(body["authorization_details"])
-    }
-
-    func test_includesIssuerStateOnlyWhenPresent() async throws {
-        let withMock = makeMock(responseBody: validResponseBody)
-        _ = try await PushedAuthorizationRequestService().pushAuthorizationRequest(
-            parEndpoint: parEndpoint,
-            clientId: "client-id",
-            redirectUri: "app://callback",
-            codeChallenge: "challenge",
-            state: "state-123",
-            nonce: "nonce-123",
-            scope: "openid",
-            issuerState: "issuer-state-xyz",
-            session: withMock
-        )
-        XCTAssertEqual(withMock.capturedParams["issuer_state"], "issuer-state-xyz")
-
-        let withoutMock = makeMock(responseBody: validResponseBody)
-        _ = try await PushedAuthorizationRequestService().pushAuthorizationRequest(
-            parEndpoint: parEndpoint,
-            clientId: "client-id",
-            redirectUri: "app://callback",
-            codeChallenge: "challenge",
-            state: "state-123",
-            nonce: "nonce-123",
-            scope: "openid",
-            session: withoutMock
-        )
-        XCTAssertNil(withoutMock.capturedParams["issuer_state"])
     }
 
     func test_mergesClientAuthParamsIntoBody() async throws {
@@ -165,27 +116,6 @@ final class PushedAuthorizationRequestServiceTests: XCTestCase {
         )
 
         XCTAssertEqual(mock.capturedParams["client_id"], "real-client-id")
-    }
-
-    func test_throwsWhenBothScopeAndAuthorizationDetailsAbsent() async {
-        let mock = makeMock(responseBody: validResponseBody)
-
-        do {
-            _ = try await PushedAuthorizationRequestService().pushAuthorizationRequest(
-                parEndpoint: parEndpoint,
-                clientId: "client-id",
-                redirectUri: "app://callback",
-                codeChallenge: "challenge",
-                state: "state-123",
-                nonce: "nonce-123",
-                session: mock
-            )
-            XCTFail("Expected PushedAuthorizationRequestException to be thrown")
-        } catch is PushedAuthorizationRequestException {
-            // expected
-        } catch {
-            XCTFail("Unexpected error type: \(error)")
-        }
     }
 
     func test_throwsWhenResponseHasNoRequestUri() async {

@@ -2,7 +2,7 @@ import Foundation
 
 enum AuthorizationUrlBuilder {
     
-    static func build(
+    static func buildWithParameters(
         baseUrl: String,
         clientId: String,
         redirectUri: String,
