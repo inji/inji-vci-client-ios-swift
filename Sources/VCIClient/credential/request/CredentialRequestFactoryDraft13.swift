@@ -31,12 +31,6 @@ class CredentialRequestFactoryDraft13: CredentialRequestFactoryProtocol {
                 issuerMetaData: issuer,
                 proof: proof
             )
-        case .jwt_vc_json:
-            credentialRequest = JwtVcCredentialRequestDraft13(
-                accessToken: accessToken,
-                issuerMetaData: issuer,
-                proof: proof
-            )
         case .mso_mdoc:
             credentialRequest = MsoMdocCredentialRequestDraft13(
                 accessToken: accessToken,
