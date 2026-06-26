@@ -160,7 +160,7 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         let sut = makeService(openId4vp: FakeOpenID4VP())
         XCTAssertEqual(
             sut.type(),
-            InteractionType.openId4VpPresentation.rawValue
+            InteractionType.openId4VpPresentationIAE.rawValue
         )
     }
 

@@ -96,8 +96,7 @@ class AuthorizationServerResolver {
            (authServerMetadata.interactiveAuthorizationEndpoint == nil ||
             authServerMetadata.interactiveAuthorizationEndpoint?
                 .trimmingCharacters(in: .whitespacesAndNewlines)
-                .isEmpty == true) &&
-           authServerMetadata.requireInteractiveAuthorizationRequest != true
+                .isEmpty == true) 
         {
             throw AuthorizationServerDiscoveryException(
                 "Missing authorization_endpoint for authorization_code flow."

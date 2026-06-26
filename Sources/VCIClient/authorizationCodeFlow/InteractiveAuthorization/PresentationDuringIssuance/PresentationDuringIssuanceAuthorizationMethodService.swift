@@ -25,7 +25,7 @@ class PresentationDuringIssuanceAuthorizationMethodService: AuthorizationMethodS
     }
 
     func type() -> String {
-        return InteractionType.openId4VpPresentation.rawValue
+        return InteractionType.openId4VpPresentationIAE.rawValue
     }
 
     func authorizeUser(requestData: AuthorizationRequestData) async throws -> AuthorizationResponse {

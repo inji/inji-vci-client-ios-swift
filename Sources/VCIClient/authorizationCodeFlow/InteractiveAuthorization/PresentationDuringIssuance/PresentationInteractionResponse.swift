@@ -82,11 +82,11 @@ final class PresentationInteractionResponse: InteractionResponse, Decodable {
     
     override func validate() throws {
         guard let type = type,
-              type == "openid4vp_presentation"
-                || type == "urn:openid:dcp:iae:openid4vp_presentation"
+              type == InteractionType.openId4VpPresentation.rawValue
+                || type == InteractionType.openId4VpPresentationIAE.rawValue
         else {
             throw IllegalArgumentException(
-                "Invalid type: expected 'openid4vp_presentation' or 'urn:openid:dcp:iae:openid4vp_presentation'"
+                "Invalid type: expected '\(InteractionType.openId4VpPresentation.rawValue)' or '\(InteractionType.openId4VpPresentationIAE.rawValue)'"
             )
         }
         
