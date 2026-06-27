@@ -34,7 +34,8 @@ class AuthorizationCodeFlowService {
         proofSigningAlgorithmsSupported: [String],
         credentialOffer: CredentialOffer? = nil,
         downloadTimeOutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
-        session: NetworkManager = NetworkManager.shared
+        session: NetworkManager = NetworkManager.shared,
+        dpopManager: DPoPManager = DPoPManager()
     ) async throws -> CredentialResponse {
         try await executeRequestCredentials(
             issuerMetadata: issuerMetadata,
@@ -45,11 +46,12 @@ class AuthorizationCodeFlowService {
             proofSigningAlgorithmsSupported: proofSigningAlgorithmsSupported,
             credentialOffer: credentialOffer,
             downloadTimeOutInMillis: downloadTimeOutInMillis,
-            session: session
+            session: session,
+            dpopManager: dpopManager
         ) { token in
             let proofs: CredentialRequestProofs
             let nonce = try await nonceService.fetchNonce(issuerMetadata: issuerMetadata, timeoutInMillis: downloadTimeOutInMillis)
-            
+
             do {
                 proofs = try await getProofs(
                     issuerMetadata.credentialIssuer,
@@ -66,7 +68,9 @@ class AuthorizationCodeFlowService {
                 proofs: proofs,
                 accessToken: token.accessToken,
                 timeoutInMillis: downloadTimeOutInMillis,
-                session: session
+                session: session,
+                tokenType: token.tokenType,
+                dpopManager: dpopManager
             )
         }
     }
@@ -81,7 +85,8 @@ class AuthorizationCodeFlowService {
         proofSigningAlgorithmsSupported: [String],
         credentialOffer: CredentialOffer? = nil,
         downloadTimeOutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
-        session: NetworkManager = NetworkManager.shared
+        session: NetworkManager = NetworkManager.shared,
+        dpopManager: DPoPManager = DPoPManager()
     ) async throws -> CredentialResponseDraft13 {
         try await executeRequestCredentials(
             issuerMetadata: issuerMetadata,
@@ -92,9 +97,10 @@ class AuthorizationCodeFlowService {
             proofSigningAlgorithmsSupported: proofSigningAlgorithmsSupported,
             credentialOffer: credentialOffer,
             downloadTimeOutInMillis: downloadTimeOutInMillis,
-            session: session
+            session: session,
+            dpopManager: dpopManager
         ) { token in
-            
+
             let nonce = try NonceService.extractNonceFromTokenResponse(token)
             let jwt: String
             do {
@@ -113,7 +119,9 @@ class AuthorizationCodeFlowService {
                 proof: JWTProof(jwt: jwt),
                 accessToken: token.accessToken,
                 timeoutInMillis: downloadTimeOutInMillis,
-                session: session
+                session: session,
+                tokenType: token.tokenType,
+                dpopManager: dpopManager
             )
         }
     }
@@ -128,6 +136,7 @@ class AuthorizationCodeFlowService {
         credentialOffer: CredentialOffer?,
         downloadTimeOutInMillis: Int64,
         session: NetworkManager,
+        dpopManager: DPoPManager = DPoPManager(),
         requestCredential: (TokenResponse) async throws -> Response?
     ) async throws -> Response {
         do {
@@ -158,7 +167,8 @@ class AuthorizationCodeFlowService {
                     authorizationMethods: authorizationMethods,
                     pkceSession: pkceSession,
                     getTokenResponse: getTokenResponse,
-                    credentialConfigurationId: credentialConfigurationId
+                    credentialConfigurationId: credentialConfigurationId,
+                    dpopManager: dpopManager
                 )
             } catch let e as DownloadFailedException {
                 throw e
@@ -202,13 +212,19 @@ class AuthorizationCodeFlowService {
         authorizationMethods: [AuthorizationMethod],
         pkceSession: PKCESessionManager.PKCESession,
         getTokenResponse: @escaping TokenResponseCallback,
-        credentialConfigurationId: String
+        credentialConfigurationId: String,
+        dpopManager: DPoPManager = DPoPManager()
     ) async throws -> TokenResponse {
         guard let tokenEndpoint = issuerMetadata.tokenEndpoint ?? authServerMetadata.tokenEndpoint else {
             throw DownloadFailedException("Missing token endpoint for issuer \(issuerMetadata.credentialIssuer)")
         }
 
-        let authCode = try await obtainAuthorizationCode(authorizationServerMetadata: authServerMetadata, issuerMetadata: issuerMetadata, clientMetadata: clientMetadata, pkceSession: pkceSession, credentialConfigurationId: credentialConfigurationId, authorizationMethods: authorizationMethods)
+        dpopManager.initialize(
+            tokenEndpoint: tokenEndpoint,
+            authorizationServerSupportedAlgorithms: authServerMetadata.dpopSigningAlgValuesSupported
+        )
+
+        let authCode = try await obtainAuthorizationCode(authorizationServerMetadata: authServerMetadata, issuerMetadata: issuerMetadata, clientMetadata: clientMetadata, pkceSession: pkceSession, credentialConfigurationId: credentialConfigurationId, authorizationMethods: authorizationMethods, dpopManager: dpopManager)
 
         return try await tokenService.getAccessToken(
             getTokenResponse: getTokenResponse,
@@ -216,7 +232,8 @@ class AuthorizationCodeFlowService {
             authCode: authCode,
             clientId: clientMetadata.clientId,
             redirectUri: clientMetadata.redirectUri,
-            codeVerifier: pkceSession.codeVerifier
+            codeVerifier: pkceSession.codeVerifier,
+            dpopManager: dpopManager
         )
     }
 
@@ -226,7 +243,8 @@ class AuthorizationCodeFlowService {
         clientMetadata: ClientMetadata,
         pkceSession: PKCESessionManager.PKCESession,
         credentialConfigurationId: String,
-        authorizationMethods: [AuthorizationMethod]
+        authorizationMethods: [AuthorizationMethod],
+        dpopManager: DPoPManager = DPoPManager()
     ) async throws -> String {
     
         let normalizedInteractiveEndpoint =
@@ -262,7 +280,8 @@ class AuthorizationCodeFlowService {
                         issuerMetadata: issuerMetadata,
                         clientMetadata: clientMetadata,
                         pkceSession: pkceSession,
-                        authorizationMethods: authorizationMethods
+                        authorizationMethods: authorizationMethods,
+                        dpopManager: dpopManager
                     )
                 }
 
@@ -275,7 +294,8 @@ class AuthorizationCodeFlowService {
                 issuerMetadata: issuerMetadata,
                 clientMetadata: clientMetadata,
                 pkceSession: pkceSession,
-                authorizationMethods: authorizationMethods
+                authorizationMethods: authorizationMethods,
+                dpopManager: dpopManager
             )
         }
     }
@@ -324,7 +344,8 @@ class AuthorizationCodeFlowService {
         issuerMetadata: IssuerMetadata,
         clientMetadata: ClientMetadata,
         pkceSession: PKCESessionManager.PKCESession,
-        authorizationMethods: [AuthorizationMethod]? = nil
+        authorizationMethods: [AuthorizationMethod]? = nil,
+        dpopManager: DPoPManager = DPoPManager()
     ) async throws -> String {
         guard let authorizationEndpoint =
             authorizationServerMetadata.authorizationEndpoint else {
@@ -346,7 +367,8 @@ class AuthorizationCodeFlowService {
                 authorizeUrl: authorizationEndpoint,
                 clientMetadata: clientMetadata,
                 pkceSession: pkceSession,
-                scope: issuerMetadata.scope ?? "default"
+                scope: issuerMetadata.scope ?? "default",
+                dpopJkt: dpopManager.isInitialized ? try? dpopManager.jwkThumbprint() : nil
             )
 
             let response: AuthorizationResponse

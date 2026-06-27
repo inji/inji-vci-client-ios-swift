@@ -7,6 +7,7 @@ struct AuthorizationServerMetadata: Codable {
     let authorizationEndpoint: String?
     let interactiveAuthorizationEndpoint: String?
     let requireInteractiveAuthorizationRequest: Bool?
+    let dpopSigningAlgValuesSupported: [String]?
 
     enum CodingKeys: String, CodingKey {
         case issuer
@@ -15,6 +16,7 @@ struct AuthorizationServerMetadata: Codable {
         case authorizationEndpoint = "authorization_endpoint"
         case interactiveAuthorizationEndpoint = "interactive_authorization_endpoint"
         case requireInteractiveAuthorizationRequest = "require_interactive_authorization_request"
+        case dpopSigningAlgValuesSupported = "dpop_signing_alg_values_supported"
     }
 }
 

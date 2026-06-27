@@ -18,7 +18,9 @@ class CredentialRequestExecutor {
         proofs: CredentialRequestProofs,
         accessToken: String,
         timeoutInMillis: Int64 = 10000,
-        session: NetworkManager = NetworkManager.shared
+        session: NetworkManager = NetworkManager.shared,
+        tokenType: String? = nil,
+        dpopManager: DPoPManager = DPoPManager()
     ) async throws -> CredentialResponse? {
         let timeoutSeconds = timeoutInMillis / 1000
 
@@ -32,7 +34,13 @@ class CredentialRequestExecutor {
 
             request.timeoutInterval = TimeInterval(timeoutInMillis) / 1000
 
-            let networkResponse = try await session.sendRequest(request: request)
+            let networkResponse = try await DPoPCredentialRequestSender(session: session).send(
+                baseRequest: request,
+                accessToken: accessToken,
+                credentialEndpoint: issuerMetadata.credentialEndpoint,
+                tokenType: tokenType,
+                dpopManager: dpopManager
+            )
             let responseBody = networkResponse.body
 
 
@@ -129,7 +137,9 @@ class CredentialRequestExecutor {
         proof: Proof,
         accessToken: String,
         timeoutInMillis: Int64 = 10000,
-        session: NetworkManager = NetworkManager.shared
+        session: NetworkManager = NetworkManager.shared,
+        tokenType: String? = nil,
+        dpopManager: DPoPManager = DPoPManager()
     ) async throws -> CredentialResponseDraft13? {
 
         let timeoutSeconds = timeoutInMillis / 1000
@@ -144,7 +154,13 @@ class CredentialRequestExecutor {
 
             request.timeoutInterval = TimeInterval(timeoutInMillis) / 1000
 
-            let networkResponse = try await session.sendRequest(request: request)
+            let networkResponse = try await DPoPCredentialRequestSender(session: session).send(
+                baseRequest: request,
+                accessToken: accessToken,
+                credentialEndpoint: issuerMetadata.credentialEndpoint,
+                tokenType: tokenType,
+                dpopManager: dpopManager
+            )
             let responseBody = networkResponse.body
 
 

@@ -6,6 +6,7 @@ public class VCIClient {
     let credentialOfferFlowHandler: CredentialOfferFlowHandler
     let trustedIssuerFlowHandler: TrustedIssuerFlowHandler
     let issuerMetadataService: IssuerMetadataService
+    private let dpopManager = DPoPManager()
 
     public init(traceabilityId: String
     ) {
@@ -45,6 +46,13 @@ public class VCIClient {
         }
     }
     
+    /// Generates a fresh token-endpoint DPoP proof bound to the supplied nonce, used by the wallet
+    /// to retry the token POST after an authorization server `use_dpop_nonce` challenge. Valid only
+    /// during an active flow; the ephemeral key from that flow signs the proof.
+    public func generateTokenDPoPProof(dpopNonce: String) throws -> String {
+        return try dpopManager.generateTokenProof(nonce: dpopNonce)
+    }
+
     public func fetchCredentialsFromTrustedIssuer(
         credentialIssuer: String,
         credentialConfigurationId: String,
@@ -56,6 +64,7 @@ public class VCIClient {
     ) async throws -> CredentialResponse {
 
         do {
+            dpopManager.reset()
             return try await self.trustedIssuerFlowHandler.downloadCredentials(
                 credentialIssuer: credentialIssuer,
                 credentialConfigurationId: credentialConfigurationId,
@@ -63,7 +72,8 @@ public class VCIClient {
                 authorizationMethods: authorizationMethods,
                 getTokenResponse: getTokenResponse,
                 getProofs: getProofs,
-                downloadTimeoutInMillis: downloadTimeoutInMillis
+                downloadTimeoutInMillis: downloadTimeoutInMillis,
+                dpopManager: dpopManager
             )
         } catch {
             Util.logError(
@@ -86,6 +96,7 @@ public class VCIClient {
     ) async throws -> CredentialResponse {
 
         do {
+            dpopManager.reset()
             return try await self.credentialOfferFlowHandler.downloadCredentials(
                 credentialOffer: credentialOffer,
                 clientMetadata: clientMetadata,
@@ -95,7 +106,8 @@ public class VCIClient {
                 getProofs: getProofs,
                 onCheckIssuerTrust: onCheckIssuerTrust,
                 networkSession: networkSession,
-                downloadTimeoutInMillis: downloadTimeoutInMillis
+                downloadTimeoutInMillis: downloadTimeoutInMillis,
+                dpopManager: dpopManager
             )
         } catch {
             Util.logError(
