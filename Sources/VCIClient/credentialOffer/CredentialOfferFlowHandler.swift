@@ -25,7 +25,8 @@ class CredentialOfferFlowHandler {
         getProofs: @escaping ProofsCallback,
         onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
         networkSession: NetworkManager = NetworkManager.shared,
-        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
+        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
+        dpopManager: DPoPManager = DPoPManager()
     ) async throws -> CredentialResponse {
         try await executeDownloadCredentials(
             credentialOffer: credentialOffer,
@@ -46,7 +47,8 @@ class CredentialOfferFlowHandler {
                         credentialConfigurationId: credentialConfigurationId,
                         proofSigningAlgorithmsSupported: proofSigningAlgorithmsSupported,
                         getTxCode: getTxCode,
-                        downloadTimeoutInMillis: downloadTimeoutInMillis
+                        downloadTimeoutInMillis: downloadTimeoutInMillis,
+                        dpopManager: dpopManager
                     )
                 } else if offer.isAuthorizationCodeFlow {
                     return try await self.authorizationCodeFlowService.requestCredentials(
@@ -59,7 +61,8 @@ class CredentialOfferFlowHandler {
                         proofSigningAlgorithmsSupported: proofSigningAlgorithmsSupported,
                         credentialOffer: offer,
                         downloadTimeOutInMillis: downloadTimeoutInMillis,
-                        session: networkSession
+                        session: networkSession,
+                        dpopManager: dpopManager
                     )
                 } else {
                     throw CredentialOfferFetchFailedException("Credential offer does not contain a supported grant type")
@@ -83,7 +86,8 @@ class CredentialOfferFlowHandler {
                         credentialConfigurationId: credentialConfigurationId,
                         proofSigningAlgorithmsSupported: proofSigningAlgorithmsSupported,
                         getTxCode: getTxCode,
-                        downloadTimeoutInMillis: downloadTimeoutInMillis
+                        downloadTimeoutInMillis: downloadTimeoutInMillis,
+                        dpopManager: dpopManager
                     )
                 } else if offer.isAuthorizationCodeFlow {
                     draft13Response = try await self.authorizationCodeFlowService.requestCredentialsDraft13(
@@ -96,7 +100,8 @@ class CredentialOfferFlowHandler {
                         proofSigningAlgorithmsSupported: proofSigningAlgorithmsSupported,
                         credentialOffer: offer,
                         downloadTimeOutInMillis: downloadTimeoutInMillis,
-                        session: networkSession
+                        session: networkSession,
+                        dpopManager: dpopManager
                     )
                 } else {
                     throw CredentialOfferFetchFailedException("Credential offer does not contain a supported grant type")

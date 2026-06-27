@@ -5,4 +5,5 @@ struct ImplicitAuthorizationRequestData: AuthorizationRequestData {
     let clientMetadata: ClientMetadata
     let pkceSession: PKCESessionManager.PKCESession
     let scope: String
+    let dpopJkt: String?
 }

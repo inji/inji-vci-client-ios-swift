@@ -81,6 +81,8 @@ class NetworkManager {
 
                 throw NetworkRequestFailedException(
                     message: "HTTP \(httpResponse.statusCode)",
+                    httpStatusCode: httpResponse.statusCode,
+                    headers: httpResponse.allHeaderFields,
                     issuerErrorCode: issuerErrorCode,
                     issuerErrorDescription: issuerErrorDescription
                 )

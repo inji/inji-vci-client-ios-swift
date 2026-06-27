@@ -26,7 +26,8 @@ final class RedirectToWebAuthorizationMethodServiceTests: XCTestCase {
             authorizeUrl: authorizeUrl,
             clientMetadata: clientMetadata,
             pkceSession: pkceSession,
-            scope: scope
+            scope: scope,
+            dpopJkt: nil
         )
     }
 
