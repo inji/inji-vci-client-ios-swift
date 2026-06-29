@@ -340,32 +340,52 @@ Presentation During Issuance allows the wallet to present a verifiable presentat
 
 ###### Specification Reference
 
-This implementation follows - [OpenID4VCI v1.1 Specification Commit](https://github.com/openid/OpenID4VCI/blob/31636e9bb7f0eef6933175e1e41c78ce79a69783/1.1/openid-4-verifiable-credential-issuance-1_1.md)
+This implementation follows - [OpenID4VCI v1.1 Specification Commit](https://github.com/openid/OpenID4VCI/blob/4ef9f264e4f23affafc1097f9bd4c0f639a80bfd/1.1/openid-4-verifiable-credential-issuance-1_1.md)
 
 > Note:
 > - While this library primarily implements OpenID4VCI 1.0 and draft 13, the Presentation During Issuance feature follows the v1.1 specification as mentioned above.
 > - For Presentation During Issuance, this library internally uses [inji-openid4vp-ios-swift](https://github.com/inji/inji-openid4vp-ios-swift) to construct the VP and handle the presentation exchange with the issuer.
+> 
+> The OpenID4VP request is expected to follow either:
+>
+> * the [**Digital Credentials Query Language (DCQL)**](https://openid.github.io/OpenID4VP/openid-4-verifiable-presentations-1_0-wg-draft.html#name-digital-credentials-query-l) request format, as defined in the OpenID4VP specification V1.0, or
+> * the [**DIF Presentation Exchange**](https://openid.net/specs/openid-4-verifiable-presentations-1_0-ID3.html#name-dif-presentation-exchange-2) request format, as defined in the Draft 23 OpenID4VP specification.
+
+
+###### Supported Response Modes
+
+The following response modes are supported:
+
+1. `iae_post`
+2. `iae_post.jwt`
+3. `iar-post` — Supported for backward compatibility and may be deprecated in a future release.
+4. `iar-post.jwt` — Supported for backward compatibility and may be deprecated in a future release.
+
 
 **Parameters :**
 
-| Name                             | Type                                     | Required | Default Value | Description                                                                                                                                                                                                                                                                                                                                                                                            |
-|----------------------------------|------------------------------------------|----------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| selectCredentialsForPresentation | SelectCredentialsForPresentationCallback | Yes      | N/A           | Callback to select credentials from the wallet for the issuer's presentation request                                                                                                                                                                                                                                                                                                                  |
-| signVerifiablePresentation       | SignVerifiablePresentationCallback       | Yes      | N/A           | Callback to sign the payload used for verifiable presentation construction                                                                                                                                                                                                                                                                                                                             |
-| ldpVpSignatureSuite              | String                                   | No       | nil           | Signature suite to use for signing the VP when the requested credential format is `ldp_vc`                                                                                                                                                                                                                                                                                                            |
+| Name                             | Type                                     | Required | Default Value  | Description                                                                                                                                        |
+|----------------------------------|------------------------------------------|----------|----------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| jsonLdCanonicalizer              | JsonLdCanonicalizerCallback              | No       | nil            | **Required only if supporting `ldp_vc` format** to canonicalize JSON-LD data for proof generation during VP construction<br/>. Otherwise Optional. |
+| openid4vpWalletConfig            | WalletConfig                             | No       | WalletConfig() | Wallet's OpenID4VP related configuration                                                                                                           |
+| selectCredentialsForPresentation | SelectCredentialsForPresentationCallback | Yes      | N/A            | Callback to select credentials from the wallet for the issuer's presentation request                                                               |
+| signVerifiablePresentation       | SignVerifiablePresentationCallback       | Yes      | N/A            | Callback to sign the payload used for verifiable presentation construction                                                                         |
+
+
 
 **Example usage**
 ```swift
 AuthorizationMethod.presentationDuringIssuance(
+    jsonLdCanonicalizer: JsonLdCanonicalizerCallback? = jsonLdCanonicalizerCallback,
+    openid4vpWalletConfig: WalletConfig = openid4vpWalletConfig,
     selectCredentialsForPresentation: { presentationRequest in
-        let selectedCredentials: [String: [FormatType: [Any]]] = selectCredentials(presentationRequest)
+        let selectedCredentials: [String: [Credential]] = selectCredentials(presentationRequest)
         return selectedCredentials
     },
     signVerifiablePresentation: { payload in
-        let signedData: [VPTokenSigningResultV2] = signDataForVP(payload)
+        let signedData: [VPTokenSigningResult] = signDataForVP(payload)
         return signedData
-    },
-    ldpVpSignatureSuite: "Ed25519Signature2020"
+    }
 )
 ```
 
@@ -481,19 +501,19 @@ do {
 
 ### Error code reference
 
-| Code    | Exception Type                             | Description                                                                                              |
-|---------|--------------------------------------------|----------------------------------------------------------------------------------------------------------|
-| VCI-001 | `AuthorizationServerDiscoveryException`    | Failed to discover authorization server                                                                  |
-| VCI-002 | `DownloadFailedException`                  | Failed to download credential                                                                            |
-| VCI-003 | `InvalidAccessTokenException`              | Access token is invalid                                                                                  |
-| VCI-004 | `InvalidDataProvidedException`             | Required details not provided                                                                            |
-| VCI-005 | `InvalidPublicKeyException`                | Invalid public key passed                                                                                |
-| VCI-006 | `NetworkRequestFailedException`            | Network request failed                                                                                   |
-| VCI-007 | `NetworkRequestTimeoutException`           | Network request timed-out                                                                                |
-| VCI-008 | `CredentialOfferFetchFailedException`      | Failed to fetch credential offer                                                                         |
-| VCI-009 | `IssuerMetadataFetchException`             | Failed to fetch issuerMetadata                                                                           |
-| VCI-010 | `VCIClientException`                       | Generic API-boundary wrapper or unknown exception surfaced by `VCIClient` public methods                |
-| VCI-011 | `InteractiveAuthorizationException`        | Failed to perform Interactive authorization (Presentation During Issuance / Redirect to Web interaction) |
+| Code    | Exception Type                          | Description                                                                                              |
+|---------|-----------------------------------------|----------------------------------------------------------------------------------------------------------|
+| VCI-001 | `AuthorizationServerDiscoveryException` | Failed to discover authorization server                                                                  |
+| VCI-002 | `DownloadFailedException`               | Failed to download credential                                                                            |
+| VCI-003 | `InvalidAccessTokenException`           | Access token is invalid                                                                                  |
+| VCI-004 | `InvalidDataProvidedException`          | Required details not provided                                                                            |
+| VCI-005 | `InvalidPublicKeyException`             | Invalid public key passed                                                                                |
+| VCI-006 | `NetworkRequestFailedException`         | Network request failed                                                                                   |
+| VCI-007 | `NetworkRequestTimeoutException`        | Network request timed-out                                                                                |
+| VCI-008 | `CredentialOfferFetchFailedException`   | Failed to fetch credential offer                                                                         |
+| VCI-009 | `IssuerMetadataFetchException`          | Failed to fetch issuerMetadata                                                                           |
+| VCI-010 | `VCIClientException`                    | Generic API-boundary wrapper or unknown exception surfaced by `VCIClient` public methods                 |
+| VCI-011 | `InteractiveAuthorizationException`     | Failed to perform Interactive authorization (Presentation During Issuance / Redirect to Web interaction) |
 
 ---
 
