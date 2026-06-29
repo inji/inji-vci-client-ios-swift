@@ -270,4 +270,115 @@ final class CredentialRequestExecutorTests: XCTestCase {
                 XCTFail("Unexpected error type: \(error)")
             }
         }
+
+    // MARK: - DPoP
+
+    final class SequencedNetworkManager: NetworkManager {
+        var outcomes: [() throws -> NetworkResponse] = []
+        var sent: [URLRequest] = []
+        private var index = 0
+
+        override func sendRequest(request: URLRequest) async throws -> NetworkResponse {
+            sent.append(request)
+            defer { index += 1 }
+            return try outcomes[index]()
+        }
+    }
+
+    private func dpopManager() throws -> DPoPManager {
+        let manager = DPoPManager()
+        try manager.initialize(tokenEndpoint: "https://as.example.com/token", authorizationServerSupportedAlgorithms: ["ES256"])
+        return manager
+    }
+
+    private func nonceClaim(in request: URLRequest) throws -> String? {
+        let proof = try XCTUnwrap(request.value(forHTTPHeaderField: "DPoP"))
+        let payload = try XCTUnwrap(try Data(base64URLEncodedString: proof.components(separatedBy: ".")[1]))
+        let claims = try XCTUnwrap(try JSONSerialization.jsonObject(with: payload) as? [String: Any])
+        return claims["nonce"] as? String
+    }
+
+    func testRequestCredential_dpop_appliesDpopAuthorizationAndProof() async throws {
+        let factory = MockCredentialRequestFactory()
+        let networkManager = MockNetworkManager()
+        networkManager.responseBody = "{\"credential\":\"vc\"}"
+
+        let executor = CredentialRequestExecutor(credentialRequestFactoryDraft13: factory)
+        _ = try await executor.requestCredentialDraft13(
+            issuerMetadata: mockIssuerMetadata(),
+            credentialConfigurationId: "mock",
+            proof: mockProof(),
+            accessToken: "token",
+            session: networkManager,
+            tokenType: "DPoP",
+            dpopManager: try dpopManager()
+        )
+
+        let request = try XCTUnwrap(networkManager.capturedUrlRequest)
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "DPoP token")
+        XCTAssertNotNil(request.value(forHTTPHeaderField: "DPoP"))
+    }
+
+    func testRequestCredential_dpop_retriesWithServerNonce() async throws {
+        let factory = MockCredentialRequestFactory()
+        let networkManager = SequencedNetworkManager()
+        networkManager.outcomes = [
+            {
+                throw NetworkRequestFailedException(
+                    message: "HTTP 401",
+                    httpStatusCode: 401,
+                    headers: [
+                        "WWW-Authenticate": "DPoP error=\"use_dpop_nonce\"",
+                        "DPoP-Nonce": "server-nonce",
+                    ]
+                )
+            },
+            { NetworkResponse(body: "{\"credential\":\"vc\"}", headers: nil) },
+        ]
+
+        let executor = CredentialRequestExecutor(credentialRequestFactoryDraft13: factory)
+        let result = try await executor.requestCredentialDraft13(
+            issuerMetadata: mockIssuerMetadata(),
+            credentialConfigurationId: "mock",
+            proof: mockProof(),
+            accessToken: "token",
+            session: networkManager,
+            tokenType: "DPoP",
+            dpopManager: try dpopManager()
+        )
+
+        XCTAssertNotNil(result)
+        XCTAssertEqual(networkManager.sent.count, 2)
+        XCTAssertEqual(try nonceClaim(in: networkManager.sent[1]), "server-nonce")
+    }
+
+    func testRequestCredential_dpop_bearerFallbackOnBearerOnlyChallenge() async throws {
+        let factory = MockCredentialRequestFactory()
+        let networkManager = SequencedNetworkManager()
+        networkManager.outcomes = [
+            {
+                throw NetworkRequestFailedException(
+                    message: "HTTP 401",
+                    httpStatusCode: 401,
+                    headers: ["WWW-Authenticate": "Bearer error=\"invalid_token\""]
+                )
+            },
+            { NetworkResponse(body: "{\"credential\":\"vc\"}", headers: nil) },
+        ]
+
+        let executor = CredentialRequestExecutor(credentialRequestFactoryDraft13: factory)
+        _ = try await executor.requestCredentialDraft13(
+            issuerMetadata: mockIssuerMetadata(),
+            credentialConfigurationId: "mock",
+            proof: mockProof(),
+            accessToken: "token",
+            session: networkManager,
+            tokenType: "DPoP",
+            dpopManager: try dpopManager()
+        )
+
+        XCTAssertEqual(networkManager.sent.count, 2)
+        XCTAssertEqual(networkManager.sent[1].value(forHTTPHeaderField: "Authorization"), "Bearer token")
+        XCTAssertNil(networkManager.sent[1].value(forHTTPHeaderField: "DPoP"))
+    }
 }

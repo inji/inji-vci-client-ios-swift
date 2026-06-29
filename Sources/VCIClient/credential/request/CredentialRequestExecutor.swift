@@ -2,15 +2,15 @@ import Foundation
 
 class CredentialRequestExecutor {
     private let credentialRequestFactory: CredentialRequestFactory
-        private let credentialRequestFactoryDraft13: CredentialRequestFactoryProtocol
+    private let credentialRequestFactoryDraft13: CredentialRequestFactoryProtocol
 
-        init(
-            credentialRequestFactoryDraft13: CredentialRequestFactoryProtocol = CredentialRequestFactoryDraft13(),
-            credentialRequestFactory: CredentialRequestFactory = CredentialRequestFactory()
-        ) {
-            self.credentialRequestFactoryDraft13 = credentialRequestFactoryDraft13
-            self.credentialRequestFactory = credentialRequestFactory
-        }
+    init(
+        credentialRequestFactoryDraft13: CredentialRequestFactoryProtocol = CredentialRequestFactoryDraft13(),
+        credentialRequestFactory: CredentialRequestFactory = CredentialRequestFactory()
+    ) {
+        self.credentialRequestFactoryDraft13 = credentialRequestFactoryDraft13
+        self.credentialRequestFactory = credentialRequestFactory
+    }
 
     func requestCredential(
         issuerMetadata: IssuerMetadata,
@@ -34,7 +34,7 @@ class CredentialRequestExecutor {
 
             request.timeoutInterval = TimeInterval(timeoutInMillis) / 1000
 
-            let networkResponse = try await DPoPCredentialRequestSender(session: session).send(
+            let networkResponse = try await sendCredentialRequest(session: session,
                 baseRequest: request,
                 accessToken: accessToken,
                 credentialEndpoint: issuerMetadata.credentialEndpoint,
@@ -154,7 +154,7 @@ class CredentialRequestExecutor {
 
             request.timeoutInterval = TimeInterval(timeoutInMillis) / 1000
 
-            let networkResponse = try await DPoPCredentialRequestSender(session: session).send(
+            let networkResponse = try await sendCredentialRequest(session: session,
                 baseRequest: request,
                 accessToken: accessToken,
                 credentialEndpoint: issuerMetadata.credentialEndpoint,
@@ -238,6 +238,86 @@ class CredentialRequestExecutor {
                 cause: error
             )
         }
+    }
+
+    /// Sends the credential request, applying DPoP when the token response carried
+    /// `token_type=DPoP`. A `use_dpop_nonce` challenge is retried once with the server supplied
+    /// nonce; a Bearer-only challenge triggers a best-effort Bearer retry per RFC 9449 section 7.2.
+    private func sendCredentialRequest(
+        session: NetworkManager,
+        baseRequest: URLRequest,
+        accessToken: String,
+        credentialEndpoint: String,
+        tokenType: String?,
+        dpopManager: DPoPManager
+    ) async throws -> NetworkResponse {
+        let useDpop = dpopManager.isInitialized
+            && tokenType?.caseInsensitiveCompare(Constants.dpopTokenType) == .orderedSame
+
+        guard useDpop else {
+            return try await session.sendRequest(request: baseRequest)
+        }
+
+        let proof = try dpopManager.generateCredentialProof(
+            credentialEndpoint: credentialEndpoint,
+            accessToken: accessToken
+        )
+
+        do {
+            return try await session.sendRequest(
+                request: withDpop(baseRequest, accessToken: accessToken, proof: proof)
+            )
+        } catch let failure as NetworkRequestFailedException {
+            guard failure.httpStatusCode == 401 else { throw failure }
+
+            let challenge = WwwAuthenticateChallenge.parse(
+                header(Constants.wwwAuthenticateHeader, in: failure.headers)
+            )
+            let nonce = header(Constants.dpopNonceHeader, in: failure.headers)
+
+            if challenge.error == Constants.useDpopNonceError, let nonce = nonce {
+                let retryProof = try dpopManager.generateCredentialProof(
+                    credentialEndpoint: credentialEndpoint,
+                    accessToken: accessToken,
+                    nonce: nonce
+                )
+                return try await session.sendRequest(
+                    request: withDpop(baseRequest, accessToken: accessToken, proof: retryProof)
+                )
+            }
+
+            if !challenge.isDpop && challenge.isBearer {
+                return try await session.sendRequest(
+                    request: withBearer(baseRequest, accessToken: accessToken)
+                )
+            }
+
+            throw failure
+        }
+    }
+
+    private func withDpop(_ request: URLRequest, accessToken: String, proof: String) -> URLRequest {
+        var updated = request
+        updated.setValue("\(Constants.dpopTokenType) \(accessToken)", forHTTPHeaderField: Constants.authorizationHeader)
+        updated.setValue(proof, forHTTPHeaderField: Constants.dpopHeader)
+        return updated
+    }
+
+    private func withBearer(_ request: URLRequest, accessToken: String) -> URLRequest {
+        var updated = request
+        updated.setValue("\(Constants.bearerTokenType) \(accessToken)", forHTTPHeaderField: Constants.authorizationHeader)
+        updated.setValue(nil, forHTTPHeaderField: Constants.dpopHeader)
+        return updated
+    }
+
+    private func header(_ name: String, in headers: [AnyHashable: Any]?) -> String? {
+        guard let headers = headers else { return nil }
+        for (key, value) in headers {
+            if let keyString = key as? String, keyString.caseInsensitiveCompare(name) == .orderedSame {
+                return value as? String
+            }
+        }
+        return nil
     }
 
 }

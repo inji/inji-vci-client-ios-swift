@@ -1,36 +1,15 @@
 import CryptoKit
 import Foundation
+import JSONWebAlgorithms
+import JSONWebKey
+import JSONWebSignature
+import JSONWebToken
 
-/// Owns the DPoP mechanism for a single issuance flow as described in the DPoP ADR (RFC 9449).
-///
-/// A fresh ephemeral EC key pair is generated in memory for the flow and reused to sign every
-/// proof - the `dpop_jkt` in the authorization URL, the token-endpoint proof, and the
-/// credential-endpoint proof. The key never leaves the library and is never persisted.
+
 class DPoPManager {
-    private enum KeyPair {
-        case p256(P256.Signing.PrivateKey)
-        case p384(P384.Signing.PrivateKey)
-        case p521(P521.Signing.PrivateKey)
-
-        var publicKeyRawRepresentation: Data {
-            switch self {
-            case let .p256(key): return key.publicKey.rawRepresentation
-            case let .p384(key): return key.publicKey.rawRepresentation
-            case let .p521(key): return key.publicKey.rawRepresentation
-            }
-        }
-
-        func signature(for data: Data) throws -> Data {
-            switch self {
-            case let .p256(key): return try key.signature(for: data).rawRepresentation
-            case let .p384(key): return try key.signature(for: data).rawRepresentation
-            case let .p521(key): return try key.signature(for: data).rawRepresentation
-            }
-        }
-    }
-
     private struct Session {
-        let keyPair: KeyPair
+        let signingKey: any KeyRepresentable
+        let publicJWK: JWK
         let algorithm: DPoPAlgorithm
         let tokenEndpoint: String
     }
@@ -39,17 +18,13 @@ class DPoPManager {
 
     var isInitialized: Bool { session != nil }
 
-    func initialize(tokenEndpoint: String, authorizationServerSupportedAlgorithms: [String]?) {
+    func initialize(tokenEndpoint: String, authorizationServerSupportedAlgorithms: [String]?) throws {
         guard session == nil else { return }
         let algorithm = DPoPAlgorithm.select(authorizationServerSupportedAlgorithms)
-        let keyPair: KeyPair
-        switch algorithm {
-        case .es256: keyPair = .p256(P256.Signing.PrivateKey())
-        case .es384: keyPair = .p384(P384.Signing.PrivateKey())
-        case .es512: keyPair = .p521(P521.Signing.PrivateKey())
-        }
+        let material = try algorithm.generateKeyMaterial()
         session = Session(
-            keyPair: keyPair,
+            signingKey: material.signingKey,
+            publicJWK: material.publicJWK,
             algorithm: algorithm,
             tokenEndpoint: DPoPManager.normalizeHtu(tokenEndpoint)
         )
@@ -60,29 +35,12 @@ class DPoPManager {
     }
 
     func jwkThumbprint() throws -> String {
-        let activeSession = try requireSession()
-        let coordinates = DPoPManager.coordinates(activeSession.keyPair)
-        let canonical: [String: String] = [
-            "crv": activeSession.algorithm.curveName,
-            "kty": "EC",
-            "x": coordinates.x,
-            "y": coordinates.y,
-        ]
-        let data = try JSONSerialization.data(
-            withJSONObject: canonical,
-            options: [.sortedKeys, .withoutEscapingSlashes]
-        )
-        return Data(SHA256.hash(data: data)).base64URLEncodedString()
+        try DPoPManager.thumbprint(of: requireSession().publicJWK)
     }
 
     func generateTokenProof(nonce: String? = nil) throws -> String {
         let activeSession = try requireSession()
-        return try buildProof(
-            activeSession,
-            htu: activeSession.tokenEndpoint,
-            nonce: nonce,
-            accessToken: nil
-        )
+        return try buildProof(activeSession, htu: activeSession.tokenEndpoint, nonce: nonce, accessToken: nil)
     }
 
     func generateCredentialProof(
@@ -105,37 +63,26 @@ class DPoPManager {
         nonce: String?,
         accessToken: String?
     ) throws -> String {
-        let coordinates = DPoPManager.coordinates(activeSession.keyPair)
-        let header: [String: Any] = [
-            "typ": DPoPConstants.dpopJwtType,
-            "alg": activeSession.algorithm.rawValue,
-            "jwk": [
-                "kty": "EC",
-                "crv": activeSession.algorithm.curveName,
-                "x": coordinates.x,
-                "y": coordinates.y,
-            ],
-        ]
+        var header = DefaultJWSHeaderImpl(algorithm: activeSession.algorithm.signingAlgorithm)
+        header.type = Constants.dpopJwtType
+        header.jwk = activeSession.publicJWK
 
         let issuedAt = Int(Date().timeIntervalSince1970)
-        var payload: [String: Any] = [
-            "jti": UUID().uuidString,
-            "htm": DPoPConstants.httpMethodPost,
-            "htu": htu,
-            "iat": issuedAt,
-            "exp": issuedAt + Int(DPoPConstants.proofLifetimeSeconds),
-        ]
-        if let nonce = nonce {
-            payload["nonce"] = nonce
-        }
-        if let accessToken = accessToken {
-            payload["ath"] = DPoPManager.accessTokenHash(accessToken)
-        }
+        let claims = DPoPProofClaims(
+            jti: UUID().uuidString,
+            htm: Constants.httpMethodPost,
+            htu: htu,
+            iat: issuedAt,
+            exp: issuedAt + Int(Constants.dpopProofLifetimeSeconds),
+            nonce: nonce,
+            ath: accessToken.map { DPoPManager.accessTokenHash($0) }
+        )
 
-        let signingInput = try DPoPManager.base64URLJSON(header)
-            + "." + DPoPManager.base64URLJSON(payload)
-        let signature = try activeSession.keyPair.signature(for: Data(signingInput.utf8))
-        return signingInput + "." + signature.base64URLEncodedString()
+        return try JWT.signed(
+            payload: claims,
+            protectedHeader: header,
+            key: activeSession.signingKey
+        ).jwtString
     }
 
     private func requireSession() throws -> Session {
@@ -148,25 +95,39 @@ class DPoPManager {
         return session
     }
 
-    private static func coordinates(_ keyPair: KeyPair) -> (x: String, y: String) {
-        let raw = keyPair.publicKeyRawRepresentation
-        let half = raw.count / 2
-        return (
-            raw.prefix(half).base64URLEncodedString(),
-            raw.suffix(half).base64URLEncodedString()
-        )
-    }
-
     private static func accessTokenHash(_ accessToken: String) -> String {
-        Data(SHA256.hash(data: Data(accessToken.utf8))).base64URLEncodedString()
+        // RFC 9449 §4.2: hash the ASCII encoding of the access token
+        let tokenData = accessToken.data(using: .ascii) ?? Data(accessToken.utf8)
+        return Data(SHA256.hash(data: tokenData)).base64URLEncodedString()
     }
 
-    private static func base64URLJSON(_ object: Any) throws -> String {
-        let data = try JSONSerialization.data(
-            withJSONObject: object,
+    /// Computes the RFC 7638 JWK thumbprint over the public key, supporting EC, OKP and RSA keys.
+    private static func thumbprint(of jwk: JWK) throws -> String {
+        let members: [String: String]
+        switch jwk.keyType {
+        case .ellipticCurve:
+            guard let curve = jwk.curve?.rawValue, let x = jwk.x, let y = jwk.y else {
+                throw VCIClientException(code: "VCI-011", message: "Incomplete EC JWK for thumbprint")
+            }
+            members = ["crv": curve, "kty": jwk.keyType.rawValue, "x": x.base64URLEncodedString(), "y": y.base64URLEncodedString()]
+        case .octetKeyPair:
+            guard let curve = jwk.curve?.rawValue, let x = jwk.x else {
+                throw VCIClientException(code: "VCI-011", message: "Incomplete OKP JWK for thumbprint")
+            }
+            members = ["crv": curve, "kty": jwk.keyType.rawValue, "x": x.base64URLEncodedString()]
+        case .rsa:
+            guard let n = jwk.n, let e = jwk.e else {
+                throw VCIClientException(code: "VCI-011", message: "Incomplete RSA JWK for thumbprint")
+            }
+            members = ["e": e.base64URLEncodedString(), "kty": jwk.keyType.rawValue, "n": n.base64URLEncodedString()]
+        default:
+            throw VCIClientException(code: "VCI-011", message: "Unsupported JWK type for thumbprint")
+        }
+        let canonical = try JSONSerialization.data(
+            withJSONObject: members,
             options: [.sortedKeys, .withoutEscapingSlashes]
         )
-        return data.base64URLEncodedString()
+        return Data(SHA256.hash(data: canonical)).base64URLEncodedString()
     }
 
     private static func normalizeHtu(_ endpoint: String) -> String {
@@ -175,4 +136,14 @@ class DPoPManager {
         components.fragment = nil
         return components.string ?? endpoint
     }
+}
+
+private struct DPoPProofClaims: Codable {
+    let jti: String
+    let htm: String
+    let htu: String
+    let iat: Int
+    let exp: Int
+    let nonce: String?
+    let ath: String?
 }

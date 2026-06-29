@@ -134,7 +134,7 @@ class PreAuthCodeFlowService {
                 )
             }
 
-            dpopManager.initialize(
+            try dpopManager.initialize(
                 tokenEndpoint: tokenEndpoint,
                 authorizationServerSupportedAlgorithms: authServerMetadata.dpopSigningAlgValuesSupported
             )

@@ -2,16 +2,22 @@ import Foundation
 
 struct WwwAuthenticateChallenge {
     let isDpop: Bool
+    let isBearer: Bool
     let error: String?
 
     static func parse(_ headerValue: String?) -> WwwAuthenticateChallenge {
         guard let headerValue = headerValue,
               !headerValue.trimmingCharacters(in: .whitespaces).isEmpty else {
-            return WwwAuthenticateChallenge(isDpop: false, error: nil)
+            return WwwAuthenticateChallenge(isDpop: false, isBearer: false, error: nil)
         }
 
         let isDpop = headerValue.range(
             of: "(^|,|\\s)DPoP(\\s|$)",
+            options: [.regularExpression, .caseInsensitive]
+        ) != nil
+
+        let isBearer = headerValue.range(
+            of: "(^|,|\\s)Bearer(\\s|$)",
             options: [.regularExpression, .caseInsensitive]
         ) != nil
 
@@ -29,6 +35,6 @@ struct WwwAuthenticateChallenge {
             }
         }
 
-        return WwwAuthenticateChallenge(isDpop: isDpop, error: error)
+        return WwwAuthenticateChallenge(isDpop: isDpop, isBearer: isBearer, error: error)
     }
 }

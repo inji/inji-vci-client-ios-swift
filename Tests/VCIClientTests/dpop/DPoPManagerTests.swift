@@ -7,9 +7,9 @@ final class DPoPManagerTests: XCTestCase {
     private func initializedManager(
         tokenEndpoint: String = "https://as.example.com/token",
         algorithms: [String]? = ["ES256"]
-    ) -> DPoPManager {
+    ) throws -> DPoPManager {
         let manager = DPoPManager()
-        manager.initialize(tokenEndpoint: tokenEndpoint, authorizationServerSupportedAlgorithms: algorithms)
+        try manager.initialize(tokenEndpoint: tokenEndpoint, authorizationServerSupportedAlgorithms: algorithms)
         return manager
     }
 
@@ -20,7 +20,7 @@ final class DPoPManagerTests: XCTestCase {
 
     func test_isInitialized() throws {
         XCTAssertFalse(DPoPManager().isInitialized)
-        XCTAssertTrue(initializedManager().isInitialized)
+        XCTAssertTrue(try initializedManager().isInitialized)
     }
 
     func test_tokenProof_headerAndClaims() throws {
@@ -65,8 +65,28 @@ final class DPoPManagerTests: XCTestCase {
         XCTAssertTrue(publicKey.isValidSignature(signature, for: signingInput))
     }
 
+    func test_producesProofForEverySupportedAlgorithm() throws {
+        let algorithms = ["EdDSA", "ES256K", "ES256", "ES384", "ES512", "RS256"]
+        for alg in algorithms {
+            let manager = try initializedManager(algorithms: [alg])
+            let parts = try manager.generateTokenProof().components(separatedBy: ".")
+            XCTAssertEqual(parts.count, 3, "proof for \(alg) must be a compact JWS")
+
+            let header = try segment(parts[0])
+            XCTAssertEqual(header["alg"] as? String, alg)
+            XCTAssertEqual(header["typ"] as? String, "dpop+jwt")
+
+            let jwk = try XCTUnwrap(header["jwk"] as? [String: Any])
+            XCTAssertNil(jwk["d"], "public JWK for \(alg) must not contain private key 'd'")
+            XCTAssertNil(jwk["p"], "public JWK for \(alg) must not contain private key 'p'")
+            XCTAssertNil(jwk["q"], "public JWK for \(alg) must not contain private key 'q'")
+
+            XCTAssertFalse(try manager.jwkThumbprint().isEmpty)
+        }
+    }
+
     func test_tokenProof_includesNonceWhenSupplied() throws {
-        let manager = initializedManager()
+        let manager = try initializedManager()
         let claims = try segment(try manager.generateTokenProof(nonce: "nonce-123").components(separatedBy: ".")[1])
         XCTAssertEqual(claims["nonce"] as? String, "nonce-123")
     }
@@ -86,13 +106,13 @@ final class DPoPManagerTests: XCTestCase {
 
     func test_htuStripsQueryAndFragment() throws {
         let manager = DPoPManager()
-        manager.initialize(tokenEndpoint: "https://as.example.com/token?foo=bar#frag", authorizationServerSupportedAlgorithms: ["ES256"])
+        try manager.initialize(tokenEndpoint: "https://as.example.com/token?foo=bar#frag", authorizationServerSupportedAlgorithms: ["ES256"])
         let claims = try segment(try manager.generateTokenProof().components(separatedBy: ".")[1])
         XCTAssertEqual(claims["htu"] as? String, "https://as.example.com/token")
     }
 
     func test_thumbprintMatchesEmbeddedJwk() throws {
-        let manager = initializedManager()
+        let manager = try initializedManager()
         let header = try segment(try manager.generateTokenProof().components(separatedBy: ".")[0])
         let jwk = try XCTUnwrap(header["jwk"] as? [String: String])
 
@@ -105,7 +125,7 @@ final class DPoPManagerTests: XCTestCase {
     }
 
     func test_eachProofHasUniqueJti() throws {
-        let manager = initializedManager()
+        let manager = try initializedManager()
         let first = try segment(try manager.generateTokenProof().components(separatedBy: ".")[1])["jti"] as? String
         let second = try segment(try manager.generateTokenProof().components(separatedBy: ".")[1])["jti"] as? String
         XCTAssertNotEqual(first, second)
@@ -128,15 +148,15 @@ final class DPoPManagerTests: XCTestCase {
     }
 
     func test_resetClearsSession() throws {
-        let manager = initializedManager()
+        let manager = try initializedManager()
         manager.reset()
         XCTAssertFalse(manager.isInitialized)
     }
 
     func test_initializeIsIdempotent() throws {
-        let manager = initializedManager()
+        let manager = try initializedManager()
         let before = try manager.jwkThumbprint()
-        manager.initialize(tokenEndpoint: "https://other.example.com/token", authorizationServerSupportedAlgorithms: ["ES384"])
+        try manager.initialize(tokenEndpoint: "https://other.example.com/token", authorizationServerSupportedAlgorithms: ["ES384"])
         XCTAssertEqual(try manager.jwkThumbprint(), before)
     }
 }

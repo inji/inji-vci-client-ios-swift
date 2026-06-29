@@ -219,7 +219,7 @@ class AuthorizationCodeFlowService {
             throw DownloadFailedException("Missing token endpoint for issuer \(issuerMetadata.credentialIssuer)")
         }
 
-        dpopManager.initialize(
+        try dpopManager.initialize(
             tokenEndpoint: tokenEndpoint,
             authorizationServerSupportedAlgorithms: authServerMetadata.dpopSigningAlgValuesSupported
         )
@@ -368,7 +368,7 @@ class AuthorizationCodeFlowService {
                 clientMetadata: clientMetadata,
                 pkceSession: pkceSession,
                 scope: issuerMetadata.scope ?? "default",
-                dpopJkt: dpopManager.isInitialized ? try? dpopManager.jwkThumbprint() : nil
+                dpopJkt: dpopManager.isInitialized ? try dpopManager.jwkThumbprint() : nil
             )
 
             let response: AuthorizationResponse

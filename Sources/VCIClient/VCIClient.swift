@@ -6,7 +6,7 @@ public class VCIClient {
     let credentialOfferFlowHandler: CredentialOfferFlowHandler
     let trustedIssuerFlowHandler: TrustedIssuerFlowHandler
     let issuerMetadataService: IssuerMetadataService
-    private let dpopManager = DPoPManager()
+    private let dpopManager: DPoPManager
 
     public init(traceabilityId: String
     ) {
@@ -15,19 +15,22 @@ public class VCIClient {
         trustedIssuerFlowHandler = TrustedIssuerFlowHandler()
         issuerMetadataService = IssuerMetadataService()
         networkSession = NetworkManager.shared
+        dpopManager = DPoPManager()
     }
 
     init(traceabilityId: String?,
          networkSession: NetworkManager? = nil,
          credentialOfferHandler: CredentialOfferFlowHandler? = nil,
          trustedIssuerFlowHandler: TrustedIssuerFlowHandler? = nil,
-         issuerMetadataService: IssuerMetadataService? = nil
+         issuerMetadataService: IssuerMetadataService? = nil,
+         dpopManager: DPoPManager? = nil
     ) {
         self.traceabilityId = traceabilityId ?? ""
         self.networkSession = networkSession ?? NetworkManager.shared
         credentialOfferFlowHandler = credentialOfferHandler ?? CredentialOfferFlowHandler()
         self.trustedIssuerFlowHandler = trustedIssuerFlowHandler ?? TrustedIssuerFlowHandler()
         self.issuerMetadataService = issuerMetadataService ?? IssuerMetadataService()
+        self.dpopManager = dpopManager ?? DPoPManager()
     }
 
     public func getIssuerMetadata(credentialIssuer: String) async throws -> [String: Any] {
@@ -45,12 +48,15 @@ public class VCIClient {
             throw mapToVciClientException(error)
         }
     }
-    
     /// Generates a fresh token-endpoint DPoP proof bound to the supplied nonce, used by the wallet
     /// to retry the token POST after an authorization server `use_dpop_nonce` challenge. Valid only
     /// during an active flow; the ephemeral key from that flow signs the proof.
     public func generateTokenDPoPProof(dpopNonce: String) throws -> String {
-        return try dpopManager.generateTokenProof(nonce: dpopNonce)
+        do {
+            return try dpopManager.generateTokenProof(nonce: dpopNonce)
+        } catch {
+            throw mapToVciClientException(error)
+        }
     }
 
     public func fetchCredentialsFromTrustedIssuer(
