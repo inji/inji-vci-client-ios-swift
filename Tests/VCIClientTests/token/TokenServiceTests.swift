@@ -44,7 +44,7 @@ final class TokenServiceTests: XCTestCase {
     func test_getAccessToken_attachesDpopProof_whenManagerInitialized() async throws {
         let service = TokenService(networkManager: MockNetworkManager())
         let dpopManager = DPoPManager()
-        dpopManager.initialize(tokenEndpoint: "https://example.com/token", authorizationServerSupportedAlgorithms: ["ES256"])
+        try dpopManager.initialize(tokenEndpoint: "https://example.com/token", authorizationServerSupportedAlgorithms: ["ES256"])
 
         var captured: TokenRequest?
         _ = try await service.getAccessToken(

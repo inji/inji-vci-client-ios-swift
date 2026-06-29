@@ -18,6 +18,9 @@ class NetworkManager {
         guard let requestURL = URL(string: url) else {
             throw NetworkRequestFailedException("Invalid URL: \(url)")
         }
+        guard requestURL.scheme?.lowercased() == "https" else {
+            throw NetworkRequestFailedException("Plaintext HTTP endpoints are not allowed; use HTTPS for: \(url)")
+        }
 
         var request = URLRequest(url: requestURL)
         request.httpMethod = method.rawValue
@@ -50,6 +53,9 @@ class NetworkManager {
     ) async throws -> NetworkResponse {
         guard let requestURL = URL(string: url) else {
             throw NetworkRequestFailedException("Invalid URL: \(url)")
+        }
+        guard requestURL.scheme?.lowercased() == "https" else {
+            throw NetworkRequestFailedException("Plaintext HTTP endpoints are not allowed; use HTTPS for: \(url)")
         }
 
         var request = URLRequest(url: requestURL)
