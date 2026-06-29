@@ -376,8 +376,8 @@ The following response modes are supported:
 **Example usage**
 ```swift
 AuthorizationMethod.presentationDuringIssuance(
-    jsonLdCanonicalizer: JsonLdCanonicalizerCallback? = jsonLdCanonicalizerCallback,
-    openid4vpWalletConfig: WalletConfig = openid4vpWalletConfig,
+    jsonLdCanonicalizer = jsonLdCanonicalizerCallback,
+    openid4vpWalletConfig = openid4vpWalletConfig,
     selectCredentialsForPresentation: { presentationRequest in
         let selectedCredentials: [String: [Credential]] = selectCredentials(presentationRequest)
         return selectedCredentials
