@@ -290,6 +290,11 @@ class CredentialRequestExecutor {
             }
 
             if !challenge.isDpop && challenge.isBearer {
+                Util.logWarning(
+                    message: "DPoP token downgraded to Bearer: AS does not require DPoP " +
+                             "(WWW-Authenticate: \(header(Constants.wwwAuthenticateHeader, in: failure.headers) ?? ""))",
+                    className: String(describing: type(of: self))
+                )
                 return try await session.sendRequest(
                     request: withBearer(baseRequest, accessToken: accessToken)
                 )

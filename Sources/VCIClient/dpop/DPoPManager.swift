@@ -20,7 +20,7 @@ class DPoPManager {
 
     func initialize(tokenEndpoint: String, authorizationServerSupportedAlgorithms: [String]?) throws {
         guard session == nil else { return }
-        let algorithm = DPoPAlgorithm.select(authorizationServerSupportedAlgorithms)
+        let algorithm = try DPoPAlgorithm.select(authorizationServerSupportedAlgorithms)
         let material = try algorithm.generateKeyMaterial()
         session = Session(
             signingKey: material.signingKey,
