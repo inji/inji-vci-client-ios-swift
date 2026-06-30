@@ -157,6 +157,7 @@ final class MockCredentialRequestExecutor: CredentialRequestExecutor {
 final class MockCredentialOfferHandler: CredentialOfferFlowHandler {
     var shouldThrow = false
     var didCallDownload = false
+    var shouldInitializeDpopDuringDownload = false
 
     override func downloadCredentials(
         credentialOffer: String,
@@ -171,6 +172,12 @@ final class MockCredentialOfferHandler: CredentialOfferFlowHandler {
         dpopManager: DPoPManager = DPoPManager()
     ) async throws -> CredentialResponse {
         didCallDownload = true
+        if shouldInitializeDpopDuringDownload {
+            try dpopManager.initialize(
+                tokenEndpoint: "https://as.example.com/token",
+                authorizationServerSupportedAlgorithms: ["ES256"]
+            )
+        }
         if shouldThrow {
             throw DownloadFailedException("Simulated failure")
         }

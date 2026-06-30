@@ -251,10 +251,13 @@ class CredentialRequestExecutor {
         tokenType: String?,
         dpopManager: DPoPManager
     ) async throws -> NetworkResponse {
-        let useDpop = dpopManager.isInitialized
-            && tokenType?.caseInsensitiveCompare(Constants.dpopTokenType) == .orderedSame
+        let isDpopToken = tokenType?.caseInsensitiveCompare(Constants.dpopTokenType) == .orderedSame
 
-        guard useDpop else {
+        if isDpopToken && !dpopManager.isInitialized {
+            throw DownloadFailedException("DPoP token_type requires an initialized DPoP session")
+        }
+
+        guard isDpopToken else {
             return try await session.sendRequest(request: baseRequest)
         }
 

@@ -206,4 +206,24 @@ final class VCIClientTests: XCTestCase {
         XCTAssertEqual(claims["nonce"] as? String, "test-nonce")
         XCTAssertEqual(claims["htm"] as? String, "POST")
     }
+
+    func testFetchCredentialsUsingCredentialOffer_resetsDpopSessionAfterFlowCompletes() async throws {
+        let manager = DPoPManager()
+        let handler = MockCredentialOfferHandler()
+        handler.shouldInitializeDpopDuringDownload = true
+        let client = VCIClient(traceabilityId: "test", credentialOfferHandler: handler, dpopManager: manager)
+
+        _ = try await client.fetchCredentialsUsingCredentialOffer(
+            credentialOffer: "credential-offer",
+            clientMetadata: ClientMetadata(clientId: "wallet", redirectUri: "https://wallet.example.com/callback"),
+            getTxCode: nil,
+            authorizationMethods: [],
+            getTokenResponse: { _ in TokenResponse(accessToken: "token", tokenType: "DPoP") },
+            getProofs: { _, _, _ in CredentialRequestProofs(proofs: []) }
+        )
+
+        XCTAssertThrowsError(try client.generateTokenDPoPProof(dpopNonce: "nonce")) { error in
+            XCTAssertEqual((error as? VCIClientException)?.code, "VCI-011")
+        }
+    }
 }

@@ -111,6 +111,20 @@ final class DPoPManagerTests: XCTestCase {
         XCTAssertEqual(claims["htu"] as? String, "https://as.example.com/token")
     }
 
+    func test_htuCanonicalizesSchemeHostDefaultPortAndEmptyPath() throws {
+        let manager = DPoPManager()
+        try manager.initialize(tokenEndpoint: "HTTPS://AS.EXAMPLE.COM:443?foo=bar", authorizationServerSupportedAlgorithms: ["ES256"])
+        let tokenClaims = try segment(try manager.generateTokenProof().components(separatedBy: ".")[1])
+        XCTAssertEqual(tokenClaims["htu"] as? String, "https://as.example.com/")
+
+        let credentialProof = try manager.generateCredentialProof(
+            credentialEndpoint: "HTTP://ISSUER.EXAMPLE.COM:80/credential?x=1#fragment",
+            accessToken: "access-token"
+        )
+        let credentialClaims = try segment(credentialProof.components(separatedBy: ".")[1])
+        XCTAssertEqual(credentialClaims["htu"] as? String, "http://issuer.example.com/credential")
+    }
+
     func test_thumbprintMatchesEmbeddedJwk() throws {
         let manager = try initializedManager()
         let header = try segment(try manager.generateTokenProof().components(separatedBy: ".")[0])

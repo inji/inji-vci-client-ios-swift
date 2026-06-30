@@ -132,6 +132,17 @@ class DPoPManager {
 
     private static func normalizeHtu(_ endpoint: String) -> String {
         guard var components = URLComponents(string: endpoint) else { return endpoint }
+        components.scheme = components.scheme?.lowercased()
+        components.host = components.host?.lowercased()
+        if components.path.isEmpty {
+            components.path = "/"
+        }
+        if components.scheme == "https", components.port == 443 {
+            components.port = nil
+        }
+        if components.scheme == "http", components.port == 80 {
+            components.port = nil
+        }
         components.query = nil
         components.fragment = nil
         return components.string ?? endpoint

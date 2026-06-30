@@ -7,6 +7,8 @@ public class VCIClient {
     let trustedIssuerFlowHandler: TrustedIssuerFlowHandler
     let issuerMetadataService: IssuerMetadataService
     private let dpopManager: DPoPManager
+    private let dpopFlowLock = NSLock()
+    private var dpopFlowActive = false
 
     public init(traceabilityId: String
     ) {
@@ -70,7 +72,8 @@ public class VCIClient {
     ) async throws -> CredentialResponse {
 
         do {
-            dpopManager.reset()
+            try beginDpopFlow()
+            defer { endDpopFlow() }
             return try await self.trustedIssuerFlowHandler.downloadCredentials(
                 credentialIssuer: credentialIssuer,
                 credentialConfigurationId: credentialConfigurationId,
@@ -102,7 +105,8 @@ public class VCIClient {
     ) async throws -> CredentialResponse {
 
         do {
-            dpopManager.reset()
+            try beginDpopFlow()
+            defer { endDpopFlow() }
             return try await self.credentialOfferFlowHandler.downloadCredentials(
                 credentialOffer: credentialOffer,
                 clientMetadata: clientMetadata,
@@ -122,5 +126,27 @@ public class VCIClient {
             )
             throw mapToVciClientException(error)
         }
+    }
+
+    private func beginDpopFlow() throws {
+        dpopFlowLock.lock()
+        defer { dpopFlowLock.unlock() }
+
+        guard !dpopFlowActive else {
+            throw VCIClientException(
+                code: "VCI-011",
+                message: "A DPoP credential download flow is already active for this VCIClient instance"
+            )
+        }
+
+        dpopManager.reset()
+        dpopFlowActive = true
+    }
+
+    private func endDpopFlow() {
+        dpopFlowLock.lock()
+        dpopManager.reset()
+        dpopFlowActive = false
+        dpopFlowLock.unlock()
     }
 }
