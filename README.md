@@ -1,13 +1,55 @@
 # INJI VCI Client
 
-The **Inji-Vci-Client-iOS-Swift** is a Swift-based library built to simplify credential issuance via [OpenID for Verifiable Credential Issuance (OID4VCI)](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html) protocol.
-It supports **Issuer Initiated (Credential Offer)** and **Wallet Initiated (Trusted Issuer)** flows, with secure proof handling, PKCE support, and custom error handling.
+The **Inji-Vci-Client-iOS-Swift** is a Swift library that simplifies credential issuance via the [OpenID for Verifiable Credential Issuance (OID4VCI)](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html) protocol. It handles the full credential download lifecycle — issuer discovery, authorization, proof construction, and credential retrieval — so your wallet can focus on user experience and key management.
 
 ---
 
-## Specifications supported
+## Table of Contents
 
-The implementation follows
+- [Overview](#overview)
+- [Specifications Supported](#specifications-supported)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#-installation)
+- [Getting Started](#getting-started)
+- [API Overview](#-api-overview)
+- [Security Support](#-security-support)
+- [Error Handling](#-error-handling)
+- [Testing](#-testing)
+- [Example App](#example-app)
+- [Limitations](#limitations)
+- [Migration Guide](#migration-guide)
+- [Documentation](#documentation)
+- [Library Implementations](#library-implementations-available-in)
+- [Glossary](#glossary)
+
+---
+
+## Overview
+
+The VCI Client library is a ready-to-integrate wallet-side solution for credential issuance. It takes care of the complexity behind OID4VCI — including issuer metadata discovery, PKCE-managed authorization, proof JWT construction, and credential download — enabling faster integration with less engineering effort.
+
+**Key Responsibilities:**
+
+* **VCI Client Library**
+
+   * Handles OID4VCI protocol workflows and compliance
+   * Manages PKCE session, authorization server discovery, and token exchange
+   * Supports both OID4VCI 1.0 and draft 13 issuers transparently
+
+* **Library Consumer (Wallet App)**
+
+   * Owns user consent and credential rendering
+   * Performs cryptographic proof signing
+   * Implements authorization callbacks (web redirect / Presentation During Issuance)
+
+> Consumer of this library is responsible for processing and rendering the credential after it is downloaded.
+
+---
+
+## Specifications Supported
+
+The implementation follows:
 - OpenID for Verifiable Credential Issuance 1.0
 - OpenID for Verifiable Credential Issuance draft 13 compatibility for issuers that still expose the older metadata and request/response format
 
@@ -30,34 +72,94 @@ The implementation follows
 [//]: # (The reference for PDI  is intentionally pointing to kotlin library master branch to be release agnostic, as the PDI support is available for both kotlin and swift libraries. The documentation for PDI support is also common for both libraries, hence it is placed in the common doc folder in the root of the repository.)
 - Presentation During Issuance (PDI) support for both download flows (For more details on PDI support, please refer to the [Presentation During Issuance documentation](https://github.com/inji/inji-vci-client/tree/master/doc/presentation-during-issuance-support.md))
 
-> Consumer of this library is responsible for processing and rendering the credential after it is downloaded.
+## Requirements
 
-## Library implementations available in:
-This library is officially supported and available in both Kotlin and Swift, ensuring seamless integration across Android and iOS platforms. The references for both implementations are provided below:
+- **Swift:** 5.7+
+- **iOS:** 13.0+
 
-* [Kotlin](https://github.com/inji/inji-vci-client/tree/master/kotlin)
-* [Swift](.)
 ---
 
 ## 📦 Installation
 
-Add VCIClient to your Swift Package Manager dependencies:
+### Option 1: Add Using Xcode
+
+1. Open your project in Xcode.
+2. Navigate to **File > Add Package Dependencies...**.
+3. Enter the repository URL:
+   ```
+   https://github.com/inji/inji-vci-client-ios-swift
+   ```
+4. Select the desired version and add it to your target.
+5. Import in your Swift files:
+   ```swift
+   import VCIClient
+   ```
+
+### Option 2: Add Using `Package.swift`
 
 ```swift
-.package(url: "https://github.com/inji/inji-vci-client-ios-swift", from: "1.0.0")
+dependencies: [
+    .package(url: "https://github.com/inji/inji-vci-client-ios-swift", from: "1.0.0")
+]
 ```
 
-## What's New in 1.0.0
+Then add `"VCIClient"` to your target's dependencies.
 
-Version `1.0.0` adds support for the final **OpenID for Verifiable Credential Issuance 1.0** specification while retaining backward compatibility with OID4VCI draft 13. The highlights below cover everything added since `0.7.0`:
+---
 
-- **OID4VCI 1.0 support with retained draft 13 support** - The library auto-detects the spec version of the issuer from its metadata and builds the credential request accordingly, so a single integration works against both 1.0 and draft 13 issuers.
-- **Credential download methods renamed (and now return multiple credentials)** - `fetchCredentialUsingCredentialOffer` and `fetchCredentialFromTrustedIssuer` are now `fetchCredentialsUsingCredentialOffer` and `fetchCredentialsFromTrustedIssuer`.
-- **New `getProofs` callback** - The single-proof `getProofJwt` callback is replaced by `getProofs`, which returns a `CredentialRequestProofs` object and allows supplying one or more proofs in a single credential request, as per OID4VCI 1.0.
-- **`CredentialResponse` now exposes a `credentials` list** - Instead of a single `credential` field, the response carries a `credentials` list (`[CredentialItem]`), aligning with the OID4VCI 1.0 credential response structure.
-- **Legacy APIs removed** - `requestCredentialByCredentialOffer`, `requestCredentialFromTrustedIssuer`, and `requestCredential` have been removed. Migrate to the `fetchCredentials*` methods.
-- **Structured error handling** - `VCIClientException` now carries `issuerErrorCode` and `issuerErrorDescription` alongside `code` and `message`, and `code` resolves to the root error code across the cause chain, so consumers can distinguish library failures from issuer/authorization-server error payloads (see [Error Handling](#-error-handling)).
-- **Issuer identity validation** - Issuer metadata fetches now validate that the `credential_issuer` returned by the well-known endpoint matches the requested issuer, per [OID4VCI Section 13.5](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-13.5).
+## Getting Started
+
+### Typical Workflow
+
+```
+1. Initialise → VCIClient(traceabilityId:)
+2. Discover   → getIssuerMetadata() / getCredentialConfigurationsSupported()
+3. Download   → fetchCredentialsUsingCredentialOffer()   [issuer-initiated]
+              → fetchCredentialsFromTrustedIssuer()      [wallet-initiated]
+4. Render     → read credentialResponse.credentials ([CredentialItem])
+```
+
+### Quick Start Example
+
+```swift
+import VCIClient
+
+let vciClient = VCIClient(traceabilityId: UUID().uuidString)
+
+let credentialResponse = try await vciClient.fetchCredentialsUsingCredentialOffer(
+    credentialOffer: deepLinkOrCredentialOfferURI,
+    clientMetadata: ClientMetadata(clientId: "my-wallet", redirectUri: "https://my-wallet.example/callback"),
+    authorizationMethods: [
+        .redirectToWeb(openWebPage: { url in openBrowserAndReturnParams(url) })
+    ],
+    getTokenResponse: { tokenRequest in
+        // Exchange authorization grant for access token
+        return TokenResponse(accessToken: "...", cNonce: "...", tokenType: "Bearer", expiresIn: 3600, cNonceExpiresIn: 3600)
+    },
+    getProofs: { credentialIssuer, nonce, proofSigningAlgorithmsSupported in
+        // Sign proof JWT and wrap it
+        return CredentialRequestProofs(proofs: [buildAndSignProofJwt(nonce: nonce)])
+    }
+)
+
+// credentialResponse.credentials is [CredentialItem]
+for item in credentialResponse.credentials {
+    renderCredential(item.credential) // item.credential is AnyCodable
+}
+```
+
+> **Note:** The crypto implementations like signing the proof JWT are kept in your wallet app. The library handles OID4VCI protocol mechanics.
+
+### Core Methods
+
+| Method | Purpose | Returns |
+|--------|---------|---------|
+| `getIssuerMetadata(credentialIssuer:)` | Fetches raw issuer well-known metadata | `[String: Any]` |
+| `getCredentialConfigurationsSupported(credentialIssuer:)` | Fetches supported credential configurations | `[String: Any]` |
+| `fetchCredentialsUsingCredentialOffer(...)` | Downloads credentials via issuer-initiated (credential offer) flow | `CredentialResponse` |
+| `fetchCredentialsFromTrustedIssuer(...)` | Downloads credentials via wallet-initiated (trusted issuer) flow | `CredentialResponse` |
+
+---
 
 ## 🏗️ Construction of VCIClient instance
 
@@ -233,10 +335,6 @@ credentialResponse.credentialConfigurationId // eg - "DriversLicense"
 credentialResponse.credentialIssuer // eg - "https://sample-issuer.com"
 ```
 
-#### requestCredentialByCredentialOffer (removed in 1.0)
-
-> ⚠️ **Removed in 1.0**: `requestCredentialByCredentialOffer` (deprecated since `0.7.0`) has been removed. Use [`fetchCredentialsUsingCredentialOffer`](#fetchcredentialsusingcredentialoffer) instead, which supports both Pre-Authorization and Authorization flows along with the different authorization methods (Redirect to Web / Presentation During Issuance).
-
 ### 3.2 Request Credential from Trusted Issuer
 
 #### fetchCredentialsFromTrustedIssuer
@@ -304,10 +402,6 @@ credentialResponse.credentials // [CredentialItem]; each item's `credential` is 
 credentialResponse.credentialConfigurationId // eg - "DriversLicense"
 credentialResponse.credentialIssuer // eg - "https://sample-issuer.com"
 ```
-
-#### requestCredentialFromTrustedIssuer (removed in 1.0)
-
-> ⚠️ **Removed in 1.0**: `requestCredentialFromTrustedIssuer` (deprecated since `0.7.0`) has been removed. Use [`fetchCredentialsFromTrustedIssuer`](#fetchcredentialsfromtrustedissuer) instead, which supports the different authorization methods (Redirect to Web / Presentation During Issuance).
 
 ##### Authorizations
 
@@ -392,22 +486,6 @@ AuthorizationMethod.presentationDuringIssuance(
 [//]: # (The branch in inji-wallet for pdi docs link is pointed to master intentionally to ensure that the latest documentation is always referred.)
 > For more details on the Presentation During Issuance flow and the expected implementation of the callbacks, please refer to the [inji-wallet Presentation During Issuance documentation](https://github.com/inji/inji-wallet/blob/master/docs/presentation-during-issuance-support.md)
 
-### 3.3 requestCredential (removed in 1.0)
-
-> ⚠️ **Removed in 1.0**: The low-level `requestCredential` method (deprecated since `0.7.0`) has been removed. Please migrate to [`fetchCredentialsUsingCredentialOffer()`](#fetchcredentialsusingcredentialoffer) or [`fetchCredentialsFromTrustedIssuer()`](#fetchcredentialsfromtrustedissuer), which fetch the issuer metadata, build the credential request (for OID4VCI 1.0 or draft 13), and download the credential for you.
-
----
-
-## 🚨 Removed APIs
-
-The following methods were deprecated in earlier releases and have been **removed in 1.0**. Please migrate to the suggested alternatives.
-
-| Method Name                        | Deprecated Since | Removed In | Suggested Alternative                                                                                                                                      |
-|------------------------------------|------------------|------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| requestCredentialFromTrustedIssuer | 0.7.0            | 1.0.0      | [fetchCredentialsFromTrustedIssuer](#fetchcredentialsfromtrustedissuer)                                                                                    |
-| requestCredentialByCredentialOffer | 0.7.0            | 1.0.0      | [fetchCredentialsUsingCredentialOffer](#fetchcredentialsusingcredentialoffer)                                                                              |
-| requestCredential                  | 0.7.0            | 1.0.0      | [fetchCredentialsUsingCredentialOffer()](#fetchcredentialsusingcredentialoffer) or [fetchCredentialsFromTrustedIssuer()](#fetchcredentialsfromtrustedissuer) |
-
 ---
 
 ## 🔐 Security Support
@@ -433,8 +511,6 @@ They carry structured fields that help consumers identify whether the failure ca
 | `issuerErrorDescription`  | `String?` | The upstream `error_description` value when available. If the response body is not parseable JSON, the raw response body may be propagated here for diagnostics. |
 
 ### Structured error handling
-
-> New in `1.0.0`: if you are upgrading from `0.7.0`, where only `code` and `message` were reliably available, the structured fields below are new.
 
 The error model exposes the following fields so consumers can react precisely to failures:
 
@@ -527,11 +603,6 @@ Mock-based tests are available covering:
 
 > See `VCIClientTests` for full coverage
 
-## Platform Support
-
-- **Swift:** 5.7+
-- **iOS:** 13.0+
-
 ## Documentation
 
 - Architecture decisions are documented in the [INJI VCI Client ADR directory](https://github.com/inji/inji-vci-client/tree/master/doc/adr).
@@ -539,6 +610,15 @@ Mock-based tests are available covering:
 - The OpenID4VCI 1.0 migration and Draft-13 compatibility design for this Swift library is documented in [ADR-0001](docs/adr/0001-openid4vci-v1-migration.md).
 
 **Note: The Android library is available in the [INJI VCI Client repository](https://github.com/inji/inji-vci-client).**
+
+---
+
+## Library Implementations Available In
+
+This library is officially supported and available in both Kotlin and Swift, ensuring seamless integration across Android and iOS platforms:
+
+* [Kotlin](https://github.com/inji/inji-vci-client/tree/master/kotlin)
+* [Swift](.)
 
 ---
 
@@ -555,3 +635,34 @@ A complete sample app demonstrating credential issuance flows, proof JWT signing
 > Use the example app to quickly get started and see the library in action.
 
 ---
+
+## Limitations
+
+1. **Single flow instance usage**
+
+   Each `VCIClient` instance handles one download flow at a time. For concurrent credential downloads, create separate instances.
+
+---
+
+## Migration Guide
+
+For information on upgrading between versions, see the [Migration Guide](./MIGRATION_GUIDE.md).
+
+---
+
+## Glossary
+
+* **Credential:** A verifiable piece of information issued by a trusted issuer that can be presented to a verifier.
+* **Verifiable Credential (VC):** A tamper-evident credential with cryptographic proofs of its authenticity and integrity.
+* **Holder / Wallet:** The entity that owns Verifiable Credentials and presents them. This library provides the OID4VCI handling for wallet applications.
+* **Credential Issuer:** A server that issues credentials to wallets following the OID4VCI protocol.
+* **OID4VCI:** OpenID for Verifiable Credential Issuance. A standard protocol for issuing Verifiable Credentials to wallets.
+* **Credential Offer:** A URI or JSON payload sent by the issuer to initiate the credential download flow.
+* **Trusted Issuer:** A wallet-initiated flow where the wallet already knows the issuer and requests a credential directly.
+* **PKCE:** Proof Key for Code Exchange (RFC 7636). A security extension to OAuth 2.0 that prevents authorization code interception.
+* **c_nonce:** A nonce provided by the issuer to be bound into the proof JWT, ensuring the proof is fresh and tied to this issuance session.
+* **Proof JWT:** A signed JWT included in the credential request to prove the wallet controls the key associated with the credential subject.
+* **PDI (Presentation During Issuance):** An authorization flow where the wallet presents an existing credential to the issuer as proof of identity, instead of using a web redirect.
+* **JWT:** JSON Web Token. A digitally signed token format used for secure transmission of claims.
+* **AnyCodable:** A Swift type-erased `Codable` wrapper used to represent the credential payload, which may be a JSON object, string, or other format depending on the credential type.
+
