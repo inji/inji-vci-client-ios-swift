@@ -17,7 +17,6 @@ The **Inji-Vci-Client-iOS-Swift** is a Swift library that simplifies credential 
 - [Error Handling](#-error-handling)
 - [Testing](#-testing)
 - [Example App](#example-app)
-- [Limitations](#limitations)
 - [Migration Guide](#migration-guide)
 - [Documentation](#documentation)
 - [Library Implementations](#library-implementations-available-in)
@@ -633,14 +632,6 @@ A complete sample app demonstrating credential issuance flows, proof JWT signing
 - Can be built and run on iOS device only
 
 > Use the example app to quickly get started and see the library in action.
-
----
-
-## Limitations
-
-1. **Single flow instance usage**
-
-   Each `VCIClient` instance handles one download flow at a time. For concurrent credential downloads, create separate instances.
 
 ---
 
