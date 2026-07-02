@@ -96,6 +96,7 @@ class DPoPManager {
     }
 
     private static func accessTokenHash(_ accessToken: String) -> String {
+        // RFC 9449 §4.2: hash the ASCII encoding of the access token
         let tokenData = accessToken.data(using: .ascii) ?? Data(accessToken.utf8)
         return Data(SHA256.hash(data: tokenData)).base64URLEncodedString()
     }

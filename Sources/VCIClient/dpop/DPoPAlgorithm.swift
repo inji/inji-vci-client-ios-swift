@@ -2,6 +2,7 @@ import CryptoSwift
 import Foundation
 import JSONWebAlgorithms
 import JSONWebKey
+import Security
 
 private let rsaKeySizeInBits = 2048
 
@@ -54,13 +55,34 @@ enum DPoPAlgorithm: String {
     }
 
     private func generateRsaKeyMaterial() throws -> DPoPKeyMaterial {
-        let privateKey = try CryptoSwift.RSA(keySize: rsaKeySizeInBits)
+        // SecKeyCreateRandomKey is hardware-accelerated, far faster than
+        // pure-Swift prime generation in CryptoSwift.RSA(keySize:).
+        let attributes: [CFString: Any] = [
+            kSecAttrKeyType: kSecAttrKeyTypeRSA,
+            kSecAttrKeySizeInBits: rsaKeySizeInBits
+        ]
+        var genError: Unmanaged<CFError>?
+        guard let privateSecKey = SecKeyCreateRandomKey(attributes as CFDictionary, &genError) else {
+            throw VCIClientException(
+                code: "VCI-011",
+                message: "RSA key generation failed: \(genError!.takeRetainedValue())"
+            )
+        }
+        // Apple exports RSA private keys as PKCS#1 DER (not SPKI),
+        // which CryptoSwift.RSA(rawRepresentation:) can parse directly.
+        var exportError: Unmanaged<CFError>?
+        guard let keyData = SecKeyCopyExternalRepresentation(privateSecKey, &exportError) as Data? else {
+            throw VCIClientException(
+                code: "VCI-011",
+                message: "RSA key export failed: \(exportError!.takeRetainedValue())"
+            )
+        }
+        let privateKey = try CryptoSwift.RSA(rawRepresentation: keyData)
         let fullJWK = privateKey.jwkRepresentation
         guard let n = fullJWK.n, let e = fullJWK.e else {
             throw VCIClientException(code: "VCI-011", message: "Unable to extract RSA public key components")
         }
-        let publicJWK = JWK(keyType: .rsa, e: e, n: n)
-        return DPoPKeyMaterial(signingKey: privateKey, publicJWK: publicJWK)
+        return DPoPKeyMaterial(signingKey: privateKey, publicJWK: JWK(keyType: .rsa, e: e, n: n))
     }
 
     private func ellipticParameters() -> (JWK.KeyType, JWK.CryptographicCurve) {
@@ -77,9 +99,17 @@ enum DPoPAlgorithm: String {
         JWK(keyType: jwk.keyType, curve: jwk.curve, x: jwk.x, y: jwk.y)
     }
 
+    /// Selects the best DPoP signing algorithm advertised by the authorization server.
+    ///
+    /// Preference order:
+    ///  1. EdDSA  (ed)       – Edwards-curve; smallest signatures, modern
+    ///  2. ES256K (eck1)     – ECDSA secp256k1; widely deployed
+    ///  3. ES256  (ecr1)     – ECDSA secp256r1 (P-256); default fallback
+    ///  4. ES384, ES512      – Other EC r1 variants (P-384, P-521)
+    ///  5. RS256  (rsa)      – RSA; last resort, large key/signature size
     static func select(_ authorizationServerSupported: [String]?) throws -> DPoPAlgorithm {
         guard let supported = authorizationServerSupported, !supported.isEmpty else {
-            return .rs256
+            return .es256
         }
         let preferenceOrder: [DPoPAlgorithm] = [.eddsa, .es256k, .es256, .es384, .es512, .rs256]
         guard let match = preferenceOrder.first(where: { supported.contains($0.rawValue) }) else {
