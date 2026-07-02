@@ -637,7 +637,7 @@ A complete sample app demonstrating credential issuance flows, proof JWT signing
 
 ## Migration Guide
 
-For information on upgrading between versions, see the [Migration Guide](./MIGRATION_GUIDE.md).
+For information on upgrading between versions, see the [Migration Guide](docs/migration-guides/MIGRATION_0.7.0_TO_1.0.0.md).
 
 ---
 

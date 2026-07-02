@@ -1,7 +1,7 @@
 # ADR-0002: Support for PDI with VP Request following OpenID4VP 1.0
 
 - Status: Accepted
-- Date: 2026-03-30
+- Date: 2026-06-07
 
 ## Context
 

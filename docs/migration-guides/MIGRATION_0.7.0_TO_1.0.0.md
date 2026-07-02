@@ -83,8 +83,12 @@ let credentialResponse: CredentialResponse? = try await vciClient.fetchCredentia
     },
     authorizationMethods: [
         .presentationDuringIssuance(
-            selectCredentialsForPresentation: selectCredentialsForPresentationCallback(),
-            signVerifiablePresentation: signVerifiablePresentationCallback(),
+            selectCredentialsForPresentation: { vpRequest in
+                try await selectCredentialsForPresentationCallback(vpRequest: vpRequest)
+            },
+            signVerifiablePresentation: { unsignedVPTokens in
+                try await signVerifiablePresentationCallback(unsignedVPTokens: unsignedVPTokens)
+            },
             ldpVpSignatureSuite: "Ed25519Signature2020"
         ),
         .redirectToWeb(openWebPage: openWebPageCallback())
@@ -117,9 +121,12 @@ let credentialResponse = try await vciClient.fetchCredentialsUsingCredentialOffe
     },
     authorizationMethods: [
         .presentationDuringIssuance(
-            selectCredentialsForPresentation: selectCredentialsForPresentationCallback(),
-            signVerifiablePresentation: signVerifiablePresentationCallback(),
-            ldpVpSignatureSuite: "Ed25519Signature2020"
+            selectCredentialsForPresentation: { vpRequest in
+                try await selectCredentialsForPresentationCallback(vpRequest: vpRequest)
+            },
+            signVerifiablePresentation: { unsignedVPTokens in
+                try await signVerifiablePresentationCallback(unsignedVPTokens: unsignedVPTokens)
+            }
         ),
         .redirectToWeb(openWebPage: openWebPageCallback())
     ],
@@ -143,18 +150,18 @@ credentialResponse.credentialIssuer
 
 ### Parameter mapping
 
-| 0.7.0 parameter | 1.0.0 parameter | Migration note |
-|-----------------|-----------------|----------------|
-| `getProofJwt: ProofJwtCallback` | `getProofs: ProofsCallback` | Return a `CredentialRequestProofs(proofs: [...])` instead of a plain `String` |
-| `credentialOffer`, `clientMetadata`, `getTxCode`, `authorizationMethods`, `getTokenResponse`, `onCheckIssuerTrust`, `downloadTimeoutInMillis` | _(unchanged)_ | Same parameter names and types |
+| 0.7.0 parameter                                                                                                                               | 1.0.0 parameter             | Migration note                                                                |
+|-----------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------|-------------------------------------------------------------------------------|
+| `getProofJwt: ProofJwtCallback`                                                                                                               | `getProofs: ProofsCallback` | Return a `CredentialRequestProofs(proofs: [...])` instead of a plain `String` |
+| `credentialOffer`, `clientMetadata`, `getTxCode`, `authorizationMethods`, `getTokenResponse`, `onCheckIssuerTrust`, `downloadTimeoutInMillis` | _(unchanged)_               | Same parameter names and types                                                |
 
 ### Response mapping
 
-| 0.7.0 field | 1.0.0 field | Migration note |
-|-------------|-------------|----------------|
-| `credential: AnyCodable` | `credentials: [CredentialItem]` | Iterate `credentials`; each `CredentialItem` exposes `credential: AnyCodable` |
-| `credentialConfigurationId: String?` | `credentialConfigurationId: String` | No longer optional |
-| `credentialIssuer: String?` | `credentialIssuer: String` | No longer optional |
+| 0.7.0 field                          | 1.0.0 field                         | Migration note                                                                |
+|--------------------------------------|-------------------------------------|-------------------------------------------------------------------------------|
+| `credential: AnyCodable`             | `credentials: [CredentialItem]`     | Iterate `credentials`; each `CredentialItem` exposes `credential: AnyCodable` |
+| `credentialConfigurationId: String?` | `credentialConfigurationId: String` | No longer optional                                                            |
+| `credentialIssuer: String?`          | `credentialIssuer: String`          | No longer optional                                                            |
 
 ---
 
@@ -169,8 +176,12 @@ let credentialResponse: CredentialResponse? = try await vciClient.fetchCredentia
     clientMetadata: ClientMetadata(clientId: "sample-client-id", redirectUri: "https://sample-wallet.com/callback"),
     authorizationMethods: [
         .presentationDuringIssuance(
-            selectCredentialsForPresentation: selectCredentialsForPresentationCallback(),
-            signVerifiablePresentation: signVerifiablePresentationCallback(),
+            selectCredentialsForPresentation: { vpRequest in
+                try await selectCredentialsForPresentationCallback(vpRequest: vpRequest)
+            },
+            signVerifiablePresentation: { unsignedVPTokens in
+                try await signVerifiablePresentationCallback(unsignedVPTokens: unsignedVPTokens)
+            },
             ldpVpSignatureSuite: "Ed25519Signature2020"
         ),
         .redirectToWeb(openWebPage: openWebPageCallback())
@@ -199,9 +210,12 @@ let credentialResponse = try await vciClient.fetchCredentialsFromTrustedIssuer(
     clientMetadata: ClientMetadata(clientId: "sample-client-id", redirectUri: "https://sample-wallet.com/callback"),
     authorizationMethods: [
         .presentationDuringIssuance(
-            selectCredentialsForPresentation: selectCredentialsForPresentationCallback(),
-            signVerifiablePresentation: signVerifiablePresentationCallback(),
-            ldpVpSignatureSuite: "Ed25519Signature2020"
+            selectCredentialsForPresentation: { vpRequest in
+                try await selectCredentialsForPresentationCallback(vpRequest: vpRequest)
+            },
+            signVerifiablePresentation: { unsignedVPTokens in
+                try await signVerifiablePresentationCallback(unsignedVPTokens: unsignedVPTokens)
+            }
         ),
         .redirectToWeb(openWebPage: openWebPageCallback())
     ],
@@ -230,17 +244,19 @@ The parameter and response mapping is the same as described in the credential of
 
 - `AuthorizationMethod.presentationDuringIssuance(...)` is still the way to pass PDI into both download methods.
 - `selectCredentialsForPresentation` and `signVerifiablePresentation` callbacks are still required.
-- `ldpVpSignatureSuite` is still the way to declare the LDP signature suite.
 
 ### What changes in practice
 
 1. **`selectCredentialsForPresentation` return type changed**
    - **0.7.0**: returned `[String: [FormatType: [Any]]]`
-   - **1.0.0**: returns `[String: [Credential]]` — a flat list of `Credential` objects per descriptor/query ID
+   - **1.0.0**: returns `[String: [Credential]]` — a flat list of `Credential` objects per input descriptor ID /Credential query ID
 
-2. **`signVerifiablePresentation` return type changed**
-   - **0.7.0**: returned `[VPTokenSigningResultV2]`
-   - **1.0.0**: returns `[VPTokenSigningResult]` (the `V2` suffix is gone)
+2. **`signVerifiablePresentation` callback inputs and return changed**
+   - **0.7.0**: Input: `[UnsignedVPTokenV2]`
+   - **1.0.0**: Input: `[UnsignedVPToken]` (adds the `id` property in addition to `format`, `holderKeyReference`, `signatureAlgorithm`, and `dataToSign`)
+
+   - **0.7.0**: Returns: `[VPTokenSigningResultV2]`
+   - **1.0.0**: Returns: `[VPTokenSigningResult]` (adds the `id` property in addition to `signedData`)
 
 3. **Two new optional parameters added**
    - `jsonLdCanonicalizer` — **required when your wallet issues `ldp_vc` format credentials during PDI**; optional otherwise
@@ -286,20 +302,19 @@ AuthorizationMethod.presentationDuringIssuance(
         // 1.0.0: payload items are [UnsignedVPToken]; return [VPTokenSigningResult]
         let signedData: [VPTokenSigningResult] = signDataForVP(payload)
         return signedData
-    },
-    ldpVpSignatureSuite: "Ed25519Signature2020"
+    }
 )
 ```
 
 ### Parameter mapping
 
-| 0.7.0 parameter | 1.0.0 parameter | Change |
-|---|---|---|
-| _(not present)_ | `jsonLdCanonicalizer` | **New** — required for `ldp_vc`, optional otherwise |
-| _(not present)_ | `openid4vpWalletConfig` | **New** — optional OpenID4VP wallet config |
+| 0.7.0 parameter                    | 1.0.0 parameter                    | Change                                                                          |
+|------------------------------------|------------------------------------|---------------------------------------------------------------------------------|
+| _(not present)_                    | `jsonLdCanonicalizer`              | **New** — required for `ldp_vc`, optional otherwise                             |
+| _(not present)_                    | `openid4vpWalletConfig`            | **New** — optional OpenID4VP wallet config                                      |
 | `selectCredentialsForPresentation` | `selectCredentialsForPresentation` | Return type changed: `[String: [FormatType: [Any]]]` → `[String: [Credential]]` |
-| `signVerifiablePresentation` | `signVerifiablePresentation` | Return type changed: `[VPTokenSigningResultV2]` → `[VPTokenSigningResult]` |
-| `ldpVpSignatureSuite` | `ldpVpSignatureSuite` | Unchanged |
+| `signVerifiablePresentation`       | `signVerifiablePresentation`       | Return type changed: `[VPTokenSigningResultV2]` → `[VPTokenSigningResult]`      |
+| `ldpVpSignatureSuite`              | (not present)                      | Removed                                                                         |
 
 ---
 
@@ -314,10 +329,10 @@ AuthorizationMethod.presentationDuringIssuance(
 
 Two structured fields are now available on `VCIClientException`:
 
-| New field                 | Type      | Meaning |
-|---------------------------|-----------|---------|
-| `issuerErrorCode`         | `String?` | The `error` value returned by the issuer or authorization server in a structured OAuth/OID4VCI error response. |
-| `issuerErrorDescription`  | `String?` | The `error_description` from the upstream server, or the raw body when structured parsing is not possible. |
+| New field                | Type      | Meaning                                                                                                        |
+|--------------------------|-----------|----------------------------------------------------------------------------------------------------------------|
+| `issuerErrorCode`        | `String?` | The `error` value returned by the issuer or authorization server in a structured OAuth/OID4VCI error response. |
+| `issuerErrorDescription` | `String?` | The `error_description` from the upstream server, or the raw body when structured parsing is not possible.     |
 
 Additionally, `code` now resolves to the **root** error code across the cause chain — if an exception wraps another `VCIClientException`, `code` carries the deepest `VCI-*` code rather than the wrapper's own code.
 
@@ -366,24 +381,25 @@ do {
 
 ### API changes
 
-| 0.7.0 | 1.0.0 status | Change |
-|---|---|---|
-| `fetchCredentialUsingCredentialOffer(...)` | **Renamed** | Use `fetchCredentialsUsingCredentialOffer(...)` |
-| `fetchCredentialFromTrustedIssuer(...)` | **Renamed** | Use `fetchCredentialsFromTrustedIssuer(...)` |
-| `getProofJwt` callback | **Replaced** | Use `getProofs` returning `CredentialRequestProofs` |
-| `CredentialResponse.credential: AnyCodable` | **Replaced** | Use `CredentialResponse.credentials: [CredentialItem]` |
-| PDI `selectCredentialsForPresentation` → `[String: [FormatType: [Any]]]` | **Changed** | Now returns `[String: [Credential]]` |
-| PDI `signVerifiablePresentation` → `[VPTokenSigningResultV2]` | **Changed** | Now returns `[VPTokenSigningResult]` |
-| PDI _(no `jsonLdCanonicalizer`)_ | **New parameter** | Required for `ldp_vc`; optional otherwise |
-| PDI _(no `openid4vpWalletConfig`)_ | **New parameter** | Optional OpenID4VP wallet configuration |
+| 0.7.0                                                                    | 1.0.0 status | Change                                                                                                                                        |
+|--------------------------------------------------------------------------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| `fetchCredentialUsingCredentialOffer(...)`                               | **Renamed**  | Use `fetchCredentialsUsingCredentialOffer(...)`                                                                                               |
+| `fetchCredentialFromTrustedIssuer(...)`                                  | **Renamed**  | Use `fetchCredentialsFromTrustedIssuer(...)`                                                                                                  |
+| `getProofJwt` callback                                                   | **Replaced** | Use `getProofs` returning `CredentialRequestProofs`                                                                                           |
+| `CredentialResponse.credential: AnyCodable`                              | **Replaced** | Use `CredentialResponse.credentials: [CredentialItem]`                                                                                        |
+| PDI `selectCredentialsForPresentation` → `[String: [FormatType: [Any]]]` | **Changed**  | Now returns `[String: [Credential]]`                                                                                                          |
+| PDI `signVerifiablePresentation`                                         | **Changed**  | Input changed from `UnsignedVPTokenV2` to `UnsignedVPToken`. Return type changed from `[VPTokenSigningResultV2]` to `[VPTokenSigningResult]`. |
+
+| PDI _(no `jsonLdCanonicalizer`)_                                                     | **New parameter** | Required for `ldp_vc`; optional otherwise                     |
+| PDI _(no `openid4vpWalletConfig`)_                                                   | **New parameter** | Optional OpenID4VP wallet configuration                       |
 
 ### APIs removed in 1.0.0
 
-| Removed method | Deprecated since | Replacement |
-|---|---|---|
-| `requestCredentialByCredentialOffer(...)` | 0.7.0 | `fetchCredentialsUsingCredentialOffer(...)` |
-| `requestCredentialFromTrustedIssuer(...)` | 0.7.0 | `fetchCredentialsFromTrustedIssuer(...)` |
-| `requestCredential(...)` | 0.7.0 | `fetchCredentialsUsingCredentialOffer(...)` or `fetchCredentialsFromTrustedIssuer(...)` |
+| Removed method                            | Deprecated since | Replacement                                                                             |
+|-------------------------------------------|------------------|-----------------------------------------------------------------------------------------|
+| `requestCredentialByCredentialOffer(...)` | 0.7.0            | `fetchCredentialsUsingCredentialOffer(...)`                                             |
+| `requestCredentialFromTrustedIssuer(...)` | 0.7.0            | `fetchCredentialsFromTrustedIssuer(...)`                                                |
+| `requestCredential(...)`                  | 0.7.0            | `fetchCredentialsUsingCredentialOffer(...)` or `fetchCredentialsFromTrustedIssuer(...)` |
 
 ### Unchanged APIs
 
@@ -425,8 +441,7 @@ func downloadCredential(
                 signVerifiablePresentation: { payload in
                     // Sign VP payload; return [VPTokenSigningResult]
                     return []
-                },
-                ldpVpSignatureSuite: "Ed25519Signature2020"
+                }
             ),
             .redirectToWeb(openWebPage: { authorizationEndpoint in
                 // Open web view, complete authorization, return response params
@@ -476,15 +491,15 @@ Notes:
 
 ## Appendix: Key Swift types and entry points
 
-| Purpose | Type / File |
-|---------|-------------|
-| Entry point | `VCIClient` |
-| Credential download (offer) | `fetchCredentialsUsingCredentialOffer(...)` |
-| Credential download (trusted issuer) | `fetchCredentialsFromTrustedIssuer(...)` |
-| Proof callback return type | `CredentialRequestProofs` |
-| Credential response | `CredentialResponse` |
-| Individual credential in response | `CredentialItem` |
-| Client registration details | `ClientMetadata` |
-| Token exchange response | `TokenResponse` |
-| Authorization flows | `AuthorizationMethod` (`.redirectToWeb`, `.presentationDuringIssuance`) |
-| Exception base type | `VCIClientException` |
+| Purpose                              | Type / File                                                             |
+|--------------------------------------|-------------------------------------------------------------------------|
+| Entry point                          | `VCIClient`                                                             |
+| Credential download (offer)          | `fetchCredentialsUsingCredentialOffer(...)`                             |
+| Credential download (trusted issuer) | `fetchCredentialsFromTrustedIssuer(...)`                                |
+| Proof callback return type           | `CredentialRequestProofs`                                               |
+| Credential response                  | `CredentialResponse`                                                    |
+| Individual credential in response    | `CredentialItem`                                                        |
+| Client registration details          | `ClientMetadata`                                                        |
+| Token exchange response              | `TokenResponse`                                                         |
+| Authorization flows                  | `AuthorizationMethod` (`.redirectToWeb`, `.presentationDuringIssuance`) |
+| Exception base type                  | `VCIClientException`                                                    |
