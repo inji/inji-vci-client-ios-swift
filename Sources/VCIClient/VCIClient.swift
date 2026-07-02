@@ -131,16 +131,10 @@ public class VCIClient {
     private func beginDpopFlow() {
         dpopFlowLock.lock()
         defer { dpopFlowLock.unlock() }
-
-        // If a previous flow is still marked active (e.g. it was aborted mid-way
-        // and the Swift Task never completed), reset it instead of blocking the retry.
         dpopManager.reset()
         dpopFlowActive = true
     }
 
-    /// Cancels any active DPoP credential download flow and resets the DPoP session.
-    /// Call this when a flow is aborted mid-way (e.g. network error during token request)
-    /// to allow subsequent download attempts to succeed.
     public func cancelDpopFlow() {
         endDpopFlow()
     }

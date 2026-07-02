@@ -96,12 +96,10 @@ class DPoPManager {
     }
 
     private static func accessTokenHash(_ accessToken: String) -> String {
-        // RFC 9449 §4.2: hash the ASCII encoding of the access token
         let tokenData = accessToken.data(using: .ascii) ?? Data(accessToken.utf8)
         return Data(SHA256.hash(data: tokenData)).base64URLEncodedString()
     }
 
-    /// Computes the RFC 7638 JWK thumbprint over the public key, supporting EC, OKP and RSA keys.
     private static func thumbprint(of jwk: JWK) throws -> String {
         let members: [String: String]
         switch jwk.keyType {

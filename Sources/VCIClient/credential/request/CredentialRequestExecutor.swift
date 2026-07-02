@@ -240,9 +240,6 @@ class CredentialRequestExecutor {
         }
     }
 
-    /// Sends the credential request, applying DPoP when the token response carried
-    /// `token_type=DPoP`. A `use_dpop_nonce` challenge is retried once with the server supplied
-    /// nonce; a Bearer-only challenge triggers a best-effort Bearer retry per RFC 9449 section 7.2.
     private func sendCredentialRequest(
         session: NetworkManager,
         baseRequest: URLRequest,

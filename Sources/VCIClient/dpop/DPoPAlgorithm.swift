@@ -77,14 +77,6 @@ enum DPoPAlgorithm: String {
         JWK(keyType: jwk.keyType, curve: jwk.curve, x: jwk.x, y: jwk.y)
     }
 
-    /// Selects the best DPoP signing algorithm advertised by the authorization server.
-    ///
-    /// Preference order:
-    ///  1. EdDSA  (ed)       – Edwards-curve; smallest signatures, modern
-    ///  2. ES256K (eck1)     – ECDSA secp256k1; widely deployed
-    ///  3. ES256  (ecr1)     – ECDSA secp256r1 (P-256); default fallback
-    ///  4. ES384, ES512      – Other EC r1 variants (P-384, P-521)
-    ///  5. RS256  (rsa)      – RSA; last resort, large key/signature size
     static func select(_ authorizationServerSupported: [String]?) throws -> DPoPAlgorithm {
         guard let supported = authorizationServerSupported, !supported.isEmpty else {
             return .rs256
