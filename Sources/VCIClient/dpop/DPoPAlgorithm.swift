@@ -87,7 +87,7 @@ enum DPoPAlgorithm: String {
     ///  5. RS256  (rsa)      – RSA; last resort, large key/signature size
     static func select(_ authorizationServerSupported: [String]?) throws -> DPoPAlgorithm {
         guard let supported = authorizationServerSupported, !supported.isEmpty else {
-            return .es256
+            return .rs256
         }
         let preferenceOrder: [DPoPAlgorithm] = [.eddsa, .es256k, .es256, .es384, .es512, .rs256]
         guard let match = preferenceOrder.first(where: { supported.contains($0.rawValue) }) else {
