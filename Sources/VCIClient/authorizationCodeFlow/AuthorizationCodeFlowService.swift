@@ -228,22 +228,9 @@ class AuthorizationCodeFlowService {
         credentialConfigurationId: String,
         authorizationMethods: [AuthorizationMethod]
     ) async throws -> String {
-    
-        let normalizedInteractiveEndpoint =
-            authorizationServerMetadata.interactiveAuthorizationEndpoint?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
+        let interactiveEndpoint = authorizationServerMetadata.interactiveAuthorizationEndpoint
 
-        let hasInteractiveEndpoint =
-            !(normalizedInteractiveEndpoint?.isEmpty ?? true)
-
-        if authorizationServerMetadata.requireInteractiveAuthorizationRequest == true ||
-           hasInteractiveEndpoint {
-
-            guard let interactiveEndpoint = normalizedInteractiveEndpoint,
-                  !interactiveEndpoint.isEmpty
-            else {
-                throw DownloadFailedException(message: "Missing interactive authorization endpoint")
-            }
+        if let interactiveEndpoint {
             do {
                 return try await obtainAuthorizationCodeViaInteractiveAuthorizationEndpoint(
                     endpoint: interactiveEndpoint,
@@ -254,19 +241,11 @@ class AuthorizationCodeFlowService {
                     authorizationMethods: authorizationMethods
                 )
             } catch let error as VCIClientException {
-                if error.issuerErrorCode == Constants.MISSING_INTERACTION_TYPE_ERROR,
-                   authorizationServerMetadata.requireInteractiveAuthorizationRequest != true {
-
-                    return try await obtainAuthorizationCodeViaAuthorizationEndpoint(
-                        authorizationServerMetadata: authorizationServerMetadata,
-                        issuerMetadata: issuerMetadata,
-                        clientMetadata: clientMetadata,
-                        pkceSession: pkceSession,
-                        authorizationMethods: authorizationMethods
-                    )
+                if error.issuerErrorCode == Constants.MISSING_INTERACTION_TYPE_ERROR {
+                    return try await obtainAuthorizationCodeViaAuthorizationEndpoint(authorizationServerMetadata: authorizationServerMetadata, issuerMetadata: issuerMetadata, clientMetadata: clientMetadata, pkceSession: pkceSession, authorizationMethods: authorizationMethods)
+                } else {
+                    throw error
                 }
-
-                throw error
             }
 
         } else {
