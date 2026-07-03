@@ -16,18 +16,11 @@ class InteractiveAuthorizationHandler {
     ) async throws -> AuthorizationResponse {
         
         do {
-            let interactionTypesSupported = authorizationMethods.flatMap { method -> [String] in
-                switch method {
-                case .redirectToWeb:
-                    return []
-
-                case .presentationDuringIssuance:
-                    return [
-                        InteractionType.openId4VpPresentation.rawValue,
-                        InteractionType.openId4VpPresentationIAE.rawValue
-                    ]
-                }
+            let interactionTypesSupported = authorizationMethods.compactMap { method in
+                let type = method.type.rawValue
+                return type != InteractionType.redirectToWeb.rawValue ? type : nil
             }
+            
             if interactionTypesSupported.isEmpty {
                 throw InteractiveAuthorizationException(
                     message: "No supported interaction types found in authorization methods"
@@ -50,9 +43,7 @@ class InteractiveAuthorizationHandler {
             
             let type: String = try extractTypeAndThrowIfError(interactiveAuthorizationResponse.body)
             
-            if type == InteractionType.openId4VpPresentation.rawValue ||
-               type == InteractionType.openId4VpPresentationIAE.rawValue {
-
+            if type == InteractionType.openId4VpPresentation.rawValue {
                 return try await handlePresentationInteraction(
                     presentationInteractionResponse: interactiveAuthorizationResponse.body,
                     authorizationMethods: authorizationMethods,
@@ -153,9 +144,7 @@ class InteractiveAuthorizationHandler {
         }
         
         guard
-            case let .presentationDuringIssuance(jsonLdCanonicalizer, openid4vpWalletConfig, selectCredentialsForPresentation, signVerifiablePresentation) = authorizationMethods.first(where: {
-                $0.type == .openId4VpPresentationIAE
-            })
+            case let .presentationDuringIssuance(jsonLdCanonicalizer, openid4vpWalletConfig, selectCredentialsForPresentation, signVerifiablePresentation) = authorizationMethods.first(where: { $0.type == .openId4VpPresentation })
         else {
             throw InteractiveAuthorizationException(message: "Presentation callback missing")
         }

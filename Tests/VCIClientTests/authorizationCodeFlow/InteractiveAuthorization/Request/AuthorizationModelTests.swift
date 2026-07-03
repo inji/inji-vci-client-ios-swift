@@ -102,34 +102,6 @@ final class AuthorizationModelTests: XCTestCase {
         XCTAssertEqual(authDetailsParsed?.first?["credential_configuration_id"] as? String, "cfg1")
     }
 
-    
-    func test_IARInitialRequestBody_toFormMap_includesLegacyAndIAEInteractionTypes() throws {
-
-        let details = [
-            AuthorizationDetails(
-                type: "openid_credential",
-                credentialConfigurationId: "cfg1"
-            )
-        ]
-
-        let body = IARInitialRequestBody(
-            clientId: "client-123",
-            codeChallenge: "challenge",
-            redirectUri: "app://callback",
-            authorizationDetails: details,
-            interactionTypesSupported: [
-                InteractionType.openId4VpPresentation.rawValue,
-                InteractionType.openId4VpPresentationIAE.rawValue
-            ]
-        )
-
-        let form = body.toFormMap()
-
-        XCTAssertEqual(
-            form["interaction_types_supported"],
-            "\(InteractionType.openId4VpPresentation.rawValue),\(InteractionType.openId4VpPresentationIAE.rawValue)"
-        )
-    }
     // MARK: - AuthorizationResponse (Codable)
 
     func test_AuthorizationResponse_success_decode_encode() throws {
