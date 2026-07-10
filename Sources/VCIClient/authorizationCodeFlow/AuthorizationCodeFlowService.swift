@@ -50,7 +50,7 @@ class AuthorizationCodeFlowService {
             dpopManager: dpopManager
         ) { token in
             let proofs: CredentialRequestProofs
-            let nonce = try await nonceService.fetchNonce(issuerMetadata: issuerMetadata, timeoutInMillis: downloadTimeOutInMillis)
+            let nonce = try await nonceService.fetchNonce(issuerMetadata: issuerMetadata, timeoutInMillis: downloadTimeOutInMillis, dpopManager: dpopManager)
 
             do {
                 proofs = try await getProofs(

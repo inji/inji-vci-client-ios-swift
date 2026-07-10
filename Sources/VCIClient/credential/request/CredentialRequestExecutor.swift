@@ -264,9 +264,10 @@ class CredentialRequestExecutor {
         )
 
         do {
-            return try await session.sendRequest(
+            let response = try await session.sendRequest(
                 request: withDpop(baseRequest, accessToken: accessToken, proof: proof)
             )
+            return persistIssuerNonce(response, dpopManager: dpopManager)
         } catch let failure as NetworkRequestFailedException {
             guard failure.httpStatusCode == 401 else { throw failure }
 
@@ -281,9 +282,10 @@ class CredentialRequestExecutor {
                     accessToken: accessToken,
                     nonce: nonce
                 )
-                return try await session.sendRequest(
+                let response = try await session.sendRequest(
                     request: withDpop(baseRequest, accessToken: accessToken, proof: retryProof)
                 )
+                return persistIssuerNonce(response, dpopManager: dpopManager)
             }
 
             if !challenge.isDpop && challenge.isBearer {
@@ -313,6 +315,11 @@ class CredentialRequestExecutor {
         updated.setValue("\(Constants.bearerTokenType) \(accessToken)", forHTTPHeaderField: Constants.authorizationHeader)
         updated.setValue(nil, forHTTPHeaderField: Constants.dpopHeader)
         return updated
+    }
+
+    private func persistIssuerNonce(_ response: NetworkResponse, dpopManager: DPoPManager) -> NetworkResponse {
+        dpopManager.updateNonce(header(Constants.dpopNonceHeader, in: response.headers))
+        return response
     }
 
     private func header(_ name: String, in headers: [AnyHashable: Any]?) -> String? {

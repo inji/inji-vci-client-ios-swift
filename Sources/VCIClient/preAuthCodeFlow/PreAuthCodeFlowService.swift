@@ -40,7 +40,7 @@ class PreAuthCodeFlowService {
             dpopManager: dpopManager
         ) { token in
             let proofs: CredentialRequestProofs
-            let nonce = try await nonceService.fetchNonce(issuerMetadata: issuerMetadata, timeoutInMillis: downloadTimeoutInMillis)
+            let nonce = try await nonceService.fetchNonce(issuerMetadata: issuerMetadata, timeoutInMillis: downloadTimeoutInMillis, dpopManager: dpopManager)
             do {
                 proofs = try await getProofs(
                     issuerMetadata.credentialIssuer,

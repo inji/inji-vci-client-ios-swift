@@ -91,6 +91,59 @@ final class DPoPManagerTests: XCTestCase {
         XCTAssertEqual(claims["nonce"] as? String, "nonce-123")
     }
 
+    func test_credentialProof_usesStoredIssuerNonceWhenNoneSupplied() throws {
+        let manager = try initializedManager()
+        manager.updateNonce("issuer-nonce")
+        let proof = try manager.generateCredentialProof(
+            credentialEndpoint: "https://issuer.example.com/credential",
+            accessToken: "an-access-token"
+        )
+        let claims = try segment(proof.components(separatedBy: ".")[1])
+        XCTAssertEqual(claims["nonce"] as? String, "issuer-nonce")
+    }
+
+    func test_credentialProof_suppliedNonceOverridesAndUpdatesStoredNonce() throws {
+        let manager = try initializedManager()
+        manager.updateNonce("old-nonce")
+
+        let first = try segment(try manager.generateCredentialProof(
+            credentialEndpoint: "https://issuer.example.com/credential",
+            accessToken: "an-access-token",
+            nonce: "new-nonce"
+        ).components(separatedBy: ".")[1])
+        XCTAssertEqual(first["nonce"] as? String, "new-nonce")
+
+        let second = try segment(try manager.generateCredentialProof(
+            credentialEndpoint: "https://issuer.example.com/credential",
+            accessToken: "an-access-token"
+        ).components(separatedBy: ".")[1])
+        XCTAssertEqual(second["nonce"] as? String, "new-nonce")
+    }
+
+    func test_updateNonce_ignoresBlankValues() throws {
+        let manager = try initializedManager()
+        manager.updateNonce("issuer-nonce")
+        manager.updateNonce(nil)
+        manager.updateNonce(" ")
+        let claims = try segment(try manager.generateCredentialProof(
+            credentialEndpoint: "https://issuer.example.com/credential",
+            accessToken: "an-access-token"
+        ).components(separatedBy: ".")[1])
+        XCTAssertEqual(claims["nonce"] as? String, "issuer-nonce")
+    }
+
+    func test_resetClearsStoredIssuerNonce() throws {
+        let manager = try initializedManager()
+        manager.updateNonce("issuer-nonce")
+        manager.reset()
+        try manager.initialize(tokenEndpoint: "https://as.example.com/token", authorizationServerSupportedAlgorithms: ["ES256"])
+        let claims = try segment(try manager.generateCredentialProof(
+            credentialEndpoint: "https://issuer.example.com/credential",
+            accessToken: "an-access-token"
+        ).components(separatedBy: ".")[1])
+        XCTAssertNil(claims["nonce"] as? String)
+    }
+
     func test_credentialProof_includesAth() throws {
         let accessToken = "an-access-token"
         let proof = try initializedManager().generateCredentialProof(

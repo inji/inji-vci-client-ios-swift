@@ -85,7 +85,8 @@ final class MockNonceService: NonceService {
 
     override func fetchNonce(
         issuerMetadata: IssuerMetadata,
-        timeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
+        timeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
+        dpopManager: DPoPManager? = nil
     ) async throws -> String? {
         if let errorToThrow {
             throw errorToThrow

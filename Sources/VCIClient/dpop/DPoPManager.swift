@@ -16,6 +16,8 @@ class DPoPManager {
 
     private var session: Session?
 
+    private var issuerNonce: String?
+
     var isInitialized: Bool { session != nil }
 
     func initialize(tokenEndpoint: String, authorizationServerSupportedAlgorithms: [String]?) throws {
@@ -32,6 +34,13 @@ class DPoPManager {
 
     func reset() {
         session = nil
+        issuerNonce = nil
+    }
+
+    func updateNonce(_ nonce: String?) {
+        if let nonce = nonce, !nonce.trimmingCharacters(in: .whitespaces).isEmpty {
+            issuerNonce = nonce
+        }
     }
 
     func jwkThumbprint() throws -> String {
@@ -49,10 +58,11 @@ class DPoPManager {
         nonce: String? = nil
     ) throws -> String {
         let activeSession = try requireSession()
+        updateNonce(nonce)
         return try buildProof(
             activeSession,
             htu: DPoPManager.normalizeHtu(credentialEndpoint),
-            nonce: nonce,
+            nonce: issuerNonce,
             accessToken: accessToken
         )
     }

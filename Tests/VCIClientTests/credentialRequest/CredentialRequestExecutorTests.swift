@@ -352,6 +352,55 @@ final class CredentialRequestExecutorTests: XCTestCase {
         XCTAssertEqual(try nonceClaim(in: networkManager.sent[1]), "server-nonce")
     }
 
+    func testRequestCredential_dpop_carriesSeededIssuerNonceOnFirstRequest() async throws {
+        let factory = MockCredentialRequestFactory()
+        let networkManager = SequencedNetworkManager()
+        networkManager.outcomes = [
+            { NetworkResponse(body: "{\"credential\":\"vc\"}", headers: nil) },
+        ]
+        let manager = try dpopManager()
+        manager.updateNonce("nonce-endpoint-nonce")
+
+        _ = try await CredentialRequestExecutor(credentialRequestFactoryDraft13: factory).requestCredentialDraft13(
+            issuerMetadata: mockIssuerMetadata(),
+            credentialConfigurationId: "mock",
+            proof: mockProof(),
+            accessToken: "token",
+            session: networkManager,
+            tokenType: "DPoP",
+            dpopManager: manager
+        )
+
+        XCTAssertEqual(networkManager.sent.count, 1)
+        XCTAssertEqual(try nonceClaim(in: networkManager.sent[0]), "nonce-endpoint-nonce")
+    }
+
+    func testRequestCredential_dpop_storesRotatedNonceFromSuccessResponse() async throws {
+        let factory = MockCredentialRequestFactory()
+        let networkManager = MockNetworkManager()
+        networkManager.responseBody = "{\"credential\":\"vc\"}"
+        networkManager.responseHeaders = ["DPoP-Nonce": "rotated-nonce"]
+        let manager = try dpopManager()
+
+        _ = try await CredentialRequestExecutor(credentialRequestFactoryDraft13: factory).requestCredentialDraft13(
+            issuerMetadata: mockIssuerMetadata(),
+            credentialConfigurationId: "mock",
+            proof: mockProof(),
+            accessToken: "token",
+            session: networkManager,
+            tokenType: "DPoP",
+            dpopManager: manager
+        )
+
+        let nextProof = try manager.generateCredentialProof(
+            credentialEndpoint: mockIssuerMetadata().credentialEndpoint,
+            accessToken: "token"
+        )
+        let payload = try XCTUnwrap(try Data(base64URLEncodedString: nextProof.components(separatedBy: ".")[1]))
+        let claims = try XCTUnwrap(try JSONSerialization.jsonObject(with: payload) as? [String: Any])
+        XCTAssertEqual(claims["nonce"] as? String, "rotated-nonce")
+    }
+
     func testRequestCredential_dpop_bearerFallbackOnBearerOnlyChallenge() async throws {
         let factory = MockCredentialRequestFactory()
         let networkManager = SequencedNetworkManager()
