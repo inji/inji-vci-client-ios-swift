@@ -433,7 +433,7 @@ Presentation During Issuance allows the wallet to present a verifiable presentat
 
 ###### Specification Reference
 
-This implementation follows - [OpenID4VCI v1.1 Specification Commit](https://github.com/openid/OpenID4VCI/blob/4ef9f264e4f23affafc1097f9bd4c0f639a80bfd/1.1/openid-4-verifiable-credential-issuance-1_1.md)
+This implementation follows - [OpenID4VCI v1.1 Specification Commit](https://github.com/openid/OpenID4VCI/blob/31636e9bb7f0eef6933175e1e41c78ce79a69783/1.1/openid-4-verifiable-credential-issuance-1_1.md)
 
 > Note:
 > - While this library primarily implements OpenID4VCI 1.0 and draft 13, the Presentation During Issuance feature follows the v1.1 specification as mentioned above.
@@ -449,10 +449,8 @@ This implementation follows - [OpenID4VCI v1.1 Specification Commit](https://git
 
 The following response modes are supported:
 
-1. `iae_post`
-2. `iae_post.jwt`
-3. `iar-post` — Supported for backward compatibility and may be deprecated in a future release.
-4. `iar-post.jwt` — Supported for backward compatibility and may be deprecated in a future release.
+1. `iar_post`
+2. `iar_post.jwt`
 
 
 **Parameters :**

@@ -33,7 +33,7 @@ Note:
    4. **PDI `selectCredentialsForPresentation` callback** now returns `[String: [Credential]]` instead of `[String: [FormatType: [Any]]]`.
    5. **PDI `signVerifiablePresentation` callback** now returns `[VPTokenSigningResult]` instead of `[VPTokenSigningResultV2]`.
    6. **PDI gains two new optional parameters**: `jsonLdCanonicalizer` (required for `ldp_vc` format) and `openid4vpWalletConfig`.
-   7. **PDI response modes updated**: `iae_post` / `iae_post.jwt` are now primary; `iar-post` / `iar-post.jwt` are retained for backward compatibility only.
+   7. **PDI response modes updated**: `iar_post` / `iar_post.jwt` are the supported response modes.
    8. Issuer metadata fetch now validates that `credential_issuer` in the well-known response matches the requested issuer (OID4VCI §13.5).
    9. `VCIClientException` carries structured upstream error fields (`issuerErrorCode`, `issuerErrorDescription`).
    10. Legacy low-level APIs (`requestCredential`, `requestCredentialByCredentialOffer`, `requestCredentialFromTrustedIssuer`) have been removed.
@@ -62,7 +62,7 @@ Note:
 
 6. **Add new PDI parameters if needed** — `jsonLdCanonicalizer` is now required when using `ldp_vc` format in PDI; `openid4vpWalletConfig` is available as an optional configuration.
 
-7. **Update PDI response mode handling** — prefer `iae_post` / `iae_post.jwt`; `iar-post` / `iar-post.jwt` still work but are backward-compat only.
+7. **Update PDI response mode handling** — use `iar_post` / `iar_post.jwt` response modes.
 
 8. **Remove any calls to deleted APIs** — `requestCredential`, `requestCredentialByCredentialOffer`, and `requestCredentialFromTrustedIssuer` are gone; migrate to the `fetchCredentials*` methods.
 
@@ -263,8 +263,7 @@ The parameter and response mapping is the same as described in the credential of
    - `openid4vpWalletConfig` — optional OpenID4VP wallet configuration (trusted verifiers, supported formats, etc.)
 
 4. **Response modes updated**
-   - `iae_post` and `iae_post.jwt` are the primary response modes in 1.0.0
-   - `iar-post` and `iar-post.jwt` are still accepted for backward compatibility but may be deprecated in a future release
+   - `iar_post` and `iar_post.jwt` are the supported response modes in 1.0.0
 
 ### 0.7.0 PDI usage (old)
 
