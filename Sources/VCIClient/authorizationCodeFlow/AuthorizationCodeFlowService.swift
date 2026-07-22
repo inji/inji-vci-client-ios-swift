@@ -368,7 +368,7 @@ class AuthorizationCodeFlowService {
                 clientMetadata: clientMetadata,
                 pkceSession: pkceSession,
                 scope: issuerMetadata.scope ?? "default",
-                dpopJkt: dpopManager.isInitialized ? try dpopManager.jwkThumbprint() : nil
+                dpopJkt: try dpopManager.jwkThumbprint()
             )
 
             let response: AuthorizationResponse
