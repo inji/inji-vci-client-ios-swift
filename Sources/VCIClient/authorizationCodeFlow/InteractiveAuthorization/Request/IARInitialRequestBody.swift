@@ -8,7 +8,8 @@ struct IARInitialRequestBody: Codable {
     let redirectUri: String
     let authorizationDetails: [AuthorizationDetails]
     let interactionTypesSupported: [String]
-    
+    let dpopJkt: String?
+
     enum CodingKeys: String, CodingKey {
         case responseType = "response_type"
         case clientId = "client_id"
@@ -17,8 +18,9 @@ struct IARInitialRequestBody: Codable {
         case redirectUri = "redirect_uri"
         case authorizationDetails = "authorization_details"
         case interactionTypesSupported = "interaction_types_supported"
+        case dpopJkt = "dpop_jkt"
     }
-    
+
     init(
         clientId: String,
         codeChallenge: String,
@@ -26,7 +28,8 @@ struct IARInitialRequestBody: Codable {
         authorizationDetails: [AuthorizationDetails],
         interactionTypesSupported: [String],
         responseType: String = "code",
-        codeChallengeMethod: String = "S256"
+        codeChallengeMethod: String = "S256",
+        dpopJkt: String? = nil
     ) {
         self.responseType = responseType
         self.clientId = clientId
@@ -35,26 +38,28 @@ struct IARInitialRequestBody: Codable {
         self.redirectUri = redirectUri
         self.authorizationDetails = authorizationDetails
         self.interactionTypesSupported = interactionTypesSupported
+        self.dpopJkt = dpopJkt
     }
-    
+
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        
+
         try container.encode(responseType, forKey: .responseType)
         try container.encode(clientId, forKey: .clientId)
         try container.encode(codeChallenge, forKey: .codeChallenge)
         try container.encode(codeChallengeMethod, forKey: .codeChallengeMethod)
         try container.encode(redirectUri, forKey: .redirectUri)
         try container.encode(authorizationDetails, forKey: .authorizationDetails)
-        
+
         let interactionTypes = interactionTypesSupported.joined(separator: ",")
         try container.encode(interactionTypes, forKey: .interactionTypesSupported)
+        try container.encodeIfPresent(dpopJkt, forKey: .dpopJkt)
     }
-    
+
     func toFormMap() -> [String: String] {
         let authDetailsJson: String = JsonUtils.encode(authorizationDetails, empty: "[]")
-        
-        return [
+
+        var map: [String: String] = [
             "response_type": responseType,
             "client_id": clientId,
             "code_challenge": codeChallenge,
@@ -63,5 +68,9 @@ struct IARInitialRequestBody: Codable {
             "authorization_details": authDetailsJson,
             "interaction_types_supported": interactionTypesSupported.joined(separator: ",")
         ]
+        if let dpopJkt = dpopJkt {
+            map["dpop_jkt"] = dpopJkt
+        }
+        return map
     }
 }

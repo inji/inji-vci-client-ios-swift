@@ -12,7 +12,8 @@ class InteractiveAuthorizationHandler {
         clientMetadata: ClientMetadata,
         credentialConfigurationId: String,
         authorizationMethods: [AuthorizationMethod],
-        pkceSession: PKCESessionManager.PKCESession
+        pkceSession: PKCESessionManager.PKCESession,
+        dpopJkt: String? = nil
     ) async throws -> AuthorizationResponse {
         
         do {
@@ -38,7 +39,8 @@ class InteractiveAuthorizationHandler {
                 clientMetadata: clientMetadata,
                 credentialConfigurationId: credentialConfigurationId,
                 pkce: pkceSession,
-                interactionTypesSupported: interactionTypesSupported
+                interactionTypesSupported: interactionTypesSupported,
+                dpopJkt: dpopJkt
             )
             
             let interactiveAuthorizationResponse = try await networkManager.sendRequest(
@@ -90,22 +92,24 @@ class InteractiveAuthorizationHandler {
         clientMetadata: ClientMetadata,
         credentialConfigurationId: String,
         pkce: PKCESessionManager.PKCESession,
-        interactionTypesSupported: [String]
+        interactionTypesSupported: [String],
+        dpopJkt: String?
     ) -> [String: String] {
-        
+
         let details = [
             AuthorizationDetails(
                 type: "openid_credential",
                 credentialConfigurationId: credentialConfigurationId
             )
         ]
-        
+
         return IARInitialRequestBody(
             clientId: clientMetadata.clientId,
             codeChallenge: pkce.codeChallenge,
             redirectUri: clientMetadata.redirectUri,
             authorizationDetails: details,
-            interactionTypesSupported: interactionTypesSupported
+            interactionTypesSupported: interactionTypesSupported,
+            dpopJkt: dpopJkt
         ).toFormMap()
     }
     

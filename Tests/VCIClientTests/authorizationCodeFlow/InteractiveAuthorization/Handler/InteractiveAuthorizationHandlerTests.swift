@@ -276,4 +276,49 @@ final class InteractiveAuthorizationHandlerTests: XCTestCase {
             )
         }
     }
+
+    // MARK: - dpop_jkt binding
+
+    func test_handle_includesDpopJkt_inInitialIarRequest_whenProvided() async {
+
+        let initialNetwork = MockNetworkManager()
+        let data = try! JSONSerialization.data(withJSONObject: ["type": "unknown_type"])
+        initialNetwork.responseBody = String(data: data, encoding: .utf8) ?? ""
+
+        let handler = InteractiveAuthorizationHandler(networkManager: initialNetwork)
+
+        await XCTAssertThrowsErrorAsync {
+            _ = try await handler.handle(
+                endpoint: "https://issuer.example.com/iar",
+                clientMetadata: self.makeClientMetadata(),
+                credentialConfigurationId: "cfg-1",
+                authorizationMethods: self.makeAuthMethods(select: { _ in [:] }, sign: { _ in [] }),
+                pkceSession: self.makePKCE(),
+                dpopJkt: "test-thumbprint"
+            )
+        } verify: { _ in }
+
+        XCTAssertEqual(initialNetwork.capturedParams["dpop_jkt"], "test-thumbprint")
+    }
+
+    func test_handle_omitsDpopJkt_fromInitialIarRequest_whenNotProvided() async {
+
+        let initialNetwork = MockNetworkManager()
+        let data = try! JSONSerialization.data(withJSONObject: ["type": "unknown_type"])
+        initialNetwork.responseBody = String(data: data, encoding: .utf8) ?? ""
+
+        let handler = InteractiveAuthorizationHandler(networkManager: initialNetwork)
+
+        await XCTAssertThrowsErrorAsync {
+            _ = try await handler.handle(
+                endpoint: "https://issuer.example.com/iar",
+                clientMetadata: self.makeClientMetadata(),
+                credentialConfigurationId: "cfg-1",
+                authorizationMethods: self.makeAuthMethods(select: { _ in [:] }, sign: { _ in [] }),
+                pkceSession: self.makePKCE()
+            )
+        } verify: { _ in }
+
+        XCTAssertNil(initialNetwork.capturedParams["dpop_jkt"])
+    }
 }

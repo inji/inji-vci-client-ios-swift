@@ -269,7 +269,8 @@ class AuthorizationCodeFlowService {
                     clientMetadata: clientMetadata,
                     pkceSession: pkceSession,
                     credentialConfigurationId: credentialConfigurationId,
-                    authorizationMethods: authorizationMethods
+                    authorizationMethods: authorizationMethods,
+                    dpopManager: dpopManager
                 )
             } catch let error as VCIClientException {
                 if error.issuerErrorCode == Constants.MISSING_INTERACTION_TYPE_ERROR,
@@ -306,7 +307,8 @@ class AuthorizationCodeFlowService {
         clientMetadata: ClientMetadata,
         pkceSession: PKCESessionManager.PKCESession,
         credentialConfigurationId: String,
-        authorizationMethods: [AuthorizationMethod]
+        authorizationMethods: [AuthorizationMethod],
+        dpopManager: DPoPManager
     ) async throws -> String {
         let response: AuthorizationResponse
         do {
@@ -315,7 +317,8 @@ class AuthorizationCodeFlowService {
                 clientMetadata: clientMetadata,
                 credentialConfigurationId: credentialConfigurationId,
                 authorizationMethods: authorizationMethods,
-                pkceSession: pkceSession
+                pkceSession: pkceSession,
+                dpopJkt: try dpopManager.jwkThumbprint()
             )
         } catch let error as VCIClientException {
             throw DownloadFailedException(

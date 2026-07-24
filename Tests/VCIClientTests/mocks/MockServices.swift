@@ -327,14 +327,17 @@ class MockInteractiveAuthorizationHandler: InteractiveAuthorizationHandler {
     )
     var errorToThrow: Error?
     var shouldThrowMissingInteractionType: Bool = false
+    var capturedDpopJkt: String?
 
     override func handle(
         endpoint: String,
         clientMetadata: ClientMetadata,
         credentialConfigurationId: String,
         authorizationMethods: [AuthorizationMethod],
-        pkceSession: PKCESessionManager.PKCESession
+        pkceSession: PKCESessionManager.PKCESession,
+        dpopJkt: String? = nil
     ) async throws -> AuthorizationResponse {
+        capturedDpopJkt = dpopJkt
         if let errorToThrow {
             throw errorToThrow
         }

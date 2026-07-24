@@ -130,6 +130,40 @@ final class AuthorizationModelTests: XCTestCase {
             "\(InteractionType.openId4VpPresentation.rawValue),\(InteractionType.openId4VpPresentationIAE.rawValue)"
         )
     }
+
+    func test_IARInitialRequestBody_includesDpopJkt_whenProvided() throws {
+        let body = IARInitialRequestBody(
+            clientId: "client-123",
+            codeChallenge: "challenge",
+            redirectUri: "app://callback",
+            authorizationDetails: [],
+            interactionTypesSupported: ["openid4vp_presentation"],
+            dpopJkt: "thumb-print-value"
+        )
+
+        XCTAssertEqual(body.toFormMap()["dpop_jkt"], "thumb-print-value")
+
+        let data = try JSONEncoder().encode(body)
+        let json = try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertEqual(json["dpop_jkt"] as? String, "thumb-print-value")
+    }
+
+    func test_IARInitialRequestBody_omitsDpopJkt_whenNil() throws {
+        let body = IARInitialRequestBody(
+            clientId: "client-123",
+            codeChallenge: "challenge",
+            redirectUri: "app://callback",
+            authorizationDetails: [],
+            interactionTypesSupported: ["openid4vp_presentation"]
+        )
+
+        XCTAssertNil(body.toFormMap()["dpop_jkt"])
+
+        let data = try JSONEncoder().encode(body)
+        let json = try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertNil(json["dpop_jkt"])
+    }
+
     // MARK: - AuthorizationResponse (Codable)
 
     func test_AuthorizationResponse_success_decode_encode() throws {
