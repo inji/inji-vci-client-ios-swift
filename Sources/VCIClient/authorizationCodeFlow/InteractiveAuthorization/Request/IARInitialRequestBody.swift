@@ -8,7 +8,7 @@ struct IARInitialRequestBody: Codable {
     let redirectUri: String
     let authorizationDetails: [AuthorizationDetails]
     let interactionTypesSupported: [String]
-    let dpopJkt: String?
+    let dpopJkt: String
 
     enum CodingKeys: String, CodingKey {
         case responseType = "response_type"
@@ -29,7 +29,7 @@ struct IARInitialRequestBody: Codable {
         interactionTypesSupported: [String],
         responseType: String = "code",
         codeChallengeMethod: String = "S256",
-        dpopJkt: String? = nil
+        dpopJkt: String
     ) {
         self.responseType = responseType
         self.clientId = clientId
@@ -53,24 +53,21 @@ struct IARInitialRequestBody: Codable {
 
         let interactionTypes = interactionTypesSupported.joined(separator: ",")
         try container.encode(interactionTypes, forKey: .interactionTypesSupported)
-        try container.encodeIfPresent(dpopJkt, forKey: .dpopJkt)
+        try container.encode(dpopJkt, forKey: .dpopJkt)
     }
 
     func toFormMap() -> [String: String] {
         let authDetailsJson: String = JsonUtils.encode(authorizationDetails, empty: "[]")
 
-        var map: [String: String] = [
+        return [
             "response_type": responseType,
             "client_id": clientId,
             "code_challenge": codeChallenge,
             "code_challenge_method": codeChallengeMethod,
             "redirect_uri": redirectUri,
             "authorization_details": authDetailsJson,
-            "interaction_types_supported": interactionTypesSupported.joined(separator: ",")
+            "interaction_types_supported": interactionTypesSupported.joined(separator: ","),
+            "dpop_jkt": dpopJkt
         ]
-        if let dpopJkt = dpopJkt {
-            map["dpop_jkt"] = dpopJkt
-        }
-        return map
     }
 }

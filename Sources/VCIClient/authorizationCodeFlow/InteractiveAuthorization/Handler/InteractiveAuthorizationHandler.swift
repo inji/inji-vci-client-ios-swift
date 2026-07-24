@@ -13,7 +13,7 @@ class InteractiveAuthorizationHandler {
         credentialConfigurationId: String,
         authorizationMethods: [AuthorizationMethod],
         pkceSession: PKCESessionManager.PKCESession,
-        dpopJkt: String? = nil
+        dpopJkt: String
     ) async throws -> AuthorizationResponse {
         
         do {
@@ -93,7 +93,7 @@ class InteractiveAuthorizationHandler {
         credentialConfigurationId: String,
         pkce: PKCESessionManager.PKCESession,
         interactionTypesSupported: [String],
-        dpopJkt: String?
+        dpopJkt: String
     ) -> [String: String] {
 
         let details = [

@@ -59,7 +59,8 @@ final class AuthorizationModelTests: XCTestCase {
             codeChallenge: "abc123",
             redirectUri: "app://callback",
             authorizationDetails: details,
-            interactionTypesSupported: ["openid4vp_presentation", "something_else"]
+            interactionTypesSupported: ["openid4vp_presentation", "something_else"],
+            dpopJkt: "test-jkt"
         )
 
         // Verify defaulted fields
@@ -120,7 +121,8 @@ final class AuthorizationModelTests: XCTestCase {
             interactionTypesSupported: [
                 InteractionType.openId4VpPresentation.rawValue,
                 InteractionType.openId4VpPresentationIAE.rawValue
-            ]
+            ],
+            dpopJkt: "test-jkt"
         )
 
         let form = body.toFormMap()
@@ -146,22 +148,6 @@ final class AuthorizationModelTests: XCTestCase {
         let data = try JSONEncoder().encode(body)
         let json = try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
         XCTAssertEqual(json["dpop_jkt"] as? String, "thumb-print-value")
-    }
-
-    func test_IARInitialRequestBody_omitsDpopJkt_whenNil() throws {
-        let body = IARInitialRequestBody(
-            clientId: "client-123",
-            codeChallenge: "challenge",
-            redirectUri: "app://callback",
-            authorizationDetails: [],
-            interactionTypesSupported: ["openid4vp_presentation"]
-        )
-
-        XCTAssertNil(body.toFormMap()["dpop_jkt"])
-
-        let data = try JSONEncoder().encode(body)
-        let json = try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
-        XCTAssertNil(json["dpop_jkt"])
     }
 
     // MARK: - AuthorizationResponse (Codable)

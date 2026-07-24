@@ -335,7 +335,7 @@ class MockInteractiveAuthorizationHandler: InteractiveAuthorizationHandler {
         credentialConfigurationId: String,
         authorizationMethods: [AuthorizationMethod],
         pkceSession: PKCESessionManager.PKCESession,
-        dpopJkt: String? = nil
+        dpopJkt: String
     ) async throws -> AuthorizationResponse {
         capturedDpopJkt = dpopJkt
         if let errorToThrow {

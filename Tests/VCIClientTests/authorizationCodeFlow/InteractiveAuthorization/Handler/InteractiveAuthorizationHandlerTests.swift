@@ -75,7 +75,8 @@ final class InteractiveAuthorizationHandlerTests: XCTestCase {
             clientMetadata: self.makeClientMetadata(),
             credentialConfigurationId: "cfg-1",
             authorizationMethods: makeAuthMethods(select: select, sign: sign),
-            pkceSession: self.makePKCE()
+            pkceSession: self.makePKCE(),
+            dpopJkt: "test-jkt"
         )
 
         XCTAssertEqual(response.status, "require_interaction")
@@ -122,7 +123,8 @@ final class InteractiveAuthorizationHandlerTests: XCTestCase {
             clientMetadata: self.makeClientMetadata(),
             credentialConfigurationId: "cfg-1",
             authorizationMethods: makeAuthMethods(select: select, sign: sign),
-            pkceSession: self.makePKCE()
+            pkceSession: self.makePKCE(),
+            dpopJkt: "test-jkt"
         )
 
         XCTAssertEqual(response.status, "require_interaction")
@@ -144,7 +146,8 @@ final class InteractiveAuthorizationHandlerTests: XCTestCase {
                 clientMetadata: self.makeClientMetadata(),
                 credentialConfigurationId: "cfg-1",
                 authorizationMethods: self.makeAuthMethods(select: { _ in [:] }, sign: { _ in [] }),
-                pkceSession: self.makePKCE()
+                pkceSession: self.makePKCE(),
+                dpopJkt: "test-jkt"
             )
         } verify: { error in
             let iae = error as? InteractiveAuthorizationException
@@ -172,7 +175,8 @@ final class InteractiveAuthorizationHandlerTests: XCTestCase {
                 clientMetadata: self.makeClientMetadata(),
                 credentialConfigurationId: "cfg-1",
                 authorizationMethods: self.makeAuthMethods(select: { _ in [:] }, sign: { _ in [] }),
-                pkceSession: self.makePKCE()
+                pkceSession: self.makePKCE(),
+                dpopJkt: "test-jkt"
             )
         } verify: { error in
             let iae = error as? InteractiveAuthorizationException
@@ -205,7 +209,8 @@ final class InteractiveAuthorizationHandlerTests: XCTestCase {
                 clientMetadata: self.makeClientMetadata(),
                 credentialConfigurationId: "cfg-1",
                 authorizationMethods: self.makeAuthMethods(select: { _ in [:] }, sign: { _ in [] }),
-                pkceSession: self.makePKCE()
+                pkceSession: self.makePKCE(),
+                dpopJkt: "test-jkt"
             )
         } verify: { error in
             let iae = error as? InteractiveAuthorizationException
@@ -240,7 +245,8 @@ final class InteractiveAuthorizationHandlerTests: XCTestCase {
                 clientMetadata: self.makeClientMetadata(),
                 credentialConfigurationId: "cfg-1",
                 authorizationMethods: self.makeAuthMethods(select: { _ in [:] }, sign: { _ in [] }),
-                pkceSession: self.makePKCE()
+                pkceSession: self.makePKCE(),
+                dpopJkt: "test-jkt"
             )
         } verify: { error in
             let iae = error as? InteractiveAuthorizationException
@@ -266,7 +272,8 @@ final class InteractiveAuthorizationHandlerTests: XCTestCase {
                 clientMetadata: self.makeClientMetadata(),
                 credentialConfigurationId: "cfg-1",
                 authorizationMethods: self.makeAuthMethods(select: { _ in [:] }, sign: { _ in [] }),
-                pkceSession: self.makePKCE()
+                pkceSession: self.makePKCE(),
+                dpopJkt: "test-jkt"
             )
         } verify: { error in
             let iae = error as? InteractiveAuthorizationException
@@ -299,26 +306,5 @@ final class InteractiveAuthorizationHandlerTests: XCTestCase {
         } verify: { _ in }
 
         XCTAssertEqual(initialNetwork.capturedParams["dpop_jkt"], "test-thumbprint")
-    }
-
-    func test_handle_omitsDpopJkt_fromInitialIarRequest_whenNotProvided() async {
-
-        let initialNetwork = MockNetworkManager()
-        let data = try! JSONSerialization.data(withJSONObject: ["type": "unknown_type"])
-        initialNetwork.responseBody = String(data: data, encoding: .utf8) ?? ""
-
-        let handler = InteractiveAuthorizationHandler(networkManager: initialNetwork)
-
-        await XCTAssertThrowsErrorAsync {
-            _ = try await handler.handle(
-                endpoint: "https://issuer.example.com/iar",
-                clientMetadata: self.makeClientMetadata(),
-                credentialConfigurationId: "cfg-1",
-                authorizationMethods: self.makeAuthMethods(select: { _ in [:] }, sign: { _ in [] }),
-                pkceSession: self.makePKCE()
-            )
-        } verify: { _ in }
-
-        XCTAssertNil(initialNetwork.capturedParams["dpop_jkt"])
     }
 }
