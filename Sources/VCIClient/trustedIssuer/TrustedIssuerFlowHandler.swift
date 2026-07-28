@@ -15,7 +15,8 @@ class TrustedIssuerFlowHandler {
         getTokenResponse: @escaping TokenResponseCallback,
         getProofs: @escaping ProofsCallback,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
-        networkSession: NetworkManager = NetworkManager.shared
+        networkSession: NetworkManager = NetworkManager.shared,
+        dpopManager: DPoPManager = DPoPManager()
     ) async throws -> CredentialResponse {
         let issuerMetadata = try await loadIssuerMetadata(
             credentialIssuer: credentialIssuer,
@@ -36,7 +37,8 @@ class TrustedIssuerFlowHandler {
                 credentialConfigurationId: credentialConfigurationId,
                 proofSigningAlgorithmsSupported: proofSigningAlgorithms,
                 downloadTimeOutInMillis: downloadTimeoutInMillis,
-                session: networkSession
+                session: networkSession,
+                dpopManager: dpopManager
             )
 
         case .draft13:
@@ -56,7 +58,8 @@ class TrustedIssuerFlowHandler {
                 credentialConfigurationId: credentialConfigurationId,
                 proofSigningAlgorithmsSupported: proofSigningAlgorithms,
                 downloadTimeOutInMillis: downloadTimeoutInMillis,
-                session: networkSession
+                session: networkSession,
+                dpopManager: dpopManager
             )
             return CredentialResponse(
                 credentials: [CredentialItem(credential: draft13Response.credential)],

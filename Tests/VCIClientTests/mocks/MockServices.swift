@@ -19,7 +19,7 @@ final class MockAuthServerResolver: AuthorizationServerResolver {
             tokenEndpoint: mockTokenEndpoint,
             authorizationEndpoint: nil,
             interactiveAuthorizationEndpoint: mockInteractiveAuthorizationEndpoint,
-            requireInteractiveAuthorizationRequest: mockRequireInteractiveAuthorizationRequest
+            requireInteractiveAuthorizationRequest: mockRequireInteractiveAuthorizationRequest, dpopSigningAlgValuesSupported: nil
         )
     }
 
@@ -31,7 +31,7 @@ final class MockAuthServerResolver: AuthorizationServerResolver {
             tokenEndpoint: mockTokenEndpoint,
             authorizationEndpoint: mcokAuthorizationEndpoint,
             interactiveAuthorizationEndpoint: mockInteractiveAuthorizationEndpoint,
-            requireInteractiveAuthorizationRequest: mockRequireInteractiveAuthorizationRequest
+            requireInteractiveAuthorizationRequest: mockRequireInteractiveAuthorizationRequest, dpopSigningAlgValuesSupported: nil
         )
     }
 }
@@ -59,7 +59,8 @@ final class MockTokenService: TokenService {
                                  tokenEndpoint: String,
                                  timeoutMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
                                  preAuthCode: String,
-                                 txCode: String? = nil) async throws -> TokenResponse {
+                                 txCode: String? = nil,
+                                 dpopManager: DPoPManager = DPoPManager()) async throws -> TokenResponse {
         return preAuthTokenResponse
     }
 
@@ -69,7 +70,8 @@ final class MockTokenService: TokenService {
                                  authCode: String,
                                  clientId: String? = nil,
                                  redirectUri: String? = nil,
-                                 codeVerifier: String? = nil) async throws -> TokenResponse {
+                                 codeVerifier: String? = nil,
+                                 dpopManager: DPoPManager = DPoPManager()) async throws -> TokenResponse {
         if let authCodeErrorToThrow {
             throw authCodeErrorToThrow
         }
@@ -83,7 +85,8 @@ final class MockNonceService: NonceService {
 
     override func fetchNonce(
         issuerMetadata: IssuerMetadata,
-        timeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
+        timeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
+        dpopManager: DPoPManager? = nil
     ) async throws -> String? {
         if let errorToThrow {
             throw errorToThrow
@@ -109,7 +112,9 @@ final class MockCredentialRequestExecutor: CredentialRequestExecutor {
         proofs: CredentialRequestProofs,
         accessToken: String,
         timeoutInMillis: Int64 = 10000,
-        session: NetworkManager = NetworkManager.shared
+        session: NetworkManager = NetworkManager.shared,
+        tokenType: String? = nil,
+        dpopManager: DPoPManager = DPoPManager()
     ) async throws -> CredentialResponse? {
         if shouldReturnNil { return nil }
         if let errorToThrow {
@@ -129,7 +134,9 @@ final class MockCredentialRequestExecutor: CredentialRequestExecutor {
         proof: Proof,
         accessToken: String,
         timeoutInMillis: Int64 = 10000,
-        session: NetworkManager = NetworkManager.shared
+        session: NetworkManager = NetworkManager.shared,
+        tokenType: String? = nil,
+        dpopManager: DPoPManager = DPoPManager()
     ) async throws -> CredentialResponseDraft13? {
         if shouldReturnNil { return nil }
         if let errorToThrow {
@@ -151,6 +158,7 @@ final class MockCredentialRequestExecutor: CredentialRequestExecutor {
 final class MockCredentialOfferHandler: CredentialOfferFlowHandler {
     var shouldThrow = false
     var didCallDownload = false
+    var shouldInitializeDpopDuringDownload = false
 
     override func downloadCredentials(
         credentialOffer: String,
@@ -161,9 +169,16 @@ final class MockCredentialOfferHandler: CredentialOfferFlowHandler {
         getProofs: @escaping ProofsCallback,
         onCheckIssuerTrust: CheckIssuerTrustCallback = nil,
         networkSession: NetworkManager = NetworkManager.shared,
-        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
+        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
+        dpopManager: DPoPManager = DPoPManager()
     ) async throws -> CredentialResponse {
         didCallDownload = true
+        if shouldInitializeDpopDuringDownload {
+            try dpopManager.initialize(
+                tokenEndpoint: "https://as.example.com/token",
+                authorizationServerSupportedAlgorithms: ["ES256"]
+            )
+        }
         if shouldThrow {
             throw DownloadFailedException("Simulated failure")
         }
@@ -188,7 +203,8 @@ class MockTrustedIssuerHandler: TrustedIssuerFlowHandler {
         getTokenResponse: @escaping TokenResponseCallback,
         getProofs: @escaping ProofsCallback,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
-        networkSession: NetworkManager = NetworkManager.shared
+        networkSession: NetworkManager = NetworkManager.shared,
+        dpopManager: DPoPManager = DPoPManager()
     ) async throws -> CredentialResponse {
         didCallDownload = true
         if shouldThrow {
@@ -311,14 +327,17 @@ class MockInteractiveAuthorizationHandler: InteractiveAuthorizationHandler {
     )
     var errorToThrow: Error?
     var shouldThrowMissingInteractionType: Bool = false
+    var capturedDpopJkt: String?
 
     override func handle(
         endpoint: String,
         clientMetadata: ClientMetadata,
         credentialConfigurationId: String,
         authorizationMethods: [AuthorizationMethod],
-        pkceSession: PKCESessionManager.PKCESession
+        pkceSession: PKCESessionManager.PKCESession,
+        dpopJkt: String
     ) async throws -> AuthorizationResponse {
+        capturedDpopJkt = dpopJkt
         if let errorToThrow {
             throw errorToThrow
         }
@@ -395,7 +414,8 @@ final class MockAuthorizationCodeFlowService: AuthorizationCodeFlowService {
         proofSigningAlgorithmsSupported: [String],
         credentialOffer: CredentialOffer? = nil,
         downloadTimeOutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
-        session: NetworkManager = NetworkManager.shared
+        session: NetworkManager = NetworkManager.shared,
+        dpopManager: DPoPManager = DPoPManager()
     ) async throws -> CredentialResponse {
         didCallRequestCredentials = true
         if shouldThrow {
@@ -418,7 +438,8 @@ final class MockAuthorizationCodeFlowService: AuthorizationCodeFlowService {
         proofSigningAlgorithmsSupported: [String],
         credentialOffer: CredentialOffer? = nil,
         downloadTimeOutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
-        session: NetworkManager = NetworkManager.shared
+        session: NetworkManager = NetworkManager.shared,
+        dpopManager: DPoPManager = DPoPManager()
     ) async throws -> CredentialResponseDraft13 {
         didCallRequestCredentials = true
         if shouldThrow {
@@ -476,7 +497,8 @@ final class MockPreAuthFlowService: PreAuthCodeFlowService {
         credentialConfigurationId: String,
         proofSigningAlgorithmsSupported: [String],
         getTxCode: TxCodeCallback = nil,
-        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
+        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
+        dpopManager: DPoPManager = DPoPManager()
     ) async throws -> CredentialResponse {
         didCallRequest = true
         return CredentialResponse(
@@ -494,7 +516,8 @@ final class MockPreAuthFlowService: PreAuthCodeFlowService {
         credentialConfigurationId: String,
         proofSigningAlgorithmsSupported: [String],
         getTxCode: TxCodeCallback = nil,
-        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis
+        downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
+        dpopManager: DPoPManager = DPoPManager()
     ) async throws -> CredentialResponseDraft13 {
         didCallRequest = true
         return responseToReturn

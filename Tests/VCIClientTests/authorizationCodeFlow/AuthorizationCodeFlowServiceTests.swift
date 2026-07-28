@@ -168,6 +168,47 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         XCTAssertEqual(result.credential.value as? String, "mock-credential")
     }
 
+    func test_interactiveAuth_threadsDpopJktThumbprintToHandler() async throws {
+        let resolver = MockAuthServerResolver()
+        resolver.mockIssuer = "https://auth.example.com"
+        resolver.mockGrantTypesSupported = ["authorization_code"]
+        resolver.mockTokenEndpoint = "https://auth.example.com/token"
+        resolver.mcokAuthorizationEndpoint = nil
+        resolver.mockInteractiveAuthorizationEndpoint = "https://auth.example.com/interactive"
+        resolver.mockRequireInteractiveAuthorizationRequest = true
+
+        let interactiveHandler = MockInteractiveAuthorizationHandler()
+        interactiveHandler.responseToReturn = AuthorizationResponse(
+            authorizationCode: "interactive-code",
+            status: "success",
+            error: nil,
+            errorDescription: nil,
+            authSession: "session-1"
+        )
+
+        let service = makeService(resolver: resolver, interactiveAuthHandler: interactiveHandler)
+        let dpopManager = DPoPManager()
+
+        _ = try await service.requestCredentialsDraft13(
+            issuerMetadata: IssuerMetadata(
+                credentialIssuer: "https://example.com",
+                credentialEndpoint: "https://example.com/credential",
+                credentialFormat: .ldp_vc,
+                authorizationServers: ["https://auth.example.com"]
+            ),
+            clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
+            authorizationMethods: [],
+            getTokenResponse: { _ in TokenResponse.mock() },
+            getProofJwt: { _, _, _ in "mock-jwt" },
+            credentialConfigurationId: "vc1",
+            proofSigningAlgorithmsSupported: ["rs256"],
+            dpopManager: dpopManager
+        )
+
+        let expectedThumbprint = try dpopManager.jwkThumbprint()
+        XCTAssertEqual(interactiveHandler.capturedDpopJkt, expectedThumbprint)
+    }
+
     func test_interactiveAuth_missingInteractionType_shouldFallbackToAuthorizationEndpoint() async throws {
         let resolver = MockAuthServerResolver()
         resolver.mockInteractiveAuthorizationEndpoint = "https://auth.example.com/interactive"
