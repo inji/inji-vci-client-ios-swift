@@ -12,11 +12,13 @@ enum WellKnownUrl {
     static func insertSuffix(baseUrl: String, suffix: String) -> String? {
         guard let components = URLComponents(string: baseUrl),
               let scheme = components.scheme,
-              let host = components.host else {
+              let host = components.percentEncodedHost else {
             return nil
         }
         let port = components.port.map { ":\($0)" } ?? ""
-        var path = components.path
+        // Use the percent-encoded path so an escaped separator (e.g. /tenant%2Falpha) is not
+        // decoded into a different path that would resolve to a different metadata endpoint.
+        var path = components.percentEncodedPath
         while path.hasSuffix("/") { path.removeLast() }
         return "\(scheme)://\(host)\(port)\(suffix)\(path)"
     }

@@ -37,6 +37,16 @@ final class WellKnownUrlTests: XCTestCase {
         XCTAssertNil(WellKnownUrl.insertSuffix(baseUrl: "not a url", suffix: "/.well-known/x"))
     }
 
+    func test_preservesPercentEncodedPathSegments() {
+        XCTAssertEqual(
+            WellKnownUrl.insertSuffix(
+                baseUrl: "https://host.example.com/tenant%2Falpha",
+                suffix: "/.well-known/openid-configuration"
+            ),
+            "https://host.example.com/.well-known/openid-configuration/tenant%2Falpha"
+        )
+    }
+
     func test_buildCandidateWellKnownUrls_insertsForPathBasedIssuer() {
         let candidates = AuthorizationServerDiscoveryService.buildCandidateWellKnownUrls(
             baseUrl: "https://host.example.com/v1/esignet"
