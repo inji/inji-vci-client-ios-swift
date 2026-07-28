@@ -73,15 +73,13 @@ class IssuerMetadataService {
     /// the well-known suffix is inserted between the authority and the path.
     /// e.g. https://host/tenant -> https://host/.well-known/openid-credential-issuer/tenant
     static func buildWellKnownUrl(from credentialIssuer: String) throws -> String {
-        guard let components = URLComponents(string: credentialIssuer),
-              let scheme = components.scheme,
-              let host = components.host else {
+        guard let url = WellKnownUrl.insertSuffix(
+            baseUrl: credentialIssuer,
+            suffix: Constants.credentialIssuerWellknownUriSuffix
+        ) else {
             throw IssuerMetadataFetchException("Invalid credential issuer URL: \(credentialIssuer)")
         }
-        let port = components.port.map { ":\($0)" } ?? ""
-        var path = components.path
-        while path.hasSuffix("/") { path.removeLast() }
-        return "\(scheme)://\(host)\(port)\(Constants.credentialIssuerWellknownUriSuffix)\(path)"
+        return url
     }
 
     /// Builds the pre-draft-16 (draft 13 / OpenID Connect style) well-known URL:
