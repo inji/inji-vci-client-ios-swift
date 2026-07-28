@@ -12,12 +12,12 @@ struct WwwAuthenticateChallenge {
         }
 
         let isDpop = headerValue.range(
-            of: "(^|,|\\s)DPoP(\\s|$)",
+            of: "(^|,|\\s)DPoP(\\s|,|$)",
             options: [.regularExpression, .caseInsensitive]
         ) != nil
 
         let isBearer = headerValue.range(
-            of: "(^|,|\\s)Bearer(\\s|$)",
+            of: "(^|,|\\s)Bearer(\\s|,|$)",
             options: [.regularExpression, .caseInsensitive]
         ) != nil
 

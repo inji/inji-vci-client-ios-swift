@@ -22,6 +22,19 @@ final class WwwAuthenticateChallengeTests: XCTestCase {
         XCTAssertTrue(challenge.isBearer)
     }
 
+    func test_detectsCommaAdjacentDpopScheme() {
+        // DPoP immediately followed by a comma (no trailing whitespace) must still be detected.
+        let challenge = WwwAuthenticateChallenge.parse(#"DPoP, Bearer realm="issuer""#)
+        XCTAssertTrue(challenge.isDpop)
+        XCTAssertTrue(challenge.isBearer)
+    }
+
+    func test_detectsSchemesWithNoSpaceAfterComma() {
+        let challenge = WwwAuthenticateChallenge.parse("Bearer,DPoP")
+        XCTAssertTrue(challenge.isDpop)
+        XCTAssertTrue(challenge.isBearer)
+    }
+
     func test_emptyForNilOrBlank() {
         for value in [nil, "", "   "] {
             let challenge = WwwAuthenticateChallenge.parse(value)
