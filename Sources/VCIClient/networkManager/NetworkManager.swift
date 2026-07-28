@@ -72,6 +72,11 @@ class NetworkManager {
     }
 
     func sendRequest(request: URLRequest) async throws -> NetworkResponse {
+        guard request.url?.scheme?.lowercased() == "https" else {
+            throw NetworkRequestFailedException(
+                "Plaintext HTTP endpoints are not allowed; use HTTPS for: \(request.url?.absoluteString ?? "unknown")"
+            )
+        }
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
 
