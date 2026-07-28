@@ -85,6 +85,17 @@ final class DPoPManagerTests: XCTestCase {
         }
     }
 
+    // Guards against CryptoSwift#892: RS256 key construction used to fail on ~half of random keys.
+    func test_rs256ProofGenerationIsReliableAcrossManyKeys() throws {
+        for _ in 0..<15 {
+            let manager = try initializedManager(algorithms: ["RS256"])
+            let parts = try manager.generateTokenProof().components(separatedBy: ".")
+            XCTAssertEqual(parts.count, 3)
+            XCTAssertEqual(try segment(parts[0])["alg"] as? String, "RS256")
+            XCTAssertFalse(try manager.jwkThumbprint().isEmpty)
+        }
+    }
+
     func test_tokenProof_includesNonceWhenSupplied() throws {
         let manager = try initializedManager()
         let claims = try segment(try manager.generateTokenProof(nonce: "nonce-123").components(separatedBy: ".")[1])

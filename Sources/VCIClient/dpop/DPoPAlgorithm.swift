@@ -68,8 +68,6 @@ enum DPoPAlgorithm: String {
                 message: "RSA key generation failed: \(genError!.takeRetainedValue())"
             )
         }
-        // Apple exports RSA private keys as PKCS#1 DER (not SPKI),
-        // which CryptoSwift.RSA(rawRepresentation:) can parse directly.
         var exportError: Unmanaged<CFError>?
         guard let keyData = SecKeyCopyExternalRepresentation(privateSecKey, &exportError) as Data? else {
             throw VCIClientException(
@@ -77,7 +75,9 @@ enum DPoPAlgorithm: String {
                 message: "RSA key export failed: \(exportError!.takeRetainedValue())"
             )
         }
-        let privateKey = try CryptoSwift.RSA(rawRepresentation: keyData)
+        // Build from parsed components rather than RSA(rawRepresentation:); see RSAKeyDER.
+        let components = try RSAKeyDER.privateComponents(keyData)
+        let privateKey = CryptoSwift.RSA(n: components.n, e: components.e, d: components.d)
         let fullJWK = privateKey.jwkRepresentation
         guard let n = fullJWK.n, let e = fullJWK.e else {
             throw VCIClientException(code: "VCI-011", message: "Unable to extract RSA public key components")
