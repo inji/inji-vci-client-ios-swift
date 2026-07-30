@@ -372,9 +372,7 @@ class AuthorizationCodeFlowService {
                 pkceSession: pkceSession,
                 scope: issuerMetadata.scope ?? "default",
                 pushedAuthorizationRequestEndpoint: authorizationServerMetadata.pushedAuthorizationRequestEndpoint,
-                dpopJkt: try dpopManager.jwkThumbprint(),
-                tokenEndpointAuthMethodsSupported: authorizationServerMetadata.tokenEndpointAuthMethodsSupported,
-                requirePushedAuthorizationRequests: authorizationServerMetadata.requirePushedAuthorizationRequests
+                dpopJkt: try dpopManager.jwkThumbprint()
             )
 
             let response: AuthorizationResponse
