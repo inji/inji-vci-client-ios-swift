@@ -26,15 +26,9 @@ final class RedirectToWebAuthorizationMethodService: AuthorizationMethodService 
         }
 
         let parEndpoint = request.pushedAuthorizationRequestEndpoint
-        let isParRequired = request.requirePushedAuthorizationRequests
 
         let authUrl: String
-        if let parEndpoint, !parEndpoint.isEmpty, isParRequired == true {
-            authUrl = try await buildAuthorizationUrlViaPushedRequest(
-                request: request,
-                parEndpoint: parEndpoint
-            )
-        } else if let parEndpoint, !parEndpoint.isEmpty, isParRequired == nil {
+        if let parEndpoint, !parEndpoint.isEmpty {
             authUrl = try await buildAuthorizationUrlViaPushedRequest(
                 request: request,
                 parEndpoint: parEndpoint
