@@ -9,7 +9,7 @@ final class AuthorizationServerResolverTests: XCTestCase {
             issuer: url,
             grantTypesSupported: ["authorization_code"], tokenEndpoint: "https://mock-token",
             authorizationEndpoint: "\(url)/auth", interactiveAuthorizationEndpoint: nil,
-            requireInteractiveAuthorizationRequest: nil
+            requireInteractiveAuthorizationRequest: nil, dpopSigningAlgValuesSupported: nil
         )
 
         let resolver = AuthorizationServerResolver(authServerDiscoveryService: mockDiscovery)
@@ -31,7 +31,7 @@ final class AuthorizationServerResolverTests: XCTestCase {
             grantTypesSupported: ["authorization_code"], tokenEndpoint: "mock",
             authorizationEndpoint: "\(overrideUrl)/auth",
             interactiveAuthorizationEndpoint: nil,
-            requireInteractiveAuthorizationRequest: nil
+            requireInteractiveAuthorizationRequest: nil, dpopSigningAlgValuesSupported: nil
         )
 
         let resolver = AuthorizationServerResolver(authServerDiscoveryService: mockDiscovery)
@@ -53,7 +53,7 @@ final class AuthorizationServerResolverTests: XCTestCase {
             grantTypesSupported: ["authorization_code"], tokenEndpoint: "mock-token",
             authorizationEndpoint: "https://valid.com/auth",
             interactiveAuthorizationEndpoint: nil,
-            requireInteractiveAuthorizationRequest: nil
+            requireInteractiveAuthorizationRequest: nil, dpopSigningAlgValuesSupported: nil
         )
 
         let resolver = AuthorizationServerResolver(authServerDiscoveryService: mockDiscovery)
@@ -101,7 +101,7 @@ final class AuthorizationServerResolverTests: XCTestCase {
             grantTypesSupported: ["authorization_code"], tokenEndpoint: "mock-token",
             authorizationEndpoint: "\(fallback)/auth",
             interactiveAuthorizationEndpoint: nil,
-            requireInteractiveAuthorizationRequest: nil
+            requireInteractiveAuthorizationRequest: nil, dpopSigningAlgValuesSupported: nil
         )
 
         let resolver = AuthorizationServerResolver(authServerDiscoveryService: mockDiscovery)
@@ -125,7 +125,7 @@ final class AuthorizationServerResolverTests: XCTestCase {
             grantTypesSupported: ["authorization_code"], tokenEndpoint: "mock",
             authorizationEndpoint: "\(realUrl)/auth",
             interactiveAuthorizationEndpoint: nil,
-            requireInteractiveAuthorizationRequest: nil
+            requireInteractiveAuthorizationRequest: nil, dpopSigningAlgValuesSupported: nil
             
         )
 
@@ -155,7 +155,7 @@ final class AuthorizationServerResolverTests: XCTestCase {
             grantTypesSupported: ["implicit"], tokenEndpoint: "mock",
             authorizationEndpoint: "\(url)/auth",
             interactiveAuthorizationEndpoint: nil,
-            requireInteractiveAuthorizationRequest: nil
+            requireInteractiveAuthorizationRequest: nil, dpopSigningAlgValuesSupported: nil
         )
 
         let resolver = AuthorizationServerResolver(authServerDiscoveryService: mockDiscovery)

@@ -11,7 +11,8 @@ enum AuthorizationUrlBuilder {
         state: String,
         codeChallenge: String,
         codeChallengeMethod: CodeChallengeMethod = .s256,
-        nonce: String
+        nonce: String,
+        dpopJkt: String
     ) -> String {
         var url = baseUrl
         url += "?client_id=\(encode(clientId))"
@@ -22,6 +23,7 @@ enum AuthorizationUrlBuilder {
         url += "&code_challenge=\(encode(codeChallenge))"
         url += "&code_challenge_method=\(encode(codeChallengeMethod.rawValue))"
         url += "&nonce=\(encode(nonce))"
+        url += "&dpop_jkt=\(encode(dpopJkt))"
         return url
     }
 

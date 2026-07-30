@@ -49,7 +49,8 @@ final class RedirectToWebAuthorizationMethodService: AuthorizationMethodService 
                 scope: request.scope,
                 state: request.pkceSession.state,
                 codeChallenge: request.pkceSession.codeChallenge,
-                nonce: request.pkceSession.nonce
+                nonce: request.pkceSession.nonce,
+                dpopJkt: request.dpopJkt
             )
         }
 
