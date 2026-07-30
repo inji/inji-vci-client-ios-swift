@@ -74,6 +74,41 @@ final class PushedAuthorizationRequestServiceTests: XCTestCase {
         XCTAssertNil(body["authorization_details"])
     }
 
+    func test_sendsDpopJktWhenProvided() async throws {
+        let mock = makeMock(responseBody: validResponseBody)
+
+        _ = try await PushedAuthorizationRequestService().pushAuthorizationRequest(
+            parEndpoint: parEndpoint,
+            clientId: "client-id",
+            redirectUri: "app://callback",
+            codeChallenge: "challenge",
+            state: "state-123",
+            nonce: "nonce-123",
+            scope: "openid",
+            dpopJkt: "jkt-thumbprint",
+            session: mock
+        )
+
+        XCTAssertEqual(mock.capturedParams["dpop_jkt"], "jkt-thumbprint")
+    }
+
+    func test_omitsDpopJktWhenNotProvided() async throws {
+        let mock = makeMock(responseBody: validResponseBody)
+
+        _ = try await PushedAuthorizationRequestService().pushAuthorizationRequest(
+            parEndpoint: parEndpoint,
+            clientId: "client-id",
+            redirectUri: "app://callback",
+            codeChallenge: "challenge",
+            state: "state-123",
+            nonce: "nonce-123",
+            scope: "openid",
+            session: mock
+        )
+
+        XCTAssertNil(mock.capturedParams["dpop_jkt"])
+    }
+
     func test_mergesClientAuthParamsIntoBody() async throws {
         let mock = makeMock(responseBody: validResponseBody)
 

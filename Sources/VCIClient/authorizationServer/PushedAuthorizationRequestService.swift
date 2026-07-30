@@ -10,6 +10,7 @@ class PushedAuthorizationRequestService {
         state: String,
         nonce: String,
         scope: String? = nil,
+        dpopJkt: String? = nil,
         codeChallengeMethod: CodeChallengeMethod = .s256,
         responseType: AuthorizationResponseType = .code,
         clientAuthParams: [String: String] = [:],
@@ -28,6 +29,10 @@ class PushedAuthorizationRequestService {
 
         if let scope = scope, !scope.isEmpty {
             params["scope"] = scope
+        }
+
+        if let dpopJkt = dpopJkt, !dpopJkt.isEmpty {
+            params["dpop_jkt"] = dpopJkt
         }
 
         // Core authorization request params take precedence; clientAuthParams

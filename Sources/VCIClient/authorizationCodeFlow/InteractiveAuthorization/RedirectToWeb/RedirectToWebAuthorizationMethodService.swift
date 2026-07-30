@@ -81,7 +81,8 @@ final class RedirectToWebAuthorizationMethodService: AuthorizationMethodService 
             codeChallenge: request.pkceSession.codeChallenge,
             state: request.pkceSession.state,
             nonce: request.pkceSession.nonce,
-            scope: request.scope
+            scope: request.scope,
+            dpopJkt: request.dpopJkt
         )
         return AuthorizationUrlBuilder.buildWithRequestUri(
             baseUrl: request.authorizeUrl,
