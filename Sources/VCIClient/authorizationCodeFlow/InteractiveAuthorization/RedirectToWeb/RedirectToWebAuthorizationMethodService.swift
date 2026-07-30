@@ -25,33 +25,22 @@ final class RedirectToWebAuthorizationMethodService: AuthorizationMethodService 
             )
         }
 
+        let parEndpoint = request.pushedAuthorizationRequestEndpoint
+        let isParRequired = request.requirePushedAuthorizationRequests
+
         let authUrl: String
-        if let parEndpoint = request.pushedAuthorizationRequestEndpoint, !parEndpoint.isEmpty {
-            let parResponse = try await parService.pushAuthorizationRequest(
-                parEndpoint: parEndpoint,
-                clientId: request.clientMetadata.clientId,
-                redirectUri: request.clientMetadata.redirectUri,
-                codeChallenge: request.pkceSession.codeChallenge,
-                state: request.pkceSession.state,
-                nonce: request.pkceSession.nonce,
-                scope: request.scope
+        if let parEndpoint, !parEndpoint.isEmpty, isParRequired == true {
+            authUrl = try await buildAuthorizationUrlViaPushedRequest(
+                request: request,
+                parEndpoint: parEndpoint
             )
-            authUrl = AuthorizationUrlBuilder.buildWithRequestUri(
-                baseUrl: request.authorizeUrl,
-                clientId: request.clientMetadata.clientId,
-                requestUri: parResponse.requestUri
+        } else if let parEndpoint, !parEndpoint.isEmpty, isParRequired == nil {
+            authUrl = try await buildAuthorizationUrlViaPushedRequest(
+                request: request,
+                parEndpoint: parEndpoint
             )
         } else {
-            authUrl = AuthorizationUrlBuilder.buildWithParameters(
-                baseUrl: request.authorizeUrl,
-                clientId: request.clientMetadata.clientId,
-                redirectUri: request.clientMetadata.redirectUri,
-                scope: request.scope,
-                state: request.pkceSession.state,
-                codeChallenge: request.pkceSession.codeChallenge,
-                nonce: request.pkceSession.nonce,
-                dpopJkt: request.dpopJkt
-            )
+            authUrl = buildStandardAuthorizationUrl(request: request)
         }
 
         let authorizationResponse = try await openWebPage(authUrl)
@@ -78,6 +67,41 @@ final class RedirectToWebAuthorizationMethodService: AuthorizationMethodService 
             error: nil,
             errorDescription: nil,
             authSession: authorizationResponse["auth_session"] as? String
+        )
+    }
+
+    private func buildAuthorizationUrlViaPushedRequest(
+        request: ImplicitAuthorizationRequestData,
+        parEndpoint: String
+    ) async throws -> String {
+        let parResponse = try await parService.pushAuthorizationRequest(
+            parEndpoint: parEndpoint,
+            clientId: request.clientMetadata.clientId,
+            redirectUri: request.clientMetadata.redirectUri,
+            codeChallenge: request.pkceSession.codeChallenge,
+            state: request.pkceSession.state,
+            nonce: request.pkceSession.nonce,
+            scope: request.scope
+        )
+        return AuthorizationUrlBuilder.buildWithRequestUri(
+            baseUrl: request.authorizeUrl,
+            clientId: request.clientMetadata.clientId,
+            requestUri: parResponse.requestUri
+        )
+    }
+
+    private func buildStandardAuthorizationUrl(
+        request: ImplicitAuthorizationRequestData
+    ) -> String {
+        return AuthorizationUrlBuilder.buildWithParameters(
+            baseUrl: request.authorizeUrl,
+            clientId: request.clientMetadata.clientId,
+            redirectUri: request.clientMetadata.redirectUri,
+            scope: request.scope,
+            state: request.pkceSession.state,
+            codeChallenge: request.pkceSession.codeChallenge,
+            nonce: request.pkceSession.nonce,
+            dpopJkt: request.dpopJkt
         )
     }
 }

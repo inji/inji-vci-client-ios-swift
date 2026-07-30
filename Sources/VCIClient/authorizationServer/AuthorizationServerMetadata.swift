@@ -10,6 +10,7 @@ struct AuthorizationServerMetadata: Codable {
     let pushedAuthorizationRequestEndpoint: String?
     let requirePushedAuthorizationRequests: Bool?
     let dpopSigningAlgValuesSupported: [String]?
+    let tokenEndpointAuthMethodsSupported: [String]?
 
     enum CodingKeys: String, CodingKey {
         case issuer
@@ -21,6 +22,7 @@ struct AuthorizationServerMetadata: Codable {
         case pushedAuthorizationRequestEndpoint = "pushed_authorization_request_endpoint"
         case requirePushedAuthorizationRequests = "require_pushed_authorization_requests"
         case dpopSigningAlgValuesSupported = "dpop_signing_alg_values_supported"
+        case tokenEndpointAuthMethodsSupported = "token_endpoint_auth_methods_supported"
     }
 
     init(
@@ -32,7 +34,8 @@ struct AuthorizationServerMetadata: Codable {
         requireInteractiveAuthorizationRequest: Bool? = nil,
         pushedAuthorizationRequestEndpoint: String? = nil,
         requirePushedAuthorizationRequests: Bool? = nil,
-        dpopSigningAlgValuesSupported: [String]? = nil
+        dpopSigningAlgValuesSupported: [String]? = nil,
+        tokenEndpointAuthMethodsSupported: [String]? = nil
     ) {
         self.issuer = issuer
         self.grantTypesSupported = grantTypesSupported
@@ -43,5 +46,6 @@ struct AuthorizationServerMetadata: Codable {
         self.pushedAuthorizationRequestEndpoint = pushedAuthorizationRequestEndpoint
         self.requirePushedAuthorizationRequests = requirePushedAuthorizationRequests
         self.dpopSigningAlgValuesSupported = dpopSigningAlgValuesSupported
+        self.tokenEndpointAuthMethodsSupported = tokenEndpointAuthMethodsSupported
     }
 }
