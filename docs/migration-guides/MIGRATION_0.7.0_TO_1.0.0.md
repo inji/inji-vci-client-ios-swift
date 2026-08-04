@@ -34,7 +34,7 @@ Note:
    5. **PDI `signVerifiablePresentation` callback** now returns `[VPTokenSigningResult]` instead of `[VPTokenSigningResultV2]`.
    6. **PDI gains two new optional parameters**: `jsonLdCanonicalizer` (required for `ldp_vc` format) and `openid4vpWalletConfig`.
    7. **PDI response modes updated**: `iar_post` / `iar_post.jwt` are the supported response modes.
-   8. Issuer metadata fetch now validates that `credential_issuer` in the well-known response matches the requested issuer (OID4VCI §13.5).
+   8. Issuer metadata fetch now validates that `credential_issuer` in the well-known response matches the requested issuer [OID4VCI §12.2.4](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-12.2.4-2.1).
    9. `VCIClientException` carries structured upstream error fields (`issuerErrorCode`, `issuerErrorDescription`).
    10. Legacy low-level APIs (`requestCredential`, `requestCredentialByCredentialOffer`, `requestCredentialFromTrustedIssuer`) have been removed.
 
@@ -357,7 +357,7 @@ do {
     logger.error(
         "VCI request failed. code=\(error.code), " +
         "issuerCode=\(error.issuerErrorCode ?? "nil"), " +
-        "issuerDescription=\(error.issuerErrorDescription ?? "nil"), " +
+        "issuerDescription=\(error.issuerErrorDescription != nil ? "<redacted>" : "nil"), " +
         "message=\(error.message)"
     )
 
@@ -380,17 +380,16 @@ do {
 
 ### API changes
 
-| 0.7.0                                                                    | 1.0.0 status | Change                                                                                                                                        |
-|--------------------------------------------------------------------------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
-| `fetchCredentialUsingCredentialOffer(...)`                               | **Renamed**  | Use `fetchCredentialsUsingCredentialOffer(...)`                                                                                               |
-| `fetchCredentialFromTrustedIssuer(...)`                                  | **Renamed**  | Use `fetchCredentialsFromTrustedIssuer(...)`                                                                                                  |
-| `getProofJwt` callback                                                   | **Replaced** | Use `getProofs` returning `CredentialRequestProofs`                                                                                           |
-| `CredentialResponse.credential: AnyCodable`                              | **Replaced** | Use `CredentialResponse.credentials: [CredentialItem]`                                                                                        |
-| PDI `selectCredentialsForPresentation` → `[String: [FormatType: [Any]]]` | **Changed**  | Now returns `[String: [Credential]]`                                                                                                          |
-| PDI `signVerifiablePresentation`                                         | **Changed**  | Input changed from `UnsignedVPTokenV2` to `UnsignedVPToken`. Return type changed from `[VPTokenSigningResultV2]` to `[VPTokenSigningResult]`. |
-
-| PDI _(no `jsonLdCanonicalizer`)_                                                     | **New parameter** | Required for `ldp_vc`; optional otherwise                     |
-| PDI _(no `openid4vpWalletConfig`)_                                                   | **New parameter** | Optional OpenID4VP wallet configuration                       |
+| 0.7.0                                                                    | 1.0.0 status      | Change                                                                                                                                        |
+|--------------------------------------------------------------------------|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| `fetchCredentialUsingCredentialOffer(...)`                               | **Renamed**       | Use `fetchCredentialsUsingCredentialOffer(...)`                                                                                               |
+| `fetchCredentialFromTrustedIssuer(...)`                                  | **Renamed**       | Use `fetchCredentialsFromTrustedIssuer(...)`                                                                                                  |
+| `getProofJwt` callback                                                   | **Replaced**      | Use `getProofs` returning `CredentialRequestProofs`                                                                                           |
+| `CredentialResponse.credential: AnyCodable`                              | **Replaced**      | Use `CredentialResponse.credentials: [CredentialItem]`                                                                                        |
+| PDI `selectCredentialsForPresentation` → `[String: [FormatType: [Any]]]` | **Changed**       | Now returns `[String: [Credential]]`                                                                                                          |
+| PDI `signVerifiablePresentation`                                         | **Changed**       | Input changed from `UnsignedVPTokenV2` to `UnsignedVPToken`. Return type changed from `[VPTokenSigningResultV2]` to `[VPTokenSigningResult]`. |
+| PDI _(no `jsonLdCanonicalizer`)_                                         | **New parameter** | Required for `ldp_vc`; optional otherwise                                                                                                     |
+| PDI _(no `openid4vpWalletConfig`)_                                       | **New parameter** | Optional OpenID4VP wallet configuration                                                                                                       |
 
 ### APIs removed in 1.0.0
 
