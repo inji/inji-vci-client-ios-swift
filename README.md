@@ -122,7 +122,7 @@ Then add `"VCIClient"` to your target's dependencies.
 ```swift
 import VCIClient
 
-let vciClient = VCIClient(traceabilityId: UUID().uuidString)
+let vciClient = VCIClient(traceabilityId: "wallet-app-101")
 
 let credentialResponse = try await vciClient.fetchCredentialsUsingCredentialOffer(
     credentialOffer: deepLinkOrCredentialOfferURI,
@@ -305,8 +305,7 @@ let credentialResponse = try await vciClient.fetchCredentialsUsingCredentialOffe
     authorizationMethods: [
         .presentationDuringIssuance(
             selectCredentialsForPresentation: selectCredentialsForPresentationCallback(),
-            signVerifiablePresentation: signVerifiablePresentationCallback(),
-            ldpVpSignatureSuite: "Ed25519Signature2020"
+            signVerifiablePresentation: signVerifiablePresentationCallback()
         ),
         .redirectToWeb(openWebPage: openWebPageCallback())
     ],
@@ -376,8 +375,7 @@ let credentialResponse = try await vciClient.fetchCredentialsFromTrustedIssuer(
     authorizationMethods: [
         .presentationDuringIssuance(
             selectCredentialsForPresentation: selectCredentialsForPresentationCallback(),
-            signVerifiablePresentation: signVerifiablePresentationCallback(),
-            ldpVpSignatureSuite: "Ed25519Signature2020"
+            signVerifiablePresentation: signVerifiablePresentationCallback()
         ),
         .redirectToWeb(openWebPage: openWebPageCallback())
     ],
@@ -454,12 +452,12 @@ The following response modes are supported:
 
 **Parameters :**
 
-| Name                             | Type                                     | Required | Default Value  | Description                                                                                                                                        |
-|----------------------------------|------------------------------------------|----------|----------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
-| jsonLdCanonicalizer              | JsonLdCanonicalizerCallback              | No       | nil            | **Required only if supporting `ldp_vc` format** to canonicalize JSON-LD data for proof generation during VP construction<br/>. Otherwise Optional. |
-| openid4vpWalletConfig            | WalletConfig                             | No       | WalletConfig() | Wallet's OpenID4VP related configuration                                                                                                           |
-| selectCredentialsForPresentation | SelectCredentialsForPresentationCallback | Yes      | N/A            | Callback to select credentials from the wallet for the issuer's presentation request                                                               |
-| signVerifiablePresentation       | SignVerifiablePresentationCallback       | Yes      | N/A            | Callback to sign the payload used for verifiable presentation construction                                                                         |
+| Name                             | Type                                     | Required    | Default Value  | Description                                                                                                                                        |
+|----------------------------------|------------------------------------------|-------------|----------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| jsonLdCanonicalizer              | JsonLdCanonicalizerCallback              | Conditional | nil            | **Required only if supporting `ldp_vc` format** to canonicalize JSON-LD data for proof generation during VP construction<br/>. Otherwise Optional. |
+| openid4vpWalletConfig            | WalletConfig                             | No          | WalletConfig() | Wallet's OpenID4VP related configuration                                                                                                           |
+| selectCredentialsForPresentation | SelectCredentialsForPresentationCallback | Yes         | N/A            | Callback to select credentials from the wallet for the issuer's presentation request                                                               |
+| signVerifiablePresentation       | SignVerifiablePresentationCallback       | Yes         | N/A            | Callback to sign the payload used for verifiable presentation construction                                                                         |
 
 
 
