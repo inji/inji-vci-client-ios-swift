@@ -14,6 +14,7 @@
 
 With the release of the OpenID4VCI specification version 1.0, this library needs to be updated to support it, while maintaining interoperability with issuers that are compliant with Draft-13.
 
+
 The main constraints are:
 
 - Draft-13 issuers must continue to work
@@ -264,6 +265,7 @@ Nonce resolution is now:
    - fetch nonce using `NonceService.fetchNonce()` from issuer metadata `nonce_endpoint`
 
 This keeps the old route behavior intact while enabling 1.0 proof generation.
+
 
 ## Sequences
 
