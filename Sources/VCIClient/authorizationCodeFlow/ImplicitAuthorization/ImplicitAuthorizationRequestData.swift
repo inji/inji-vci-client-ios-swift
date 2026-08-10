@@ -6,6 +6,7 @@ struct ImplicitAuthorizationRequestData: AuthorizationRequestData {
     let pkceSession: PKCESessionManager.PKCESession
     let scope: String
     let pushedAuthorizationRequestEndpoint: String?
+    let requirePushedAuthorizationRequests: Bool?
     let dpopJkt: String
 
     init(
@@ -14,6 +15,7 @@ struct ImplicitAuthorizationRequestData: AuthorizationRequestData {
         pkceSession: PKCESessionManager.PKCESession,
         scope: String,
         pushedAuthorizationRequestEndpoint: String? = nil,
+        requirePushedAuthorizationRequests: Bool? = nil,
         dpopJkt: String
     ) {
         self.authorizeUrl = authorizeUrl
@@ -21,6 +23,7 @@ struct ImplicitAuthorizationRequestData: AuthorizationRequestData {
         self.pkceSession = pkceSession
         self.scope = scope
         self.pushedAuthorizationRequestEndpoint = pushedAuthorizationRequestEndpoint
+        self.requirePushedAuthorizationRequests = requirePushedAuthorizationRequests
         self.dpopJkt = dpopJkt
     }
 }

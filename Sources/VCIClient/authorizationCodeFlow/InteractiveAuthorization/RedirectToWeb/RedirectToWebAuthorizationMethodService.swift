@@ -26,13 +26,35 @@ final class RedirectToWebAuthorizationMethodService: AuthorizationMethodService 
         }
 
         let parEndpoint = request.pushedAuthorizationRequestEndpoint
+        let isParRequired = request.requirePushedAuthorizationRequests ?? false
 
         let authUrl: String
-        if let parEndpoint, !parEndpoint.isEmpty {
+        if isParRequired {
+            guard let parEndpoint, !parEndpoint.isEmpty else {
+                throw PushedAuthorizationRequestException(
+                    message: "Authorization server requires pushed authorization requests "
+                        + "but did not advertise a pushed_authorization_request_endpoint"
+                )
+            }
             authUrl = try await buildAuthorizationUrlViaPushedRequest(
                 request: request,
                 parEndpoint: parEndpoint
             )
+        } else if let parEndpoint, !parEndpoint.isEmpty {
+            do {
+                authUrl = try await buildAuthorizationUrlViaPushedRequest(
+                    request: request,
+                    parEndpoint: parEndpoint
+                )
+            } catch let error as PushedAuthorizationRequestException {
+                Util.logWarning(
+                    message: "PAR attempt failed at \(parEndpoint) and PAR is not required "
+                        + "by the authorization server, falling back to the standard "
+                        + "authorization request: \(error.message)",
+                    className: String(describing: type(of: self))
+                )
+                authUrl = buildStandardAuthorizationUrl(request: request)
+            }
         } else {
             authUrl = buildStandardAuthorizationUrl(request: request)
         }

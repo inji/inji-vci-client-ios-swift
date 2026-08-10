@@ -8,6 +8,7 @@ struct AuthorizationServerMetadata: Codable {
     let interactiveAuthorizationEndpoint: String?
     let requireInteractiveAuthorizationRequest: Bool?
     let pushedAuthorizationRequestEndpoint: String?
+    let requirePushedAuthorizationRequests: Bool?
     let dpopSigningAlgValuesSupported: [String]?
 
     enum CodingKeys: String, CodingKey {
@@ -18,6 +19,7 @@ struct AuthorizationServerMetadata: Codable {
         case interactiveAuthorizationEndpoint = "interactive_authorization_endpoint"
         case requireInteractiveAuthorizationRequest = "require_interactive_authorization_request"
         case pushedAuthorizationRequestEndpoint = "pushed_authorization_request_endpoint"
+        case requirePushedAuthorizationRequests = "require_pushed_authorization_requests"
         case dpopSigningAlgValuesSupported = "dpop_signing_alg_values_supported"
     }
 
@@ -29,6 +31,7 @@ struct AuthorizationServerMetadata: Codable {
         interactiveAuthorizationEndpoint: String?,
         requireInteractiveAuthorizationRequest: Bool? = nil,
         pushedAuthorizationRequestEndpoint: String? = nil,
+        requirePushedAuthorizationRequests: Bool? = nil,
         dpopSigningAlgValuesSupported: [String]? = nil
     ) {
         self.issuer = issuer
@@ -38,6 +41,7 @@ struct AuthorizationServerMetadata: Codable {
         self.interactiveAuthorizationEndpoint = interactiveAuthorizationEndpoint
         self.requireInteractiveAuthorizationRequest = requireInteractiveAuthorizationRequest
         self.pushedAuthorizationRequestEndpoint = pushedAuthorizationRequestEndpoint
+        self.requirePushedAuthorizationRequests = requirePushedAuthorizationRequests
         self.dpopSigningAlgValuesSupported = dpopSigningAlgValuesSupported
     }
 }
