@@ -381,13 +381,6 @@ class AuthorizationCodeFlowService {
                 response = try await RedirectToWebAuthorizationMethodService(
                     openWebPage: openWebPage
                 ).authorizeUser(requestData: requestData)
-            } catch let e as VCIClientException {
-                throw DownloadFailedException(
-                    message: "Authorization failed at authorization endpoint \(authorizationEndpoint): \(e.localizedDescription)",
-                    issuerErrorCode: e.issuerErrorCode,
-                    issuerErrorDescription: e.issuerErrorDescription,
-                    cause: e
-                )
             } catch {
                 throw DownloadFailedException(
                     "Authorization failed at authorization endpoint \(authorizationEndpoint): \(error.localizedDescription)"
