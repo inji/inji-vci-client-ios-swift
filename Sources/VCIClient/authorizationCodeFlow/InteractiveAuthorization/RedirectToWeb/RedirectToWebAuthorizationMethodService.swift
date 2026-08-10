@@ -51,7 +51,7 @@ final class RedirectToWebAuthorizationMethodService: AuthorizationMethodService 
                     message: "PAR attempt failed at \(parEndpoint) and PAR is not required "
                         + "by the authorization server, falling back to the standard "
                         + "authorization request: \(error.message)",
-                    className: String(describing: type(of: self))
+                    className: String(describing: Swift.type(of: self))
                 )
                 authUrl = buildStandardAuthorizationUrl(request: request)
             }
