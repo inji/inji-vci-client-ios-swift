@@ -46,11 +46,11 @@ final class RedirectToWebAuthorizationMethodService: AuthorizationMethodService 
                     request: request,
                     parEndpoint: parEndpoint
                 )
-            } catch let error as PushedAuthorizationRequestException {
+            } catch {
                 Util.logWarning(
                     message: "PAR attempt failed at \(parEndpoint) and PAR is not required "
                         + "by the authorization server, falling back to the standard "
-                        + "authorization request: \(error.message)",
+                        + "authorization request: \(error.localizedDescription)",
                     className: String(describing: Swift.type(of: self))
                 )
                 authUrl = buildStandardAuthorizationUrl(request: request)

@@ -296,6 +296,104 @@ final class RedirectToWebAuthorizationMethodServiceTests: XCTestCase {
         XCTAssertFalse(capturedUrl?.contains("request_uri") ?? true)
     }
 
+    func test_authorizeUser_whenParIsExplicitlyOptionalAndParSucceeds_usesPushedRequest() async throws {
+        let parService = StubPARService(
+            result: .success(
+                PushedAuthorizationResponse(requestUri: "urn:req:abc", expiresIn: 90)
+            )
+        )
+        var capturedUrl: String?
+        let service = RedirectToWebAuthorizationMethodService(
+            openWebPage: { url in
+                capturedUrl = url
+                return ["code": "authcode123"]
+            },
+            parService: parService
+        )
+
+        let response = try await service.authorizeUser(
+            requestData: makeValidRequestData(
+                pushedAuthorizationRequestEndpoint: "https://as.example.com/as/par",
+                requirePushedAuthorizationRequests: false
+            )
+        )
+
+        XCTAssertEqual(response.status, "success")
+        XCTAssertEqual(parService.callCount, 1)
+        XCTAssertTrue(capturedUrl?.contains("request_uri=urn:req:abc") ?? false)
+    }
+
+    func test_authorizeUser_whenParIsExplicitlyOptionalAndNoEndpoint_usesStandardRequest() async throws {
+        let parService = StubPARService(
+            result: .success(
+                PushedAuthorizationResponse(requestUri: "urn:req:abc", expiresIn: 90)
+            )
+        )
+        var capturedUrl: String?
+        let service = RedirectToWebAuthorizationMethodService(
+            openWebPage: { url in
+                capturedUrl = url
+                return ["code": "authcode123"]
+            },
+            parService: parService
+        )
+
+        let response = try await service.authorizeUser(
+            requestData: makeValidRequestData(requirePushedAuthorizationRequests: false)
+        )
+
+        XCTAssertEqual(response.status, "success")
+        XCTAssertEqual(parService.callCount, 0)
+        XCTAssertFalse(capturedUrl?.contains("request_uri") ?? true)
+    }
+
+    func test_authorizeUser_whenOptionalParFailsWithOtherError_fallsBackToStandardRequest() async throws {
+        let parService = StubPARService(result: .failure(StubPARError.unexpected))
+        var capturedUrl: String?
+        let service = RedirectToWebAuthorizationMethodService(
+            openWebPage: { url in
+                capturedUrl = url
+                return ["code": "authcode123"]
+            },
+            parService: parService
+        )
+
+        let response = try await service.authorizeUser(
+            requestData: makeValidRequestData(
+                pushedAuthorizationRequestEndpoint: "https://as.example.com/as/par",
+                requirePushedAuthorizationRequests: false
+            )
+        )
+
+        XCTAssertEqual(response.status, "success")
+        XCTAssertEqual(parService.callCount, 1)
+        XCTAssertFalse(capturedUrl?.contains("request_uri") ?? true)
+    }
+
+    func test_authorizeUser_whenMandatoryParFailsWithOtherError_throwsWithoutFallback() async {
+        let parService = StubPARService(result: .failure(StubPARError.unexpected))
+        var callbackInvoked = false
+        let service = RedirectToWebAuthorizationMethodService(
+            openWebPage: { _ in
+                callbackInvoked = true
+                return ["code": "authcode123"]
+            },
+            parService: parService
+        )
+
+        do {
+            _ = try await service.authorizeUser(
+                requestData: makeValidRequestData(
+                    pushedAuthorizationRequestEndpoint: "https://as.example.com/as/par",
+                    requirePushedAuthorizationRequests: true
+                )
+            )
+            XCTFail("Expected the PAR failure to propagate")
+        } catch {
+            XCTAssertFalse(callbackInvoked, "Must not fall back when PAR is mandatory")
+        }
+    }
+
     func test_authorizeUser_whenParFlagOmittedAndNoEndpoint_usesStandardRequestWithoutPar() async throws {
         let parService = StubPARService(
             result: .success(
@@ -321,6 +419,10 @@ final class RedirectToWebAuthorizationMethodServiceTests: XCTestCase {
 
 // Dummy class to simulate invalid request data
 private final class DummyAuthorizationRequestData: AuthorizationRequestData {}
+
+private enum StubPARError: Error {
+    case unexpected
+}
 
 private final class StubPARService: PushedAuthorizationRequestService {
     private let result: Result<PushedAuthorizationResponse, Error>
