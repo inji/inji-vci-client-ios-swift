@@ -589,7 +589,8 @@ do {
 | VCI-009 | `IssuerMetadataFetchException`          | Failed to fetch issuerMetadata                                                                           |
 | VCI-010 | `VCIClientException`                    | Generic API-boundary wrapper or unknown exception surfaced by `VCIClient` public methods                 |
 | VCI-011 | `InteractiveAuthorizationException`     | Failed to perform Interactive authorization (Presentation During Issuance / Redirect to Web interaction) |
-| VCI-012 | `PushedAuthorizationRequestException`   | Failed to push authorization request (RFC 9126)                                                          |
+| VCI-012 | `IllegalArgumentException`              | Invalid or missing argument in a request or response payload                                             |
+| VCI-013 | `PushedAuthorizationRequestException`   | Failed to push authorization request (RFC 9126)                                                          |
 
 ---
 
