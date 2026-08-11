@@ -20,6 +20,9 @@ The implementation follows
 - Authorization server discovery for both flows
 - PKCE-compliant OAuth 2.0 Authorization Code flow (RFC 7636)
   - PKCE session is managed internally by the library
+- Pushed Authorization Requests (PAR) support (RFC 9126)
+  - Used automatically when the authorization server advertises a `pushed_authorization_request_endpoint`
+  - Falls back to a standard authorization request if the push fails and PAR is not mandated by the authorization server
 - Well-defined **exception handling** with `VCI-XXX` error codes (see more on [this](#-error-handling))
 - Support for multiple Credential formats:
   - `ldp_vc`
@@ -494,6 +497,7 @@ do {
 | VCI-009 | `IssuerMetadataFetchException`             | Failed to fetch issuerMetadata                                                                           |
 | VCI-010 | `VCIClientException`                       | Generic API-boundary wrapper or unknown exception surfaced by `VCIClient` public methods                |
 | VCI-011 | `InteractiveAuthorizationException`        | Failed to perform Interactive authorization (Presentation During Issuance / Redirect to Web interaction) |
+| VCI-012 | `PushedAuthorizationRequestException`      | Failed to push authorization request (RFC 9126)                                                          |
 
 ---
 
