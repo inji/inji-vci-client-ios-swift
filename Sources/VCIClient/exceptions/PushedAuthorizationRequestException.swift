@@ -3,7 +3,7 @@ import Foundation
 class PushedAuthorizationRequestException: VCIClientException {
     init(_ message: String?) {
         super.init(
-            code: "VCI-PAR",
+            code: "VCI-012",
             message: "Pushed authorization request failed: \(message ?? "")"
         )
     }
@@ -15,7 +15,7 @@ class PushedAuthorizationRequestException: VCIClientException {
         cause: Error? = nil
     ) {
         super.init(
-            code: "VCI-PAR",
+            code: "VCI-012",
             message: "Pushed authorization request failed: \(message ?? "")",
             issuerErrorCode: issuerErrorCode,
             issuerErrorDescription: issuerErrorDescription,
