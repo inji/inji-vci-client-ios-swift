@@ -22,14 +22,23 @@ class DPoPManager {
 
     func initialize(tokenEndpoint: String, authorizationServerSupportedAlgorithms: [String]?) throws {
         guard session == nil else { return }
-        let algorithm = try DPoPAlgorithm.select(authorizationServerSupportedAlgorithms)
-        let material = try algorithm.generateKeyMaterial()
-        session = Session(
-            signingKey: material.signingKey,
-            publicJWK: material.publicJWK,
-            algorithm: algorithm,
-            tokenEndpoint: DPoPManager.normalizeHtu(tokenEndpoint)
-        )
+        do {
+            let algorithm = try DPoPAlgorithm.select(authorizationServerSupportedAlgorithms)
+            let material = try algorithm.generateKeyMaterial()
+            session = Session(
+                signingKey: material.signingKey,
+                publicJWK: material.publicJWK,
+                algorithm: algorithm,
+                tokenEndpoint: DPoPManager.normalizeHtu(tokenEndpoint)
+            )
+        } catch let e as DPoPException {
+            throw e
+        } catch {
+            throw DPoPException(
+                message: "Unexpected error while initializing the DPoP session: \(error.localizedDescription)",
+                cause: error
+            )
+        }
     }
 
     func reset() {
@@ -44,12 +53,30 @@ class DPoPManager {
     }
 
     func jwkThumbprint() throws -> String {
-        try DPoPManager.thumbprint(of: requireSession().publicJWK)
+        do {
+            return try DPoPManager.thumbprint(of: requireSession().publicJWK)
+        } catch let e as DPoPException {
+            throw e
+        } catch {
+            throw DPoPException(
+                message: "Unexpected error while computing the DPoP JWK thumbprint: \(error.localizedDescription)",
+                cause: error
+            )
+        }
     }
 
     func generateTokenProof(nonce: String? = nil) throws -> String {
-        let activeSession = try requireSession()
-        return try buildProof(activeSession, htu: activeSession.tokenEndpoint, nonce: nonce, accessToken: nil)
+        do {
+            let activeSession = try requireSession()
+            return try buildProof(activeSession, htu: activeSession.tokenEndpoint, nonce: nonce, accessToken: nil)
+        } catch let e as DPoPException {
+            throw e
+        } catch {
+            throw DPoPException(
+                message: "Unexpected error while generating the token DPoP proof: \(error.localizedDescription)",
+                cause: error
+            )
+        }
     }
 
     func generateCredentialProof(
@@ -57,14 +84,23 @@ class DPoPManager {
         accessToken: String,
         nonce: String? = nil
     ) throws -> String {
-        let activeSession = try requireSession()
-        updateNonce(nonce)
-        return try buildProof(
-            activeSession,
-            htu: DPoPManager.normalizeHtu(credentialEndpoint),
-            nonce: issuerNonce,
-            accessToken: accessToken
-        )
+        do {
+            let activeSession = try requireSession()
+            updateNonce(nonce)
+            return try buildProof(
+                activeSession,
+                htu: DPoPManager.normalizeHtu(credentialEndpoint),
+                nonce: issuerNonce,
+                accessToken: accessToken
+            )
+        } catch let e as DPoPException {
+            throw e
+        } catch {
+            throw DPoPException(
+                message: "Unexpected error while generating the credential DPoP proof: \(error.localizedDescription)",
+                cause: error
+            )
+        }
     }
 
     private func buildProof(
@@ -97,10 +133,7 @@ class DPoPManager {
 
     private func requireSession() throws -> Session {
         guard let session = session else {
-            throw VCIClientException(
-                code: "VCI-011",
-                message: "DPoP session is not initialized for the current flow"
-            )
+            throw DPoPException("DPoP session is not initialized for the current flow")
         }
         return session
     }
@@ -116,21 +149,21 @@ class DPoPManager {
         switch jwk.keyType {
         case .ellipticCurve:
             guard let curve = jwk.curve?.rawValue, let x = jwk.x, let y = jwk.y else {
-                throw VCIClientException(code: "VCI-011", message: "Incomplete EC JWK for thumbprint")
+                throw DPoPException("Incomplete EC JWK for thumbprint")
             }
             members = ["crv": curve, "kty": jwk.keyType.rawValue, "x": x.base64URLEncodedString(), "y": y.base64URLEncodedString()]
         case .octetKeyPair:
             guard let curve = jwk.curve?.rawValue, let x = jwk.x else {
-                throw VCIClientException(code: "VCI-011", message: "Incomplete OKP JWK for thumbprint")
+                throw DPoPException("Incomplete OKP JWK for thumbprint")
             }
             members = ["crv": curve, "kty": jwk.keyType.rawValue, "x": x.base64URLEncodedString()]
         case .rsa:
             guard let n = jwk.n, let e = jwk.e else {
-                throw VCIClientException(code: "VCI-011", message: "Incomplete RSA JWK for thumbprint")
+                throw DPoPException("Incomplete RSA JWK for thumbprint")
             }
             members = ["e": e.base64URLEncodedString(), "kty": jwk.keyType.rawValue, "n": n.base64URLEncodedString()]
         default:
-            throw VCIClientException(code: "VCI-011", message: "Unsupported JWK type for thumbprint")
+            throw DPoPException("Unsupported JWK type for thumbprint")
         }
         let canonical = try JSONSerialization.data(
             withJSONObject: members,

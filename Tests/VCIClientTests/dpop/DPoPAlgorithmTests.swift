@@ -39,7 +39,8 @@ final class DPoPAlgorithmTests: XCTestCase {
     func test_throwsWhenOnlyUnsupportedAlgorithmsAdvertised() {
         XCTAssertThrowsError(try DPoPAlgorithm.select(["PS256", "HS256"])) { error in
             let vcierror = error as? VCIClientException
-            XCTAssertEqual(vcierror?.code, "VCI-012")
+            XCTAssertEqual(vcierror?.code, "VCI-013")
+            XCTAssertTrue(vcierror?.message.contains("No supported DPoP algorithm found") ?? false)
         }
     }
 }

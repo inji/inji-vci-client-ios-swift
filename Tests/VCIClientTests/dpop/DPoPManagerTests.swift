@@ -221,7 +221,13 @@ final class DPoPManagerTests: XCTestCase {
 
     func test_generateProofThrowsWhenNotInitialized() {
         XCTAssertThrowsError(try DPoPManager().generateTokenProof()) { error in
-            XCTAssertEqual((error as? VCIClientException)?.code, "VCI-011")
+            XCTAssertEqual((error as? VCIClientException)?.code, "VCI-013")
+        }
+    }
+
+    func test_jwkThumbprintThrowsWhenNotInitialized() {
+        XCTAssertThrowsError(try DPoPManager().jwkThumbprint()) { error in
+            XCTAssertEqual((error as? VCIClientException)?.code, "VCI-013")
         }
     }
 

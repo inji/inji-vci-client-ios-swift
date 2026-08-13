@@ -183,7 +183,7 @@ final class VCIClientTests: XCTestCase {
     func testGenerateTokenDPoPProof_throwsWhenNoActiveFlow() {
         let client = VCIClient(traceabilityId: "test")
         XCTAssertThrowsError(try client.generateTokenDPoPProof(dpopNonce: "nonce")) { error in
-            XCTAssertEqual((error as? VCIClientException)?.code, "VCI-011")
+            XCTAssertEqual((error as? VCIClientException)?.code, "VCI-013")
         }
     }
 
@@ -223,7 +223,7 @@ final class VCIClientTests: XCTestCase {
         )
 
         XCTAssertThrowsError(try client.generateTokenDPoPProof(dpopNonce: "nonce")) { error in
-            XCTAssertEqual((error as? VCIClientException)?.code, "VCI-011")
+            XCTAssertEqual((error as? VCIClientException)?.code, "VCI-013")
         }
     }
 }

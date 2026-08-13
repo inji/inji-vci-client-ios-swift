@@ -10,8 +10,8 @@ enum RSAKeyDER {
         let bytes = [UInt8](der)
         var cursor = 0
 
-        func fail() -> VCIClientException {
-            VCIClientException(code: "VCI-011", message: "Unable to parse RSA private key DER")
+        func fail() -> DPoPException {
+            DPoPException("Unable to parse RSA private key DER")
         }
 
         func readLength() throws -> Int {

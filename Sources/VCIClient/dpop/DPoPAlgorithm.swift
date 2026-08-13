@@ -42,10 +42,7 @@ enum DPoPAlgorithm: String {
     private func generateEcKeyMaterial() throws -> DPoPKeyMaterial {
         let (keyType, curve) = ellipticParameters()
         guard let generator = JWK(keyType: keyType, curve: curve).keyGeneration else {
-            throw VCIClientException(
-                code: "VCI-011",
-                message: "Unable to generate a DPoP key for algorithm \(rawValue)"
-            )
+            throw DPoPException("Unable to generate a DPoP key for algorithm \(rawValue)")
         }
         let privateKey = try generator.generateKeyPairJWK(purpose: .signing)
         return DPoPKeyMaterial(
@@ -63,24 +60,18 @@ enum DPoPAlgorithm: String {
         ]
         var genError: Unmanaged<CFError>?
         guard let privateSecKey = SecKeyCreateRandomKey(attributes as CFDictionary, &genError) else {
-            throw VCIClientException(
-                code: "VCI-011",
-                message: "RSA key generation failed: \(genError!.takeRetainedValue())"
-            )
+            throw DPoPException("RSA key generation failed: \(genError!.takeRetainedValue())")
         }
         var exportError: Unmanaged<CFError>?
         guard let keyData = SecKeyCopyExternalRepresentation(privateSecKey, &exportError) as Data? else {
-            throw VCIClientException(
-                code: "VCI-011",
-                message: "RSA key export failed: \(exportError!.takeRetainedValue())"
-            )
+            throw DPoPException("RSA key export failed: \(exportError!.takeRetainedValue())")
         }
         // Build from parsed components rather than RSA(rawRepresentation:); see RSAKeyDER.
         let components = try RSAKeyDER.privateComponents(keyData)
         let privateKey = CryptoSwift.RSA(n: components.n, e: components.e, d: components.d)
         let fullJWK = privateKey.jwkRepresentation
         guard let n = fullJWK.n, let e = fullJWK.e else {
-            throw VCIClientException(code: "VCI-011", message: "Unable to extract RSA public key components")
+            throw DPoPException("Unable to extract RSA public key components")
         }
         return DPoPKeyMaterial(signingKey: privateKey, publicJWK: JWK(keyType: .rsa, e: e, n: n))
     }
@@ -114,10 +105,9 @@ enum DPoPAlgorithm: String {
         let preferenceOrder: [DPoPAlgorithm] = [.eddsa, .es256k, .es256, .es384, .es512, .rs256]
         guard let match = preferenceOrder.first(where: { supported.contains($0.rawValue) }) else {
             let clientSupported = preferenceOrder.map(\.rawValue).joined(separator: ", ")
-            throw VCIClientException(
-                code: "VCI-012",
-                message: "No supported DPoP algorithm found. AS supports: \(supported), " +
-                         "client supports: [\(clientSupported)]"
+            throw DPoPException(
+                "No supported DPoP algorithm found. AS supports: \(supported), " +
+                "client supports: [\(clientSupported)]"
             )
         }
         return match
