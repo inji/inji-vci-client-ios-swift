@@ -3,7 +3,7 @@ import XCTest
 
 final class AuthorizationUrlBuilderDPoPTests: XCTestCase {
     func test_appendsDpopJktWhenProvided() {
-        let url = AuthorizationUrlBuilder.build(
+        let url = AuthorizationUrlBuilder.buildWithParameters(
             baseUrl: "https://example.com/auth",
             clientId: "client",
             redirectUri: "https://app/callback",

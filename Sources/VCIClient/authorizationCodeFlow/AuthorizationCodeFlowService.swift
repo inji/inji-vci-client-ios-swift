@@ -371,6 +371,8 @@ class AuthorizationCodeFlowService {
                 clientMetadata: clientMetadata,
                 pkceSession: pkceSession,
                 scope: issuerMetadata.scope ?? "default",
+                pushedAuthorizationRequestEndpoint: authorizationServerMetadata.pushedAuthorizationRequestEndpoint,
+                requirePushedAuthorizationRequests: authorizationServerMetadata.requirePushedAuthorizationRequests,
                 dpopJkt: try dpopManager.jwkThumbprint()
             )
 
