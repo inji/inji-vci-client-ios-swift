@@ -56,10 +56,11 @@ Callback for signing verifiable presentations has been updated:
 | Input type  | `Array<UnsignedVPTokenV2>`      | `Array<UnsignedVPToken>`      | Versioning simplified by removing V2 suffix. New version includes an `id` field to link unsigned VP tokens with their corresponding signed results during preparation. |
 | Output type | `Array<VPTokenSigningResultV2>` | `Array<VPTokenSigningResult>` | Versioning simplified by removing V2 suffix. New version includes an `id` field to link unsigned VP tokens with their corresponding signed results during preparation. |
 
-##### 4. Optional `jsonLdCanonicalizer` Parameter (Swift-specific)
+##### 4. `jsonLdCanonicalizer` Canonicalization Parameter (Swift-specific)
 
-- New optional input parameter for canonicalization of JSON-LD data
-- Applicable only when presenting credentials of format `ldp_vc`
+- New canonicalization input parameter for JSON-LD data processing
+- **Required** when presenting credentials of format `ldp_vc`
+- Optional for other credential formats
 - Allows Swift consumers to provide custom JSON-LD canonicalization logic
 
 ##### 5. Optional `openid4vpWalletConfig`
@@ -123,7 +124,7 @@ Version detection and routing are handled automatically by the OVP library, simi
 3. Update callback implementations:
    - `SelectCredentialsForPresentationCallback`: Return `Map<String, Array<Credential>>` instead of format-grouped map
    - `SignVerifiablePresentationCallback`: Accept `Array<UnsignedVPToken>` and return `Array<VPTokenSigningResult>` (without V2 suffix)
-4. Optionally provide custom `jsonLdCanonicalizer` for `ldp_vc` credential handling
+4. Provide custom `jsonLdCanonicalizer` for `ldp_vc` credential handling (required for ldp_vc, optional otherwise)
 5. Optionally provide wallet's OpenID4VP related configuration via `openid4vpWalletConfig`
 
 ## Implementation Notes

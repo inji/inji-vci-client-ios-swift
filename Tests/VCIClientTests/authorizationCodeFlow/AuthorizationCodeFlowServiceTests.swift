@@ -119,8 +119,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         resolver.mockTokenEndpoint = "https://auth.example.com/token"
         resolver.mcokAuthorizationEndpoint = nil
         resolver.mockInteractiveAuthorizationEndpoint = "https://auth.example.com/interactive"
-        resolver.mockRequireInteractiveAuthorizationRequest = true
-        
+
         let interactiveHandler = MockInteractiveAuthorizationHandler()
         interactiveHandler.responseToReturn = AuthorizationResponse(
             authorizationCode: "interactive-code",
@@ -212,7 +211,6 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
     func test_interactiveAuth_missingInteractionType_shouldFallbackToAuthorizationEndpoint() async throws {
         let resolver = MockAuthServerResolver()
         resolver.mockInteractiveAuthorizationEndpoint = "https://auth.example.com/interactive"
-        resolver.mockRequireInteractiveAuthorizationRequest = false
 
         let interactiveHandler = MockInteractiveAuthorizationHandler()
         interactiveHandler.shouldThrowMissingInteractionType = true
@@ -237,44 +235,6 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         XCTAssertEqual(result.credential.value as? String, "mock-credential")
     }
 
-    func test_interactiveAuth_missingInteractionType_shouldNotFallbackWhenInteractiveAuthorizationIsRequired() async {
-
-        let resolver = MockAuthServerResolver()
-        resolver.mockInteractiveAuthorizationEndpoint = "https://auth.example.com/interactive"
-        resolver.mockRequireInteractiveAuthorizationRequest = true
-
-        let interactiveHandler = MockInteractiveAuthorizationHandler()
-        interactiveHandler.shouldThrowMissingInteractionType = true
-
-        let service = makeService(
-            resolver: resolver,
-            interactiveAuthHandler: interactiveHandler
-        )
-
-        await XCTAssertThrowsErrorAsync {
-            _ = try await service.requestCredentialsDraft13(
-                issuerMetadata: IssuerMetadata.mock(),
-                clientMetadata: ClientMetadata(clientId: "client123", redirectUri: "app://redirect"),
-                authorizationMethods: [
-                    .redirectToWeb(openWebPage: { _ in ["code": "fallback-auth-code"] }),
-                ],
-                getTokenResponse: { _ in
-                    TokenResponse(accessToken: "mock-token", tokenType: "Bearer")
-                },
-                getProofJwt: { _, _, _ in "mock-jwt" },
-                credentialConfigurationId: "vc1",
-                proofSigningAlgorithmsSupported: ["rs256"]
-            )
-        } verify: { error in
-            let downloadError = error as? DownloadFailedException
-            XCTAssertNotNil(downloadError)
-            XCTAssertEqual(
-                downloadError?.issuerErrorCode,
-                Constants.MISSING_INTERACTION_TYPE_ERROR
-            )
-        }
-    }
-    
     func test_requestCredentials_whenInteractiveAuthorizationIsMissingType_wrapsFailure() async {
         let resolver = MockAuthServerResolver()
         resolver.mockIssuer = "https://auth.example.com"
@@ -282,7 +242,6 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         resolver.mockTokenEndpoint = "https://auth.example.com/token"
         resolver.mcokAuthorizationEndpoint = nil
         resolver.mockInteractiveAuthorizationEndpoint = "https://auth.example.com/interactive"
-        resolver.mockRequireInteractiveAuthorizationRequest = true
 
         let interactiveHandler = MockInteractiveAuthorizationHandler()
         interactiveHandler.errorToThrow = InteractiveAuthorizationException(message: "missing_interaction_type")

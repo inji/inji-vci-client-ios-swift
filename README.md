@@ -61,9 +61,6 @@ The implementation follows:
 - Authorization server discovery for both flows
 - PKCE-compliant OAuth 2.0 Authorization Code flow (RFC 7636)
   - PKCE session is managed internally by the library
-- Pushed Authorization Requests (PAR) support (RFC 9126)
-  - Used automatically when the authorization server advertises a `pushed_authorization_request_endpoint`
-  - Falls back to a standard authorization request if the push fails and PAR is not mandated by the authorization server
 - Well-defined **exception handling** with `VCI-XXX` error codes (see more on [this](#-error-handling))
 - Support for multiple Credential formats:
   - `ldp_vc`
@@ -125,7 +122,7 @@ Then add `"VCIClient"` to your target's dependencies.
 ```swift
 import VCIClient
 
-let vciClient = VCIClient(traceabilityId: UUID().uuidString)
+let vciClient = VCIClient(traceabilityId: "wallet-app-101")
 
 let credentialResponse = try await vciClient.fetchCredentialsUsingCredentialOffer(
     credentialOffer: deepLinkOrCredentialOfferURI,
@@ -308,8 +305,7 @@ let credentialResponse = try await vciClient.fetchCredentialsUsingCredentialOffe
     authorizationMethods: [
         .presentationDuringIssuance(
             selectCredentialsForPresentation: selectCredentialsForPresentationCallback(),
-            signVerifiablePresentation: signVerifiablePresentationCallback(),
-            ldpVpSignatureSuite: "Ed25519Signature2020"
+            signVerifiablePresentation: signVerifiablePresentationCallback()
         ),
         .redirectToWeb(openWebPage: openWebPageCallback())
     ],
@@ -379,8 +375,7 @@ let credentialResponse = try await vciClient.fetchCredentialsFromTrustedIssuer(
     authorizationMethods: [
         .presentationDuringIssuance(
             selectCredentialsForPresentation: selectCredentialsForPresentationCallback(),
-            signVerifiablePresentation: signVerifiablePresentationCallback(),
-            ldpVpSignatureSuite: "Ed25519Signature2020"
+            signVerifiablePresentation: signVerifiablePresentationCallback()
         ),
         .redirectToWeb(openWebPage: openWebPageCallback())
     ],
@@ -457,12 +452,12 @@ The following response modes are supported:
 
 **Parameters :**
 
-| Name                             | Type                                     | Required | Default Value  | Description                                                                                                                                        |
-|----------------------------------|------------------------------------------|----------|----------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
-| jsonLdCanonicalizer              | JsonLdCanonicalizerCallback              | No       | nil            | **Required only if supporting `ldp_vc` format** to canonicalize JSON-LD data for proof generation during VP construction<br/>. Otherwise Optional. |
-| openid4vpWalletConfig            | WalletConfig                             | No       | WalletConfig() | Wallet's OpenID4VP related configuration                                                                                                           |
-| selectCredentialsForPresentation | SelectCredentialsForPresentationCallback | Yes      | N/A            | Callback to select credentials from the wallet for the issuer's presentation request                                                               |
-| signVerifiablePresentation       | SignVerifiablePresentationCallback       | Yes      | N/A            | Callback to sign the payload used for verifiable presentation construction                                                                         |
+| Name                             | Type                                     | Required    | Default Value  | Description                                                                                                                                        |
+|----------------------------------|------------------------------------------|-------------|----------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| jsonLdCanonicalizer              | JsonLdCanonicalizerCallback              | Conditional | nil            | **Required only if supporting `ldp_vc` format** to canonicalize JSON-LD data for proof generation during VP construction<br/>. Otherwise Optional. |
+| openid4vpWalletConfig            | WalletConfig                             | No          | WalletConfig() | Wallet's OpenID4VP related configuration                                                                                                           |
+| selectCredentialsForPresentation | SelectCredentialsForPresentationCallback | Yes         | N/A            | Callback to select credentials from the wallet for the issuer's presentation request                                                               |
+| signVerifiablePresentation       | SignVerifiablePresentationCallback       | Yes         | N/A            | Callback to sign the payload used for verifiable presentation construction                                                                         |
 
 
 
@@ -589,9 +584,6 @@ do {
 | VCI-009 | `IssuerMetadataFetchException`          | Failed to fetch issuerMetadata                                                                           |
 | VCI-010 | `VCIClientException`                    | Generic API-boundary wrapper or unknown exception surfaced by `VCIClient` public methods                 |
 | VCI-011 | `InteractiveAuthorizationException`     | Failed to perform Interactive authorization (Presentation During Issuance / Redirect to Web interaction) |
-| VCI-012 | `IllegalArgumentException`              | Invalid or missing argument in a request or response payload                                             |
-| VCI-013 | `DPoPException`                         | Failed to generate or apply DPoP proof (RFC 9449)                                                        |
-| VCI-014 | `PushedAuthorizationRequestException`   | Failed to push authorization request (RFC 9126)                                                          |
 
 ---
 
