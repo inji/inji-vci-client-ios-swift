@@ -121,6 +121,7 @@ final class PresentationInteractionResponseTests: XCTestCase {
 
         XCTAssertThrowsError(try response.validate())
     }
+
     func testValidate_acceptsDcpInteractionType() throws {
         let response = try PresentationInteractionResponse(
             json: [
@@ -135,5 +136,4 @@ final class PresentationInteractionResponseTests: XCTestCase {
 
         XCTAssertNoThrow(try response.validate())
     }
-    
 }

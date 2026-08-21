@@ -212,7 +212,7 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
         XCTAssertEqual(network.capturedParams["auth_session"], "auth-session-1")
         XCTAssertNotNil(network.capturedParams["openid4vp_response"])
     }
-    
+
     func test_full_success_flow_accepts_supported_iae_response_modes() async throws {
 
         for responseMode in ["iae_post", "iae_post.jwt"] {
@@ -247,7 +247,8 @@ final class PresentationDuringIssuanceAuthorizationMethodServiceTests: XCTestCas
             XCTAssertEqual(response.authorizationCode, "code-123")
         }
     }
-    
+
+
     // MARK: - Empty selection
 
     func test_empty_selection_maps_to_access_denied_and_posts() async throws {

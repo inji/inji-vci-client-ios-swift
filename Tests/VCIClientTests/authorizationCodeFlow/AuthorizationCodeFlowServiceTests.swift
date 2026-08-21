@@ -120,7 +120,8 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
         resolver.mcokAuthorizationEndpoint = nil
         resolver.mockInteractiveAuthorizationEndpoint = "https://auth.example.com/interactive"
         resolver.mockRequireInteractiveAuthorizationRequest = true
-        
+
+
         let interactiveHandler = MockInteractiveAuthorizationHandler()
         interactiveHandler.responseToReturn = AuthorizationResponse(
             authorizationCode: "interactive-code",
@@ -274,7 +275,7 @@ final class AuthorizationCodeFlowServiceTests: XCTestCase {
             )
         }
     }
-    
+
     func test_requestCredentials_whenInteractiveAuthorizationIsMissingType_wrapsFailure() async {
         let resolver = MockAuthServerResolver()
         resolver.mockIssuer = "https://auth.example.com"
