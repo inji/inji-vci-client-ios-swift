@@ -28,6 +28,19 @@ final class IssuerMetadataResultTests: XCTestCase {
         )
     }
 
+    func testDropsNonStringSigningAlgorithms() {
+        let metadata = result(with: [
+            "proof_types_supported": [
+                "jwt": ["proof_signing_alg_values_supported": ["ES256", 42, "RS256"]]
+            ]
+        ])
+
+        XCTAssertEqual(
+            metadata.extractJwtProofSigningAlgorithms(credentialConfigurationId: credentialConfigurationId),
+            ["ES256", "RS256"]
+        )
+    }
+
     func testExtractsEveryAdvertisedProofType() {
         let metadata = result(with: [
             "proof_types_supported": [

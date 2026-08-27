@@ -17,12 +17,12 @@ struct IssuerMetadataResult {
         guard
             let proofTypes = proofTypesSupported(credentialConfigurationId: credentialConfigurationId),
             let jwt = proofTypes["jwt"] as? [String: Any],
-            let algos = jwt["proof_signing_alg_values_supported"] as? [String]
+            let algos = jwt["proof_signing_alg_values_supported"] as? [Any]
         else {
             return []
         }
 
-        return algos
+        return algos.compactMap { $0 as? String }
     }
 
     func extractSupportedProofTypes(credentialConfigurationId: String) -> [String] {
