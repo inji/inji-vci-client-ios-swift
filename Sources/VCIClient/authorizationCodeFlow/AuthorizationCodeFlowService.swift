@@ -31,7 +31,7 @@ class AuthorizationCodeFlowService {
         getTokenResponse: @escaping TokenResponseCallback,
         getProofs: @escaping ProofsCallback,
         credentialConfigurationId: String,
-        proofSigningAlgorithmsSupported: [String],
+        proofBindingContext: ProofBindingContext,
         credentialOffer: CredentialOffer? = nil,
         downloadTimeOutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
         session: NetworkManager = NetworkManager.shared,
@@ -43,7 +43,7 @@ class AuthorizationCodeFlowService {
             authorizationMethods: authorizationMethods,
             getTokenResponse: getTokenResponse,
             credentialConfigurationId: credentialConfigurationId,
-            proofSigningAlgorithmsSupported: proofSigningAlgorithmsSupported,
+            proofBindingContext: proofBindingContext,
             credentialOffer: credentialOffer,
             downloadTimeOutInMillis: downloadTimeOutInMillis,
             session: session,
@@ -54,9 +54,10 @@ class AuthorizationCodeFlowService {
 
             do {
                 proofs = try await getProofs(
-                    issuerMetadata.credentialIssuer,
-                    nonce,
-                    proofSigningAlgorithmsSupported
+                    proofBindingContext.toCredentialRequestProofMetadata(
+                        credentialIssuer: issuerMetadata.credentialIssuer,
+                        nonce: nonce
+                    )
                 )
             } catch {
                 throw DownloadFailedException("Failed to obtain proofs from callback: \(error.localizedDescription)")
@@ -82,7 +83,7 @@ class AuthorizationCodeFlowService {
         getTokenResponse: @escaping TokenResponseCallback,
         getProofJwt: @escaping ProofJwtCallback,
         credentialConfigurationId: String,
-        proofSigningAlgorithmsSupported: [String],
+        proofBindingContext: ProofBindingContext,
         credentialOffer: CredentialOffer? = nil,
         downloadTimeOutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
         session: NetworkManager = NetworkManager.shared,
@@ -94,7 +95,7 @@ class AuthorizationCodeFlowService {
             authorizationMethods: authorizationMethods,
             getTokenResponse: getTokenResponse,
             credentialConfigurationId: credentialConfigurationId,
-            proofSigningAlgorithmsSupported: proofSigningAlgorithmsSupported,
+            proofBindingContext: proofBindingContext,
             credentialOffer: credentialOffer,
             downloadTimeOutInMillis: downloadTimeOutInMillis,
             session: session,
@@ -105,9 +106,10 @@ class AuthorizationCodeFlowService {
             let jwt: String
             do {
                 jwt = try await getProofJwt(
-                    issuerMetadata.credentialIssuer,
-                    nonce,
-                    proofSigningAlgorithmsSupported
+                    proofBindingContext.toCredentialRequestProofMetadata(
+                        credentialIssuer: issuerMetadata.credentialIssuer,
+                        nonce: nonce
+                    )
                 )
             } catch {
                 throw DownloadFailedException("Failed to obtain proof JWT from callback: \(error.localizedDescription)")
@@ -132,7 +134,7 @@ class AuthorizationCodeFlowService {
         authorizationMethods: [AuthorizationMethod],
         getTokenResponse: @escaping TokenResponseCallback,
         credentialConfigurationId: String,
-        proofSigningAlgorithmsSupported: [String],
+        proofBindingContext: ProofBindingContext,
         credentialOffer: CredentialOffer?,
         downloadTimeOutInMillis: Int64,
         session: NetworkManager,

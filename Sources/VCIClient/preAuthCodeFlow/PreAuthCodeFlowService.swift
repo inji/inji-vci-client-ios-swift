@@ -24,7 +24,7 @@ class PreAuthCodeFlowService {
         getTokenResponse: @escaping TokenResponseCallback,
         getProofs: @escaping ProofsCallback,
         credentialConfigurationId: String,
-        proofSigningAlgorithmsSupported: [String],
+        proofBindingContext: ProofBindingContext,
         getTxCode: TxCodeCallback = nil,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
         dpopManager: DPoPManager = DPoPManager()
@@ -34,7 +34,7 @@ class PreAuthCodeFlowService {
             credentialOffer: credentialOffer,
             getTokenResponse: getTokenResponse,
             credentialConfigurationId: credentialConfigurationId,
-            proofSigningAlgorithmsSupported: proofSigningAlgorithmsSupported,
+            proofBindingContext: proofBindingContext,
             getTxCode: getTxCode,
             downloadTimeoutInMillis: downloadTimeoutInMillis,
             dpopManager: dpopManager
@@ -43,9 +43,10 @@ class PreAuthCodeFlowService {
             let nonce = try await nonceService.fetchNonce(issuerMetadata: issuerMetadata, timeoutInMillis: downloadTimeoutInMillis, dpopManager: dpopManager)
             do {
                 proofs = try await getProofs(
-                    issuerMetadata.credentialIssuer,
-                    nonce,
-                    proofSigningAlgorithmsSupported
+                    proofBindingContext.toCredentialRequestProofMetadata(
+                        credentialIssuer: issuerMetadata.credentialIssuer,
+                        nonce: nonce
+                    )
                 )
             } catch {
                 throw DownloadFailedException("Failed to obtain proofs from callback: \(error.localizedDescription)")
@@ -69,7 +70,7 @@ class PreAuthCodeFlowService {
         getTokenResponse: @escaping TokenResponseCallback,
         getProofJwt: @escaping ProofJwtCallback,
         credentialConfigurationId: String,
-        proofSigningAlgorithmsSupported: [String],
+        proofBindingContext: ProofBindingContext,
         getTxCode: TxCodeCallback = nil,
         downloadTimeoutInMillis: Int64 = Constants.defaultNetworkTimeoutInMillis,
         dpopManager: DPoPManager = DPoPManager()
@@ -79,7 +80,7 @@ class PreAuthCodeFlowService {
             credentialOffer: credentialOffer,
             getTokenResponse: getTokenResponse,
             credentialConfigurationId: credentialConfigurationId,
-            proofSigningAlgorithmsSupported: proofSigningAlgorithmsSupported,
+            proofBindingContext: proofBindingContext,
             getTxCode: getTxCode,
             downloadTimeoutInMillis: downloadTimeoutInMillis,
             dpopManager: dpopManager
@@ -88,9 +89,10 @@ class PreAuthCodeFlowService {
             let jwt: String
             do {
                 jwt = try await getProofJwt(
-                    issuerMetadata.credentialIssuer,
-                    nonce,
-                    proofSigningAlgorithmsSupported
+                    proofBindingContext.toCredentialRequestProofMetadata(
+                        credentialIssuer: issuerMetadata.credentialIssuer,
+                        nonce: nonce
+                    )
                 )
             } catch {
                 throw DownloadFailedException("Failed to obtain proof JWT from callback: \(error.localizedDescription)")
@@ -115,7 +117,7 @@ class PreAuthCodeFlowService {
         credentialOffer: CredentialOffer,
         getTokenResponse: @escaping TokenResponseCallback,
         credentialConfigurationId: String,
-        proofSigningAlgorithmsSupported: [String],
+        proofBindingContext: ProofBindingContext,
         getTxCode: TxCodeCallback,
         downloadTimeoutInMillis: Int64,
         dpopManager: DPoPManager = DPoPManager(),
