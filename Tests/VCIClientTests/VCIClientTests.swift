@@ -17,7 +17,7 @@ final class VCIClientTests: XCTestCase {
                 .redirectToWeb(openWebPage: { _ in ["code": "auth-code"] })
             ],
             getTokenResponse: { _ in TokenResponse(accessToken: "mock", tokenType: "Bearer") },
-            getProofs: { _, _, _ in CredentialRequestProofs(proofs: ["mock-jwt"]) }
+            getProofs: { _ in CredentialRequestProofs(proofs: ["mock-jwt"]) }
         )
 
         XCTAssertEqual(result.credentials?.count, 1)
@@ -45,7 +45,7 @@ final class VCIClientTests: XCTestCase {
                     .redirectToWeb(openWebPage: { _ in ["code": "auth-code"] })
                 ],
                 getTokenResponse: { _ in TokenResponse(accessToken: "mock", tokenType: "Bearer") },
-                getProofs: { _, _, _ in CredentialRequestProofs(proofs: ["mock-jwt"]) }
+                getProofs: { _ in CredentialRequestProofs(proofs: ["mock-jwt"]) }
             )
         }
     }
@@ -65,7 +65,7 @@ final class VCIClientTests: XCTestCase {
             authorizationMethods: [
                 .redirectToWeb(openWebPage: { _ in ["code": "auth-code"] })
             ],
-            getProofs: { _, _, _ in CredentialRequestProofs(proofs: ["mock-jwt"]) }
+            getProofs: { _ in CredentialRequestProofs(proofs: ["mock-jwt"]) }
         )
 
         XCTAssertEqual(result.credentials?.count, 1)
@@ -93,7 +93,7 @@ final class VCIClientTests: XCTestCase {
                 authorizationMethods: [
                     .redirectToWeb(openWebPage: { _ in ["code": "auth-code"] })
                 ],
-                getProofs: { _, _, _ in CredentialRequestProofs(proofs: ["mock-jwt"]) }
+                getProofs: { _ in CredentialRequestProofs(proofs: ["mock-jwt"]) }
             )
         }
     }
@@ -219,7 +219,7 @@ final class VCIClientTests: XCTestCase {
             getTxCode: nil,
             authorizationMethods: [],
             getTokenResponse: { _ in TokenResponse(accessToken: "token", tokenType: "DPoP") },
-            getProofs: { _, _, _ in CredentialRequestProofs(proofs: []) }
+            getProofs: { _ in CredentialRequestProofs(proofs: []) }
         )
 
         XCTAssertThrowsError(try client.generateTokenDPoPProof(dpopNonce: "nonce")) { error in
